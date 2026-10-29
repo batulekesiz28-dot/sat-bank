@@ -1095,6 +1095,7 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .ai-link{border:0;background:none;padding:0;color:#6d28d9;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px}
 .ai-badge{display:inline-block;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:700;margin-left:6px;text-transform:none;letter-spacing:0}
 .ai-badge.ok{background:rgba(22,163,74,.15);color:var(--green)} .ai-badge.mid{background:rgba(234,179,8,.2);color:#a16207} .ai-badge.bad{background:rgba(220,38,38,.12);color:var(--red)} .ai-badge.none{background:var(--surface2);color:var(--fg2)}
+.ai-trap{margin-top:8px;font-size:13px;color:var(--fg2)}
 .ai-rule{margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(124,58,237,.12)}
 .ai-chat{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .ai-msg{padding:7px 10px;border-radius:10px;max-width:92%;font-size:13.5px}
@@ -1864,10 +1865,8 @@ function rfFill(el) {
   if (el.dataset.sig === sig) { const z = el.querySelector('.ai-zone'); if (z) aiFill(z); return; }
   el.dataset.sig = sig;
   const traps = (RF_BY_DOMAIN[q.domain] || RF_BY_DOMAIN['Information and Ideas']);
-  el.innerHTML = (r.g ? `<div class="pg-show"><span class="rf-q">Tahminin</span> ${escHtml(r.g)}</div>` : '') + `<div class="rf-row"><span class="rf-q">Tahminin doğru muydu?</span>${RF_PRED.map(([k, l]) => `<button class="rf-chip${r.p === k ? ' on' : ''}" data-rf-p="${k}" data-rf-id="${id}">${l}</button>`).join('')}</div>` +
-    (wrong ? `<div class="rf-row"><span class="rf-q">Hangi tuzağa düştün?</span>${traps.map(k => `<button class="rf-chip trap${(r.t || []).includes(k) ? ' on' : ''}" data-rf-t="${k}" data-rf-id="${id}">${RF_TRAPS[k][0]}</button>`).join('')}</div>` +
-      ((r.t || []).length ? `<div class="rf-advice">${r.t.map(k => `<p><b>${RF_TRAPS[k][0]}:</b> ${RF_TRAPS[k][1]}</p>`).join('')}</div>` : '') : '') +
-    (r.p === 'y' && wrong ? '<div class="rf-note">Tahminin doğruymuş ama yanlış şıkkı seçmişsin: sorun okumada değil, elemede. Şıkları tahminine göre daha sıkı ele.</div>' : '') +
+  el.innerHTML = (r.g ? `<div class="pg-show"><span class="rf-q">Tahminin</span> ${escHtml(r.g)}</div>` : '') +
+    (r.p === 'y' && wrong ? '<div class="rf-note">Tahminin doğruymuş ama yanlış şıkkı seçmişsin: sorun okumada değil, elemede.</div>' : '') +
     `<div class="ai-zone" data-ai="${id}"></div>`;
   aiFill(el.querySelector('.ai-zone'));
 }
@@ -1905,7 +1904,7 @@ function renderRfStats() {
   const rows = Object.entries(tc).sort((a, b) => b[1] - a[1]); const max = rows.length ? rows[0][1] : 1;
   const predTotal = pc.y + pc.k + pc.n;
   box.innerHTML = `<div class="section-h rf-h">Hata analizi</div>
-    <p class="rf-sub">Cevapladıktan sonra açıklamanın altındaki “Tahminin doğru muydu?” ve “Hangi tuzağa düştün?” sorularını işaretledikçe burası dolar.</p>
+    <p class="rf-sub">Yanlış yaptığın sorularda “🤖 AI analiz” yaptıkça burası dolar: AI, tahmininin doğru olup olmadığını ve hangi tuzağa düştüğünü kaydeder.</p>
     <div class="rf-cards">
       <div class="stat-card"><div class="stat-card-num">${tagged}<span class="rf-of">/${wrongIds.length}</span></div><div class="stat-card-label">Etiketlenen yanlış</div></div>
       <div class="stat-card"><div class="stat-card-num">${predTotal ? Math.round(pc.y / predTotal * 100) + '%' : '—'}</div><div class="stat-card-label">Tahmin isabeti</div></div>
@@ -2211,7 +2210,12 @@ async function aiAnalyze(id) {
     });
     if (!state.aiNote || typeof state.aiNote !== 'object') state.aiNote = {};
     state.aiNote[id] = { a, m: AI.lastModel || aiModel(), at: Date.now(), ans: state.answers[id] };
-    saveState();
+    const pmap = { dogru: 'y', kismen: 'k', yanlis: 'n', yok: '-' }, pv = pmap[String(a.tahmin_durum || '').trim()];
+    const tk = String(a.tuzak || '').trim(), isWrong = state.answers[id] !== q.correct;
+    const patch = {};
+    if (pv && !rfGet(id).p) patch.p = pv;
+    if (isWrong && tk && RF_TRAPS[tk] && !(rfGet(id).t || []).includes(tk)) patch.t = [...(rfGet(id).t || []), tk];
+    if (Object.keys(patch).length) rfSet(id, patch); else saveState();
   } catch (e) { AI.err[id] = aiErrText(e); }
   clearInterval(tick);
   AI.busy[id] = false; aiRefresh(id);
@@ -2254,7 +2258,7 @@ function aiFill(z) {
     ${a.secim_analizi ? `<div class="ai-sec"><div class="ai-l">Seçimin</div><p>${aiEsc(a.secim_analizi)}</p></div>` : ''}
     ${Array.isArray(a.dogru_yol) && a.dogru_yol.length ? `<div class="ai-sec"><div class="ai-l">Doğru cevaba giden yol</div><ol>${a.dogru_yol.map(s => `<li>${aiEsc(s)}</li>`).join('')}</ol></div>` : ''}
     ${a.kural ? `<div class="ai-rule"><b>Bir dahaki sefere:</b> ${aiEsc(a.kural)}</div>` : ''}
-    ${trapOk ? `<button class="ai-link" data-ai-tag="${id}" data-trap="${trapKey}">AI’nın önerdiği tuzağı etiketle: ${aiEsc(RF_TRAPS[trapKey][0])}</button>` : ''}
+    ${trapKey && RF_TRAPS[trapKey] && (rf.t || []).includes(trapKey) ? `<div class="ai-trap">Tuzak: <b>${aiEsc(RF_TRAPS[trapKey][0])}</b> — ${aiEsc(RF_TRAPS[trapKey][1])}</div>` : ''}
     ${err ? `<div class="ai-err">${aiEsc(err)}</div>` : ''}
     <div class="ai-chat">${log.map(m => `<div class="ai-msg ${m.who}">${aiEsc(m.t).replace(/\n/g, '<br>')}</div>`).join('')}${cb ? '<div class="ai-msg ai"><span class="ai-spin"></span></div>' : ''}</div>
     <form class="ai-ask" data-ai-ask="${id}"><input placeholder="AI’ya bu soru hakkında sor… (ör. neden C yanlış?)" value="${aiEsc(draft)}"><button class="act-btn" ${cb ? 'disabled' : ''}>Sor</button></form>
