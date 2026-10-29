@@ -1137,6 +1137,10 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .tour-btn{border-color:#d97706 !important;color:#b45309 !important}
 .tour-big{width:100%;justify-content:center;margin-bottom:10px;font-size:14px;padding:10px 12px}
 [data-theme="dark"] .tour-btn{color:#fbbf24 !important}
+
+.q-pg-toggle{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--fg2);font-size:12px;cursor:pointer;white-space:nowrap}
+.q-pg-toggle b{font-weight:600}
+.q-pg-toggle.on{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
 </style>
 
 <!-- TOPBAR -->
@@ -1990,7 +1994,7 @@ function renderSet(host) {
       const answered = state.answers[id] !== undefined || !!state.revealed[id];
       const qq = RAW_QUESTIONS.find(x => x.id === id);
       let box = card.querySelector('.pg-box');
-      if (answered || !qq || qq.domain !== 'Information and Ideas') { card.classList.remove('pg-locked'); if (box) box.remove(); return; }
+      if (answered || !qq || !pgOn(qq.domain)) { card.classList.remove('pg-locked'); if (box) box.remove(); return; }
       const open = !!window.__pgOpen[id];
       card.classList.toggle('pg-locked', !open);
       const ch = card.querySelector('.choices'); if (!ch) return;
@@ -2072,8 +2076,9 @@ function pgBoxInner(id, val) {
   const orig = renderQuestion;
   renderQuestion = function (q) {
     let h = orig.apply(this, arguments);
+    try { if (q && (q.domain in PG_DOMAINS)) { const btn = pgToggleHtml(q.domain); h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', btn + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', btn + '<span class="q-status-icon">'); } } catch {}
     try {
-      if (!q || q.domain !== 'Information and Ideas' || state.answers[q.id] !== undefined || state.revealed[q.id]) return h;
+      if (!q || !pgOn(q.domain) || state.answers[q.id] !== undefined || state.revealed[q.id]) return h;
       const id = q.id, open = !!(window.__pgOpen && window.__pgOpen[id]);
       const cls = [];
       if (!open) cls.push('pg-locked');
@@ -2607,6 +2612,27 @@ document.addEventListener('keydown', e => {
 }, true);
 window.addEventListener('scroll', () => { if (TOUR.cur) tourShow(true); }, { passive: true });
 window.addEventListener('resize', () => { if (TOUR.cur) tourShow(true); });
+
+// ══════════════ "✍️ Tahmin" toggle per domain (prediction box + blurred choices) ══════════════
+const PG_DOMAINS = { 'Information and Ideas': 1, 'Craft and Structure': 0, 'Expression of Ideas': 0 };   // defaults
+function pgSettings() { try { return JSON.parse(localStorage.getItem('sat_pg_domains') || '{}') || {}; } catch { return {}; } }
+function pgOn(domain) { if (!(domain in PG_DOMAINS)) return false; const s = pgSettings(); return domain in s ? !!s[domain] : !!PG_DOMAINS[domain]; }
+function pgToggleHtml(domain) {
+  const on = pgOn(domain);
+  return `<button class="q-pg-toggle${on ? ' on' : ''}" data-pg-toggle="${domain}" aria-pressed="${on}" title="Şıkları bulanıklaştır, önce kendi tahminini yaz (bu bölümdeki tüm sorular için)">✍️ Tahmin <b>${on ? 'açık' : 'kapalı'}</b></button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-pg-toggle]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const d = b.dataset.pgToggle, s = pgSettings(); s[d] = pgOn(d) ? 0 : 1;
+  try { localStorage.setItem('sat_pg_domains', JSON.stringify(s)); } catch {}
+  const y = window.scrollY;
+  try { renderQuestionList(); } catch {}
+  try { if (typeof currentView !== 'undefined' && currentView === 'study') renderStudy(); } catch {}
+  window.__pgBoxes && window.__pgBoxes();
+  window.scrollTo({ top: y });
+  showToast(({ 'Information and Ideas': 'Information & Ideas', 'Craft and Structure': 'Craft & Structure', 'Expression of Ideas': 'Expression of Ideas' })[d] + ': tahmin modu ' + (s[d] ? 'açık' : 'kapalı'));
+}, true);
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
