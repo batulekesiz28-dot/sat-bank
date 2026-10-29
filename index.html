@@ -1215,6 +1215,33 @@ button.bb-seg{cursor:pointer;width:26px;height:14px}
   .bb-tab th:nth-child(n+6),.bb-tab td:nth-child(n+6):not(.bb-x){display:none}
   .bb-card{padding:14px}
 }
+
+.q-parca-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--fg2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-left:6px}
+.q-parca-btn.on{border-color:#7c3aed;background:rgba(124,58,237,.12);color:#7c3aed}
+::highlight(parca-odak){background-color:rgba(250,204,21,.42);color:inherit}
+::highlight(parca-donus){background-color:rgba(124,58,237,.22);color:#6d28d9}
+::highlight(parca-hover){background-color:rgba(79,142,247,.30);color:inherit}
+[data-theme="dark"] ::highlight(parca-donus){color:#c4b5fd}
+.parca-panel{margin:14px 0 4px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid #7c3aed;border-radius:10px;background:var(--surface);font-family:Inter,system-ui,sans-serif;font-style:normal}
+.parca-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--fg);margin-bottom:8px}
+.parca-h>span{font-weight:500;font-size:12px;color:var(--fg3);display:inline-flex;align-items:center;gap:6px}
+.parca-ask{font-size:13px;color:var(--fg);margin-bottom:8px;line-height:1.45}
+.parca-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.parca-row{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:7px;cursor:pointer;font-size:13px;line-height:1.35;color:var(--fg)}
+.parca-row:hover,.parca-row.sel{background:var(--accent-dim)}
+.parca-row.odak{background:rgba(250,204,21,.16)}
+.parca-row.odak.sel{background:var(--accent-dim)}
+.parca-n{flex:0 0 20px;height:20px;border-radius:50%;background:var(--border);color:var(--fg2);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.parca-chip{flex:0 0 auto;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.r-bg{background:rgba(148,163,184,.22);color:var(--fg2)}.r-id{background:rgba(37,99,235,.14);color:#2563eb}.r-kn{background:rgba(16,185,129,.15);color:#059669}
+.r-dn{background:rgba(124,58,237,.15);color:#7c3aed}.r-sn{background:rgba(234,88,12,.14);color:#c2410c}.r-or{background:rgba(14,165,233,.14);color:#0284c7}
+.r-ks{background:rgba(225,29,72,.13);color:#e11d48}.r-bs{background:rgba(250,204,21,.3);color:#a16207}
+.parca-tr{flex:1;min-width:0}
+.parca-tr i{color:var(--fg3)}
+.parca-star{flex:0 0 auto;font-size:11px;font-weight:700;color:#a16207}
+.parca-sk,.parca-go{margin-top:8px;font-size:13px;color:var(--fg);line-height:1.45}
+.parca-go{padding:7px 10px;border-radius:8px;background:rgba(250,204,21,.14)}
+.parca-note{margin-top:6px;font-size:11.5px;color:var(--fg3)}
 </style>
 
 <!-- TOPBAR -->
@@ -3043,6 +3070,166 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => { const t = e.target.closest && e.target.closest('[data-bb-f]'); if (t && BB.form) BB.form[t.dataset.bbF] = t.value; }, true);
 document.addEventListener('keydown', e => { if (e.target.closest && e.target.closest('.bb-form')) e.stopPropagation(); }, true);
 document.addEventListener('change', e => { const t = e.target.closest && e.target.closest('[data-bb-file]'); if (t && t.files && t.files[0]) { const f = t.files[0]; t.value = ''; bbRead(f); } }, true);
+
+// ══════════════ PARÇALA: break an Information & Ideas passage into labelled sentences ══════════════
+const PARCA = { open: {}, busy: {}, err: {}, hover: null };
+const PARCA_ROLES = { baglam: ['Bağlam', 'r-bg'], iddia: ['İddia', 'r-id'], kanit: ['Kanıt', 'r-kn'], donus: ['Dönüş', 'r-dn'], sonuc: ['Sonuç', 'r-sn'], ornek: ['Örnek', 'r-or'], karsi: ['Karşı görüş', 'r-ks'], bosluk: ['Boşluk', 'r-bs'] };
+const PARCA_PIVOT = ['however', 'but', 'yet', 'although', 'though', 'whereas', 'nevertheless', 'nonetheless', 'in contrast', 'instead', 'rather', 'despite', 'surprisingly', 'unexpectedly', 'actually', 'while', 'even so', 'on the other hand', 'therefore', 'thus', 'hence', 'consequently', 'as a result', 'suggests', 'suggest', 'indicates', 'indicate', 'because', 'since'];
+const PARCA_SOFT = new Set(['therefore', 'thus', 'hence', 'consequently', 'as a result', 'suggests', 'suggest', 'indicates', 'indicate', 'because', 'since']);
+function parcaSentences(q) {
+  const sp = splitQuestion(q.question), out = [];
+  String(sp.passage || '').split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
+    const parts = line.match(/[^.!?]+(?:[.!?]+["”’)]*|$)/g) || [line];
+    let buf = '';
+    parts.forEach(p => {
+      buf += p;
+      const t = buf.trim();
+      // keep abbreviations (Dr., et al., U.S., e.g.) inside the sentence
+      if (/\b(?:Dr|Mr|Mrs|Ms|St|al|vs|e\.g|i\.e|U\.S|Jr|Sr|ca|No)\.$/i.test(t) || /\b[A-Z]\.$/.test(t)) return;
+      if (t) out.push(t); buf = '';
+    });
+    if (buf.trim()) out.push(buf.trim());
+  });
+  return out;
+}
+function parcaGuess(q, sents) {
+  const has = (s, re) => re.test(s.toLowerCase());
+  const rows = sents.map((s, i) => {
+    let rol = i === 0 ? 'baglam' : 'kanit';
+    if (/_{3,}/.test(s)) rol = 'bosluk';
+    else if (has(s, /\b(however|but|yet|although|though|whereas|nevertheless|nonetheless|in contrast|instead|surprisingly|unexpectedly)\b/)) rol = 'donus';
+    else if (has(s, /\b(therefore|thus|hence|consequently|as a result|conclude[sd]?|suggests?|indicates?)\b/)) rol = 'sonuc';
+    else if (has(s, /\b(argues?|claims?|hypothes[ie][sz]e[sd]?|propose[sd]?|contends?|theori[sz]e[sd]?|believes?|maintains?)\b/)) rol = 'iddia';
+    else if (has(s, /\b(found|showed?|shown|data|study|studies|measured|observed|analy[sz]ed|experiment|survey|recorded|percent)\b|\d/)) rol = 'kanit';
+    else if (has(s, /\b(for example|for instance|such as)\b/)) rol = 'ornek';
+    return { i: i + 1, rol, tr: '', odak: 0 };
+  });
+  const last = rows.length - 1, quant = parcaQuant(q);
+  if (q.skill === 'Inferences') { rows[last].odak = 1; if (last > 0) rows[last - 1].odak = 1; }
+  else if (q.skill === 'Command of Evidence') { const k = rows.findIndex(r => r.rol === 'iddia'); rows[k >= 0 ? k : last].odak = 1; if (k < 0 && !quant && last > 0 && rows[last].rol !== 'iddia') rows[last].rol = 'iddia'; }
+  else { rows.forEach(r => { if (r.rol === 'donus' || r.rol === 'sonuc') r.odak = 1; }); if (!rows.some(r => r.odak)) rows[last].odak = 1; }
+  return rows;
+}
+const parcaQuant = q => !!q.fig || /\b(graph|table|chart|data)\b/i.test(splitQuestion(q.question).prompt || '');
+function parcaAsk(q) {
+  if (q.skill === 'Inferences') return 'Boşluğu mantıken tamamlayan sonuç. Cevap boşluktan önceki 1–2 cümleden zorunlu olarak çıkmalı; en mütevazı sonucu seç.';
+  if (q.skill === 'Command of Evidence') return parcaQuant(q) ? 'Grafik/tablo sorusu: önce iddiayı oku, grafikte sadece iddiadaki karşılaştırmaya bak. Doğru ama alakasız veri tuzaktır.' : 'İddiayı destekleyen/zayıflatan kanıt. İddiayı iki parçaya böl (X ↔ Y); doğru şık ikisine birden değer.';
+  return 'Ana fikir ya da metindeki bir detay. Ana fikir sorusunda doğru şık metnin tamamını kapsar, tek bir detayı değil.';
+}
+function parcaData(id) { const n = aiNote(id); return n && n.parca && Array.isArray(n.parca.cumleler) ? n.parca : null; }
+async function parcaAI(id) {
+  const q = RAW_QUESTIONS.find(x => x.id === id); if (!q || PARCA.busy[id] || !aiKey()) return;
+  const sents = parcaSentences(q);
+  PARCA.busy[id] = true; PARCA.err[id] = ''; parcaApply();
+  try {
+    const sp = splitQuestion(q.question);
+    const prompt = `Sen bir Digital SAT Reading & Writing koçusun. Türk bir öğrenci İngilizce metni aklında tutmakta zorlanıyor. Metni cümle cümle parçalayıp her cümleye kısa Türkçe etiket ver ki iskeleti görsün.
+ÇOK ÖNEMLİ: Doğru cevabı ASLA söyleme, ima etme, şıklardan bahsetme. Sadece metnin yapısını ve sorunun neye baktığını göster.
+Soru türü: ${q.skill}
+SORU: ${sp.prompt || ''}
+CÜMLELER:
+${sents.map((s, i) => (i + 1) + ') ' + s).join('\n')}
+Sadece şu JSON'u döndür:
+{"soru": "Soru tam olarak ne istiyor, Türkçe tek cümle",
+ "iskelet": "Metnin akışı, Türkçe tek cümle (ör. 'Eski görüş X → ama yeni çalışma Y buldu → sonuç: Z')",
+ "nereye": "Cevabı bulmak için hangi cümle numarasına/numaralarına odaklanmalı ve neden, Türkçe tek cümle (cevabı söyleme)",
+ "cumleler": [{"i": cümle numarası, "rol": "baglam|iddia|kanit|donus|sonuc|ornek|karsi|bosluk", "tr": "2-7 kelimelik Türkçe özet etiket", "odak": 1 ise soru için kritik cümle, değilse 0}],
+ "anahtar": ["metindeki 1-4 kritik kelime/öbek, birebir metinden (ör. however, only, unlike)"]}
+Her cümle için bir kayıt ver; odak en fazla 2 cümle olsun.`;
+    const out = await aiCall([{ text: prompt }], { temp: 0.2, timeout: 45000 });
+    const rows = Array.isArray(out && out.cumleler) ? out.cumleler : [];
+    if (!rows.length) throw new Error('AI cümleleri etiketleyemedi.');
+    if (!state.aiNote || typeof state.aiNote !== 'object') state.aiNote = {};
+    const n = aiNote(id) || { m: AI.lastModel || aiModel(), at: Date.now(), ans: state.answers[id] };
+    n.parca = { n: sents.length, soru: String(out.soru || ''), iskelet: String(out.iskelet || ''), nereye: String(out.nereye || ''), anahtar: (Array.isArray(out.anahtar) ? out.anahtar : []).map(String).slice(0, 5),
+      cumleler: rows.map(r => ({ i: +r.i, rol: PARCA_ROLES[String(r.rol || '').trim()] ? String(r.rol).trim() : 'kanit', tr: String(r.tr || '').slice(0, 90), odak: +r.odak ? 1 : 0 })).filter(r => r.i >= 1 && r.i <= sents.length) };
+    state.aiNote[id] = n; saveState();
+  } catch (e) { PARCA.err[id] = aiErrText(e); }
+  PARCA.busy[id] = false; parcaApply();
+}
+function parcaPanel(id, q) {
+  const sents = parcaSentences(q), d = parcaData(id), ai = d && d.n === sents.length;
+  const base = parcaGuess(q, sents), rows = base.map(r => { const a = ai && d.cumleler.find(x => x.i === r.i); return a ? a : r; });
+  const busy = !!PARCA.busy[id], err = PARCA.err[id];
+  return `<div class="parca-panel" data-parca="${id}">
+    <div class="parca-h">✂️ Metni parçala <span>${ai ? 'AI etiketli' : (busy ? '<span class="ai-spin"></span> AI Türkçe etiketleri hazırlıyor…' : 'hızlı görünüm')}</span>${!ai && !busy && aiKey() ? `<button class="bb-link" data-parca-ai="${id}">AI ile Türkçe etiketle</button>` : ''}</div>
+    <div class="parca-ask"><b>Soru ne istiyor?</b> ${escHtml(ai && d.soru ? d.soru : parcaAsk(q))}</div>
+    <ol class="parca-list">${rows.map(r => { const role = PARCA_ROLES[r.rol] || PARCA_ROLES.kanit, s = sents[r.i - 1] || ''; return `<li class="parca-row${r.odak ? ' odak' : ''}" data-parca-i="${r.i}"><span class="parca-n">${r.i}</span><span class="parca-chip ${role[1]}">${role[0]}</span><span class="parca-tr">${r.tr ? escHtml(r.tr) : `<i>${escHtml(s.split(/\s+/).slice(0, 7).join(' '))}…</i>`}</span>${r.odak ? '<span class="parca-star" title="Soru için kritik">★ odak</span>' : ''}</li>`; }).join('')}</ol>
+    ${ai && d.iskelet ? `<div class="parca-sk"><b>İskelet:</b> ${escHtml(d.iskelet)}</div>` : ''}
+    ${ai && d.nereye ? `<div class="parca-go">👉 ${escHtml(d.nereye)}</div>` : '<div class="parca-go">👉 ★ işaretli cümleler metinde sarı. Dönüş kelimeleri (however, but…) mor: metnin yönü orada değişir.</div>'}
+    ${err ? `<div class="ai-err">${escHtml(err)}</div>` : ''}
+    ${!aiKey() ? '<div class="parca-note">Türkçe etiketler için AI anahtarı gerekli (Çalış → Info & Ideas rehberi → AI Koç).</div>' : ''}
+  </div>`;
+}
+function parcaApply() {
+  const odak = [], piv = [], hov = [];
+  document.querySelectorAll('.q-card[id^="qcard-"]').forEach(card => {
+    const id = card.id.slice(6), q = RAW_QUESTIONS.find(x => x.id === id);
+    const btn = card.querySelector('[data-parca-btn]'); if (btn) btn.classList.toggle('on', !!PARCA.open[id]);
+    let panel = card.querySelector('.parca-panel');
+    if (!PARCA.open[id] || !q) { if (panel) panel.remove(); return; }
+    const qt = card.querySelector('.q-text'); if (!qt) return;
+    const sig = JSON.stringify([!!parcaData(id), !!PARCA.busy[id], PARCA.err[id] || '', !!aiKey()]);
+    if (!panel || panel.dataset.sig !== sig) {
+      const tmp = document.createElement('div'); tmp.innerHTML = parcaPanel(id, q); const np = tmp.firstElementChild; np.dataset.sig = sig;
+      if (panel) panel.replaceWith(np); else qt.after(np);
+      panel = np;
+    }
+    if (!card.offsetParent || !(window.CSS && CSS.highlights)) return;
+    const sents = parcaSentences(q), rows = [...panel.querySelectorAll('.parca-row')];
+    rows.forEach(li => { if (li.classList.contains('odak')) { const r = tourFind(qt, sents[+li.dataset.parcaI - 1]); if (r) odak.push(r); } });
+    if (PARCA.hover && PARCA.hover[0] === id) { const r = tourFind(qt, sents[PARCA.hover[1] - 1]); if (r) hov.push(r); }
+    const d = parcaData(id), words = [...PARCA_PIVOT.filter(w => !PARCA_SOFT.has(w)), ...((d && d.anahtar) || [])].map(w => w.toLowerCase().trim()).filter(w => w && w.length < 40);
+    const passage = splitQuestion(q.question).passage.toLowerCase();
+    const tw = document.createTreeWalker(qt, NodeFilter.SHOW_TEXT); let node;
+    while ((node = tw.nextNode())) {
+      const t = node.nodeValue.toLowerCase();
+      words.forEach(w => {
+        if (!passage.includes(w)) return;
+        const re = new RegExp('(^|[^a-z])(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?=[^a-z]|$)', 'g'); let m;
+        while ((m = re.exec(t))) { const r = document.createRange(); const s = m.index + m[1].length; r.setStart(node, s); r.setEnd(node, s + m[2].length); piv.push(r); }
+      });
+    }
+  });
+  if (window.CSS && CSS.highlights) {
+    CSS.highlights.set('parca-odak', new Highlight(...odak));
+    CSS.highlights.set('parca-donus', new Highlight(...piv));
+    CSS.highlights.set('parca-hover', new Highlight(...hov));
+  }
+}
+function parcaToggle(id) {
+  PARCA.open[id] = !PARCA.open[id];
+  parcaApply();
+  if (PARCA.open[id] && !parcaData(id) && aiKey()) parcaAI(id);
+}
+(function () {
+  const orig = renderQuestion;
+  renderQuestion = function (q) {
+    let h = orig.apply(this, arguments);
+    try {
+      if (q && q.domain === 'Information and Ideas') {
+        const b = `<button type="button" class="q-parca-btn${PARCA.open[q.id] ? ' on' : ''}" data-parca-btn="${q.id}" title="Metni cümle cümle parçala, dikkat etmen gereken yerleri göster">✂️ Parçala</button>`;
+        h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', b + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', b + '<span class="q-status-icon">');
+      }
+    } catch {}
+    return h;
+  };
+})();
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('[data-parca-btn],[data-parca-ai],.parca-row'); if (!t) return;
+  if (t.dataset.parcaBtn) { e.preventDefault(); e.stopPropagation(); return parcaToggle(t.dataset.parcaBtn); }
+  if (t.dataset.parcaAi) { e.preventDefault(); e.stopPropagation(); return parcaAI(t.dataset.parcaAi); }
+  const p = t.closest('.parca-panel'); if (!p) return;
+  const i = +t.dataset.parcaI;
+  PARCA.hover = PARCA.hover && PARCA.hover[0] === p.dataset.parca && PARCA.hover[1] === i ? null : [p.dataset.parca, i];
+  p.querySelectorAll('.parca-row').forEach(li => li.classList.toggle('sel', !!PARCA.hover && +li.dataset.parcaI === i));
+  parcaApply();
+}, true);
+(function () {
+  let t = null; const sched = () => { if (t) return; t = setTimeout(() => { t = null; try { parcaApply(); } catch (e) { console.error(e); } }, 60); };
+  const start = () => new MutationObserver(m => { if (m.some(x => ![...x.addedNodes, ...x.removedNodes].every(n => n.nodeType === 1 && n.classList && n.classList.contains('parca-panel')))) sched(); }).observe(document.body, { childList: true, subtree: true });
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
