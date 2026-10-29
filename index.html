@@ -1141,6 +1141,26 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .q-pg-toggle{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--fg2);font-size:12px;cursor:pointer;white-space:nowrap}
 .q-pg-toggle b{font-weight:600}
 .q-pg-toggle.on{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+
+.tour-holes rect,.tour-frames rect{transition:x .45s cubic-bezier(.4,0,.2,1),y .45s cubic-bezier(.4,0,.2,1),width .45s cubic-bezier(.4,0,.2,1),height .45s cubic-bezier(.4,0,.2,1),opacity .3s,stroke .3s}
+.tour-svg.noanim .tour-holes rect,.tour-svg.noanim .tour-frames rect{transition:none}
+.tour-holes rect.off{opacity:0;width:0;height:0}
+.tour-frames rect.off{opacity:0}
+.tour-dots{display:inline-flex;gap:5px;align-items:center}
+.tour-dots i{width:7px;height:7px;border-radius:50%;background:#374151;display:block;transition:all .3s}
+.tour-dots i.past{background:#6b7280}
+.tour-dots i.on{background:#a78bfa;width:18px;border-radius:4px}
+.tour-tools{display:inline-flex;gap:4px;align-items:center}
+.tour-tool{border:0;background:#1f2937;color:#e5e7eb;width:30px;height:28px;border-radius:8px;cursor:pointer;font-size:13px}
+.tour-tool.on{background:#7c3aed}
+.tw{display:inline-block;opacity:0;transform:translateY(6px);animation:twIn .35s ease forwards}
+.twb{font-weight:700}
+@keyframes twIn{to{opacity:1;transform:none}}
+.tour-cap{transition:top .35s ease,bottom .35s ease}
+.tour-cap.end{top:50% !important;bottom:auto;transform:translate(-50%,-50%);text-align:center;padding:26px 24px 20px}
+.tour-cap.end .tour-nav{justify-content:center}
+.tour-end-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#a78bfa;font-weight:700;margin-bottom:8px}
+.tour-end-t{font-size:21px;line-height:1.5}
 </style>
 
 <!-- TOPBAR -->
@@ -2413,12 +2433,14 @@ ekran kararacak, her adımda tek bir yere spot ışığı tutulacak, o yerin alt
 6) Kısa kural (hedef "metin" ya da "soru", tur "odak").
 Öğrenci doğru cevap verdiyse: neden doğru olduğunu ve bir dahaki sefere daha hızlı nasıl bulacağını göster.
 Kurallar:
-- "alinti" hedefteki İngilizce metinden BİREBİR kopya olmalı (harf harf), en fazla 20 kelime. Hedef "isaretim" ya da "tahmin" ise boş bırakabilirsin.
+- "alinti" hedefteki İngilizce metinden BİREBİR kopya olmalı (harf harf, noktalama dahil), 3-12 kelime: cümlenin tamamı değil, KİLİT ifade. Hedef "isaretim" ya da "tahmin" ise boş bırakabilirsin.
+- Her adım FARKLI bir yere odaklansın; aynı alıntıyı tekrar etme.
 - "metin" Türkçe, en fazla 2 kısa cümle, öğrenciye "sen" diye hitap et; somut ol ("A'da 'always' diyor ama metin sadece 'some' diyor").
+- "metin" içinde en önemli 1-2 kelimeyi **çift yıldız** ile vurgula (ör. "Buraya değil, **ikinci cümleye** odaklanmalıydın").
 - "ok": bu adıma ok çizilecek önceki adımın numarası (1'den başlar), yoksa 0.
 - "tur": odak (sarı), yanlis (kırmızı), dogru (yeşil).
 Sadece şu JSON'u döndür:
-{"adimlar":[{"hedef":"metin|soru|sik|tahmin|isaretim","alinti":"...","sik":"A","tur":"odak|yanlis|dogru","ok":0,"metin":"..."}]}`;
+{"adimlar":[{"hedef":"metin|soru|sik|tahmin|isaretim","alinti":"...","sik":"A","tur":"odak|yanlis|dogru","ok":0,"metin":"..."}],"ders":"bu sorudan çıkarılacak tek cümlelik ders (Türkçe)"}`;
 function tourCard(id) { return [...document.querySelectorAll('[id="qcard-' + id + '"]')].find(c => c.offsetParent) || document.getElementById('qcard-' + id); }
 function tourMarksText(card) { return [...card.querySelectorAll('.q-text mark')].map(m => m.textContent.trim()).filter(Boolean).slice(0, 6); }
 async function tourMake(id) {
@@ -2429,6 +2451,7 @@ async function tourMake(id) {
   const out = await aiCall(aiQuestionParts(q, head), { onAbort: ctrl => { TOUR.ctrl = ctrl; }, cancel: () => TOUR.cancelled });
   const steps = (out && Array.isArray(out.adimlar) ? out.adimlar : []).filter(s => s && s.metin).slice(0, 8);
   if (!steps.length) throw new Error('AI anlatım adımı üretmedi, tekrar dene.');
+  TOUR.lastDers = String((out && out.ders) || '');
   return steps;
 }
 async function tourStart(id) {
@@ -2442,7 +2465,7 @@ async function tourStart(id) {
     const steps = await tourMake(id);
     if (!state.aiNote || typeof state.aiNote !== 'object') state.aiNote = {};
     n = aiNote(id) || { m: AI.lastModel || aiModel(), at: Date.now(), ans: state.answers[id] };
-    n.tour = steps; state.aiNote[id] = n; saveState();
+    n.tour = steps; if (TOUR.lastDers) n.tourDers = TOUR.lastDers; state.aiNote[id] = n; saveState();
     TOUR.busy[id] = false;
     tourPlay(id, steps);
   } catch (e) {
@@ -2632,6 +2655,184 @@ document.addEventListener('click', e => {
   window.__pgBoxes && window.__pgBoxes();
   window.scrollTo({ top: y });
   showToast(({ 'Information and Ideas': 'Information & Ideas', 'Craft and Structure': 'Craft & Structure', 'Expression of Ideas': 'Expression of Ideas' })[d] + ': tahmin modu ' + (s[d] ? 'açık' : 'kapalı'));
+}, true);
+
+// ══════════════ 🎬 walkthrough v2: gliding spotlight, word-by-word captions, autoplay, voice, closing card ══════════════
+TOUR.auto = (() => { try { return localStorage.getItem('sat_tour_auto') === '1'; } catch { return false; } })();
+TOUR.voice = (() => { try { return localStorage.getItem('sat_tour_voice') === '1'; } catch { return false; } })();
+function tourOverlay(on) {
+  let ov = document.getElementById('aiTour');
+  if (!on) { if (ov) ov.remove(); return null; }
+  if (ov) return ov;
+  ov = document.createElement('div'); ov.id = 'aiTour';
+  ov.innerHTML = `<svg class="tour-svg" xmlns="http://www.w3.org/2000/svg"><defs>
+      <mask id="tourMask"><rect x="0" y="0" width="100%" height="100%" fill="white"/><g class="tour-holes"><rect class="th0" rx="12" fill="black"/><rect class="th1" rx="12" fill="black" fill-opacity=".55"/></g></mask>
+      <marker id="tourArrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#facc15"/></marker>
+    </defs>
+    <rect class="tour-dim" x="0" y="0" width="100%" height="100%" mask="url(#tourMask)"/>
+    <g class="tour-frames"><rect class="tour-frame tf0" rx="12"/><rect class="tour-frame dim tf1" rx="12"/></g><path class="tour-arrow" d="" marker-end="url(#tourArrowHead)"/></svg>
+    <div class="tour-cap">
+      <div class="tour-top"><span class="tour-dots"></span><span class="tour-tools">
+        <button class="tour-tool" data-tour-auto title="Otomatik oynat">${TOUR.auto ? '⏸' : '▶'}</button>
+        <button class="tour-tool${TOUR.voice ? ' on' : ''}" data-tour-voice title="Sesli anlatım">🔊</button>
+        <button class="tour-x" data-tour-close aria-label="Kapat">✕</button></span></div>
+      <div class="tour-text"></div>
+      <div class="tour-nav"><button class="act-btn" data-tour-prev>← Geri</button><button class="act-btn tour-next" data-tour-next>İleri →</button></div></div>`;
+  document.body.appendChild(ov);
+  return ov;
+}
+function tourLoading(msg) {
+  const ov = tourOverlay(true);
+  ov.querySelectorAll('.tour-holes rect, .tour-frames rect').forEach(r => r.classList.add('off'));
+  ov.querySelector('.tour-arrow').setAttribute('d', '');
+  ov.querySelector('.tour-dots').textContent = '';
+  ov.querySelector('.tour-text').innerHTML = `<span class="ai-spin"></span> ${escHtml(msg)}`;
+  ov.querySelector('.tour-nav').style.visibility = 'hidden';
+}
+function tourClose() {
+  TOUR.cancelled = true; if (TOUR.ctrl) try { TOUR.ctrl.abort('cancel'); } catch {}
+  clearTimeout(TOUR.autoT); tourSay(null);
+  TOUR.cur = null;
+  tourOverlay(false); if (window.CSS && CSS.highlights) CSS.highlights.delete('tour-line');
+}
+function tourPlay(id, steps) {
+  const card = tourCard(id); if (!card) return;
+  const n = aiNote(id);
+  TOUR.cur = { id, steps, i: 0, card, ders: (n && (n.tourDers || (n.a && n.a.kural))) || '' };
+  tourOverlay(true);
+  tourShow();
+}
+const tourPlain = s => String(s || '').replace(/\*\*/g, '');
+function tourWords(s, col) {
+  // **bold** → highlighted words; every word fades in one after another
+  const parts = String(s || '').split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+  let i = 0;
+  return parts.map(p => {
+    const bold = /^\*\*[^*]+\*\*$/.test(p), txt = bold ? p.slice(2, -2) : p;
+    return txt.split(/(\s+)/).map(w => /^\s+$/.test(w) ? w : `<span class="tw${bold ? ' twb' : ''}" style="animation-delay:${(i++) * 55}ms${bold ? ';color:' + col : ''}">${escHtml(w)}</span>`).join('');
+  }).join('');
+}
+function tourSay(text) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    if (!text || !TOUR.voice) return;
+    const u = new SpeechSynthesisUtterance(tourPlain(text));
+    u.lang = 'tr-TR'; u.rate = 1.02;
+    const v = speechSynthesis.getVoices().find(v => /^tr/i.test(v.lang)); if (v) u.voice = v;
+    u.onend = () => { if (TOUR.cur && TOUR.auto && TOUR.waitVoice) { TOUR.waitVoice = false; tourGo(1); } };
+    TOUR.waitVoice = TOUR.auto;
+    speechSynthesis.speak(u);
+  } catch {}
+}
+function tourSchedule(text) {
+  clearTimeout(TOUR.autoT);
+  if (!TOUR.auto || !TOUR.cur) return;
+  if (TOUR.voice && 'speechSynthesis' in window) return;      // the voice moves on when it finishes
+  const ms = Math.max(2600, tourPlain(text).length * 60 + 1200);
+  TOUR.autoT = setTimeout(() => tourGo(1), ms);
+}
+function tourEnd() {
+  const T = TOUR.cur; if (!T) return;
+  T.done = true;
+  const ov = tourOverlay(true);
+  ov.querySelectorAll('.tour-holes rect, .tour-frames rect').forEach(r => r.classList.add('off'));
+  ov.querySelector('.tour-arrow').setAttribute('d', '');
+  if (window.CSS && CSS.highlights) CSS.highlights.delete('tour-line');
+  const cap = ov.querySelector('.tour-cap'); cap.classList.remove('top'); cap.classList.add('end');
+  ov.querySelector('.tour-dots').innerHTML = '';
+  ov.querySelector('.tour-text').innerHTML = `<div class="tour-end-h">Bu sorudan alacağın ders</div><div class="tour-end-t">${tourWords(T.ders || 'Önce soruyu oku, hedef cümleyi bul, sonra şıkları tahminine göre ele.', '#c4b5fd')}</div>`;
+  ov.querySelector('.tour-nav').innerHTML = `<button class="act-btn" data-tour-replay>↺ Tekrar izle</button><button class="act-btn tour-next" data-tour-close>Kapat</button>`;
+  tourSay(T.ders);
+  clearTimeout(TOUR.autoT);
+}
+function tourShow(noScroll) {
+  const T = TOUR.cur; if (!T || T.done) return;
+  const ov = tourOverlay(true), s = T.steps[T.i], card = T.card;
+  const cap = ov.querySelector('.tour-cap'); cap.classList.remove('end');
+  const nav = ov.querySelector('.tour-nav');
+  if (!nav.querySelector('[data-tour-prev]')) nav.innerHTML = `<button class="act-btn" data-tour-prev>← Geri</button><button class="act-btn tour-next" data-tour-next>İleri →</button>`;
+  nav.style.visibility = '';
+  const t = tourTarget(card, s);
+  const src = s.ok && T.steps[s.ok - 1] ? tourTarget(card, T.steps[s.ok - 1]) : null;
+  const svg = ov.querySelector('.tour-svg');
+  svg.classList.toggle('noanim', !!noScroll);
+  if (t && !noScroll) {
+    const r0 = tourRect(t), r1 = src ? tourRect(src) : null;
+    let top = r0.top, bottom = r0.bottom;
+    if (r1 && Math.max(bottom, r1.bottom) - Math.min(top, r1.top) < innerHeight * 0.7) { top = Math.min(top, r1.top); bottom = Math.max(bottom, r1.bottom); }
+    const mid = (top + bottom) / 2, want = innerHeight * 0.42;
+    if (Math.abs(mid - want) > 40) window.scrollBy({ top: mid - want, behavior: 'instant' });
+  }
+  const pad = 8, col = TOUR_COL[String(s.tur || '').trim()] || TOUR_COL.odak;
+  const place = (hole, frame, r, color) => {
+    if (!r) { hole.classList.add('off'); frame.classList.add('off'); return; }
+    const a = { x: r.left - pad, y: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 };
+    for (const k in a) { hole.setAttribute(k, a[k]); frame.setAttribute(k, a[k]); }
+    hole.classList.remove('off'); frame.classList.remove('off'); frame.style.stroke = color;
+  };
+  const h0 = ov.querySelector('.th0'), h1 = ov.querySelector('.th1'), f0 = ov.querySelector('.tf0'), f1 = ov.querySelector('.tf1'), arrow = ov.querySelector('.tour-arrow');
+  let tr = null;
+  if (t) {
+    tr = tourRect(t); place(h0, f0, tr, col);
+    if (window.CSS && CSS.highlights && !t.noLine) { CSS.highlights.set('tour-line', new Highlight(t.range)); document.documentElement.style.setProperty('--tour-line', col); }
+    else if (window.CSS && CSS.highlights) CSS.highlights.delete('tour-line');
+  } else { place(h0, f0, null); if (window.CSS && CSS.highlights) CSS.highlights.delete('tour-line'); }
+  let sr = null;
+  if (src && tr) { sr = tourRect(src); if (!(sr.bottom > 0 && sr.top < innerHeight)) sr = null; }
+  place(h1, f1, sr, sr ? (TOUR_COL[String(T.steps[s.ok - 1].tur || '').trim()] || TOUR_COL.odak) : null);
+  if (sr && tr) {
+    const a = { x: sr.left + sr.width / 2, y: sr.top + sr.height / 2 }, b = { x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 };
+    const edge = (r, from, to) => { const dx = to.x - from.x, dy = to.y - from.y; const sx = dx ? (r.width / 2 + pad) / Math.abs(dx) : 1e9, sy = dy ? (r.height / 2 + pad) / Math.abs(dy) : 1e9; const k = Math.min(sx, sy, 1); return { x: from.x + dx * k, y: from.y + dy * k }; };
+    const p0 = edge(sr, a, b), p1 = edge(tr, b, a);
+    const mx = (p0.x + p1.x) / 2, my = (p0.y + p1.y) / 2, bend = Math.min(120, Math.hypot(p1.x - p0.x, p1.y - p0.y) * 0.3);
+    const nx = -(p1.y - p0.y), ny = p1.x - p0.x, nl = Math.hypot(nx, ny) || 1;
+    arrow.setAttribute('d', `M${p0.x},${p0.y} Q${mx + nx / nl * bend},${my + ny / nl * bend} ${p1.x},${p1.y}`);
+    if (!noScroll) {
+      arrow.classList.remove('draw');
+      const L = arrow.getTotalLength(); arrow.style.strokeDasharray = L; arrow.style.strokeDashoffset = L;
+      clearTimeout(TOUR.arrowT); TOUR.arrowT = setTimeout(() => arrow.classList.add('draw'), 380);   // after the spotlight has glided in
+    }
+  } else arrow.setAttribute('d', '');
+  // caption: away from the lit boxes
+  const lit = [tr, sr].filter(Boolean).map(r => ({ top: r.top - pad, bottom: r.bottom + pad }));
+  const ch = cap.offsetHeight || 160, topBar = ((document.querySelector('.topbar') || {}).offsetHeight || 0);
+  const zones = { bottom: [innerHeight - 28 - ch, innerHeight - 28], top: [topBar + 6, topBar + 6 + ch] };
+  const overlap = z => lit.reduce((acc, r) => acc + Math.max(0, Math.min(r.bottom, z[1]) - Math.max(r.top, z[0])), 0);
+  cap.classList.toggle('top', overlap(zones.top) < overlap(zones.bottom));
+  cap.style.setProperty('--tour-top', (topBar + 6) + 'px');
+  ov.querySelector('.tour-dots').innerHTML = T.steps.map((_, k) => `<i class="${k === T.i ? 'on' : k < T.i ? 'past' : ''}"></i>`).join('');
+  ov.querySelector('[data-tour-prev]').disabled = T.i === 0;
+  ov.querySelector('[data-tour-next]').textContent = T.i === T.steps.length - 1 ? 'Bitir ✓' : 'İleri →';
+  if (!noScroll) {
+    ov.querySelector('.tour-text').innerHTML = tourWords(s.metin, col);
+    tourSay(s.metin);
+    tourSchedule(s.metin);
+  }
+}
+function tourGo(d) {
+  const T = TOUR.cur; if (!T) return;
+  clearTimeout(TOUR.autoT);
+  if (T.done) { if (d < 0) { T.done = false; T.i = T.steps.length - 1; tourShow(); } return; }
+  if (d > 0 && T.i >= T.steps.length - 1) return tourEnd();
+  T.i = Math.max(0, Math.min(T.steps.length - 1, T.i + d)); tourShow();
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('[data-tour-auto],[data-tour-voice],[data-tour-replay]'); if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  if (t.hasAttribute('data-tour-replay')) { const T = TOUR.cur; if (T) { T.done = false; T.i = 0; tourShow(); } return; }
+  if (t.hasAttribute('data-tour-auto')) {
+    TOUR.auto = !TOUR.auto; try { localStorage.setItem('sat_tour_auto', TOUR.auto ? '1' : '0'); } catch {}
+    t.textContent = TOUR.auto ? '⏸' : '▶';
+    if (TOUR.cur && !TOUR.cur.done) { if (TOUR.auto) tourSchedule(TOUR.cur.steps[TOUR.cur.i].metin); else clearTimeout(TOUR.autoT); }
+    return;
+  }
+  if (t.hasAttribute('data-tour-voice')) {
+    TOUR.voice = !TOUR.voice; try { localStorage.setItem('sat_tour_voice', TOUR.voice ? '1' : '0'); } catch {}
+    t.classList.toggle('on', TOUR.voice);
+    const T = TOUR.cur; if (T) tourSay(T.done ? T.ders : T.steps[T.i].metin);
+    if (!('speechSynthesis' in window)) showToast('Bu tarayıcı sesli okumayı desteklemiyor.');
+  }
 }, true);
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
