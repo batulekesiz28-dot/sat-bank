@@ -1247,6 +1247,29 @@ button.bb-seg{cursor:pointer;width:26px;height:14px}
 .parca-row:not(.odak) .parca-chip{opacity:.7}
 .parca-kr{margin-top:6px;font-size:12px;color:var(--fg3)}
 ::highlight(parca-odak){background-color:rgba(250,204,21,.55);color:inherit}
+
+::highlight(parca-pick){background-color:rgba(124,58,237,.30);color:inherit}
+::highlight(parca-ok){background-color:rgba(16,185,129,.35);color:inherit}
+::highlight(parca-extra){text-decoration:line-through;text-decoration-color:rgba(225,29,72,.75);background-color:rgba(225,29,72,.10);color:inherit}
+.q-card.parca-picking .q-text{cursor:pointer}
+.parca-panel.quiz{border-left-color:#7c3aed;background:rgba(124,58,237,.05)}
+.parca-inst{font-size:13px;color:var(--fg);line-height:1.45}
+.parca-swatch{display:inline-block;width:14px;height:10px;border-radius:2px;background:rgba(124,58,237,.30);vertical-align:middle}
+.parca-qa{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
+.parca-cnt{font-size:12.5px;color:var(--fg2);font-weight:600}
+.parca-check:not(.ready){opacity:.6}
+.parca-skip{margin-left:auto;color:var(--fg3)}
+.parca-warn{margin-top:8px;font-size:12.5px;color:#b45309}
+.parca-panel.nudge{animation:pgnudge .4s}
+.parca-score{margin:2px 0 8px;padding:8px 10px;border-radius:8px;font-size:13.5px;color:var(--fg)}
+.parca-score.ok{background:rgba(16,185,129,.14)}.parca-score.mid{background:rgba(250,204,21,.18)}.parca-score.bad{background:rgba(225,29,72,.10)}
+.parca-res{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:6px}
+.parca-res li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;font-size:13px;line-height:1.4;padding:6px 8px;border-radius:8px;border:1px solid var(--border)}
+.parca-res li.ok{border-color:rgba(16,185,129,.5)}.parca-res li.miss{border-color:rgba(250,204,21,.7)}.parca-res li.extra{border-color:rgba(225,29,72,.4)}
+.parca-tag{font-size:11px;font-weight:700;white-space:nowrap}
+.parca-res li.ok .parca-tag{color:#059669}.parca-res li.miss .parca-tag{color:#a16207}.parca-res li.extra .parca-tag{color:#e11d48}
+.parca-q{font-family:Georgia,serif;font-style:italic;color:var(--fg)}
+.parca-why{flex-basis:100%;font-size:12.5px;color:var(--fg2)}
 </style>
 
 <!-- TOPBAR -->
@@ -3121,7 +3144,7 @@ function parcaAsk(q) {
   if (q.skill === 'Command of Evidence') return parcaQuant(q) ? 'Grafik/tablo sorusu: önce iddiayı oku, grafikte sadece iddiadaki karşılaştırmaya bak. Doğru ama alakasız veri tuzaktır.' : 'İddiayı destekleyen/zayıflatan kanıt. İddiayı iki parçaya böl (X ↔ Y); doğru şık ikisine birden değer.';
   return 'Ana fikir ya da metindeki bir detay. Ana fikir sorusunda doğru şık metnin tamamını kapsar, tek bir detayı değil.';
 }
-function parcaData(id) { const n = aiNote(id); return n && n.parca && n.parca.v === 2 && Array.isArray(n.parca.cumleler) ? n.parca : null; }
+function parcaData(id) { const n = aiNote(id); return n && n.parca && n.parca.v === 3 && Array.isArray(n.parca.cumleler) ? n.parca : null; }
 async function parcaAI(id) {
   const q = RAW_QUESTIONS.find(x => x.id === id); if (!q || PARCA.busy[id] || !aiKey()) return;
   const sents = parcaSentences(q);
@@ -3139,7 +3162,7 @@ Sadece şu JSON'u döndür:
  "iskelet": "Metnin akışı, Türkçe tek cümle (ör. 'Eski görüş X → ama yeni çalışma Y buldu → sonuç: Z')",
  "nereye": "Cevabı bulmak için hangi cümle numarasına/numaralarına odaklanmalı ve neden, Türkçe tek cümle (cevabı söyleme)",
  "cumleler": [{"i": cümle numarası, "rol": "baglam|iddia|kanit|donus|sonuc|ornek|karsi|bosluk", "tr": "2-7 kelimelik Türkçe özet etiket", "odak": 1 ise soru için kritik cümle, değilse 0}],
- "kritik": ["metinden BİREBİR kopyalanmış, 2-8 kelimelik kısa öbek"]}
+ "kritik": [{"o": "metinden BİREBİR kopyalanmış, 2-8 kelimelik kısa öbek", "neden": "bu öbek neden önemli, Türkçe tek kısa cümle (cevabı söyleme)"}]}
 "kritik" en fazla 3 öbek olsun: sadece şıkları ayırt etmek için GERÇEKTEN gereken yerler (iddianın iki parçası, kapsam kelimeleri like only/some/most/not, karşıtlık noktası, boşluğun bağlandığı ifade). Laf kalabalığı, isimler, tarihler, arka plan bilgisi ASLA olmasın. Tüm cümleyi değil, en kısa belirleyici öbeği seç.
 Her cümle için bir kayıt ver; odak en fazla 2 cümle olsun.`;
     const out = await aiCall([{ text: prompt }], { temp: 0.2, timeout: 45000 });
@@ -3147,7 +3170,7 @@ Her cümle için bir kayıt ver; odak en fazla 2 cümle olsun.`;
     if (!rows.length) throw new Error('AI cümleleri etiketleyemedi.');
     if (!state.aiNote || typeof state.aiNote !== 'object') state.aiNote = {};
     const n = aiNote(id) || { m: AI.lastModel || aiModel(), at: Date.now(), ans: state.answers[id] };
-    n.parca = { v: 2, kritik: (Array.isArray(out.kritik) ? out.kritik : []).map(String).filter(s => s.trim().split(/\s+/).length <= 10).slice(0, 3), n: sents.length, soru: String(out.soru || ''), iskelet: String(out.iskelet || ''), nereye: String(out.nereye || ''), anahtar: (Array.isArray(out.anahtar) ? out.anahtar : []).map(String).slice(0, 5),
+    n.parca = { v: 3, kritik: (Array.isArray(out.kritik) ? out.kritik : []).map(k => typeof k === 'string' ? { o: k, neden: '' } : { o: String((k && k.o) || ''), neden: String((k && k.neden) || '').slice(0, 220) }).filter(k => k.o.trim() && k.o.trim().split(/\s+/).length <= 10).slice(0, 3), n: sents.length, soru: String(out.soru || ''), iskelet: String(out.iskelet || ''), nereye: String(out.nereye || ''), anahtar: (Array.isArray(out.anahtar) ? out.anahtar : []).map(String).slice(0, 5),
       cumleler: rows.map(r => ({ i: +r.i, rol: PARCA_ROLES[String(r.rol || '').trim()] ? String(r.rol).trim() : 'kanit', tr: String(r.tr || '').slice(0, 90), odak: +r.odak ? 1 : 0 })).filter(r => r.i >= 1 && r.i <= sents.length) };
     state.aiNote[id] = n; saveState();
   } catch (e) { PARCA.err[id] = aiErrText(e); }
@@ -3231,6 +3254,156 @@ document.addEventListener('click', e => {
   const start = () => new MutationObserver(m => { if (m.some(x => ![...x.addedNodes, ...x.removedNodes].every(n => n.nodeType === 1 && n.classList && n.classList.contains('parca-panel')))) sched(); }).observe(document.body, { childList: true, subtree: true });
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 })();
+
+// ══════════════ PARÇALA as a mini test: you pick the important places first, then AI compares ══════════════
+PARCA.stage = PARCA.stage || {};   // 'pick' | 'wait' | 'done'
+PARCA.pick = PARCA.pick || {};     // id -> Set of word indexes in .q-text
+function parcaTokens(qt) {
+  const out = [], tw = document.createTreeWalker(qt, NodeFilter.SHOW_TEXT); let node;
+  while ((node = tw.nextNode())) { const t = node.nodeValue, re = /[A-Za-z0-9’'\-]+|_{3,}/g; let m; while ((m = re.exec(t))) out.push({ node, s: m.index, e: m.index + m[0].length, w: m[0] }); }
+  return out;
+}
+function parcaRangeTokens(toks, r) {
+  const set = new Set(); if (!r) return set;
+  toks.forEach((t, i) => { try { const tr = document.createRange(); tr.setStart(t.node, t.s); tr.setEnd(t.node, t.e); if (r.compareBoundaryPoints(Range.END_TO_START, tr) < 0 && r.compareBoundaryPoints(Range.START_TO_END, tr) > 0) set.add(i); } catch {} });
+  return set;
+}
+const parcaGroups = set => { const a = [...set].sort((x, y) => x - y), g = []; a.forEach(i => { const last = g[g.length - 1]; if (last && i === last[last.length - 1] + 1) last.push(i); else g.push([i]); }); return g; };
+function parcaResult(id, qt) {
+  const d = parcaData(id); if (!d || !qt) return null;
+  const toks = parcaTokens(qt), pick = PARCA.pick[id] || new Set();
+  const krit = (d.kritik || []).map(k => ({ ...k, toks: parcaRangeTokens(toks, tourFind(qt, k.o)) })).filter(k => k.toks.size);
+  const groups = parcaGroups(pick).map(g => ({ g, hit: g.some(i => krit.some(k => k.toks.has(i))), text: g.map(i => toks[i] && toks[i].w).join(' ') }));
+  krit.forEach(k => { k.found = [...k.toks].some(i => pick.has(i)); });
+  return { toks, krit, groups };
+}
+function parcaPanel(id, q) {
+  const sents = parcaSentences(q), d = parcaData(id), ai = d && d.n === sents.length;
+  const busy = !!PARCA.busy[id], err = PARCA.err[id], stage = PARCA.stage[id] || 'pick', pick = PARCA.pick[id] || new Set();
+  const ask = `<div class="parca-ask"><b>Soru ne istiyor?</b> ${escHtml(ai && d.soru ? d.soru : parcaAsk(q))}</div>`;
+  const tail = `${err ? `<div class="ai-err">${escHtml(err)}</div>` : ''}${!aiKey() ? '<div class="parca-note">Kontrol için AI anahtarı gerekli (Çalış → Info & Ideas rehberi → AI Koç).</div>' : ''}`;
+  if (stage === 'pick' || stage === 'wait') {
+    const n = parcaGroups(pick).length;
+    return `<div class="parca-panel quiz" data-parca="${id}">
+      <div class="parca-h">✂️ Önce sen: bu soruda nereye odaklanmalısın?</div>
+      ${ask}
+      <div class="parca-inst">Metinde <b>şıkları ayırt etmek için gerçekten lazım</b> olan yerlerin kelimelerine dokun (1–3 kısa yer). Seçtiklerin <span class="parca-swatch"></span> mor olur, tekrar dokununca kalkar.</div>
+      <div class="parca-qa"><span class="parca-cnt">${n ? n + ' yer seçtin' : 'Henüz seçim yok'}</span>
+        ${n ? `<button type="button" class="bb-link" data-parca-clear="${id}">temizle</button>` : ''}
+        <button type="button" class="act-btn parca-check${n ? ' ready' : ''}" data-parca-check="${id}" ${stage === 'wait' ? 'disabled' : ''}>${stage === 'wait' ? '<span class="ai-spin"></span> AI kontrol ediyor…' : 'Kontrol et →'}</button>
+        <button type="button" class="bb-link parca-skip" data-parca-skip="${id}">atla, direkt göster</button></div>
+      ${n > 3 ? '<div class="parca-warn">3’ten fazla yer seçtin. SAT’ta kritik yer genelde 1–3 kısa öbektir; laf kalabalığını bırak.</div>' : ''}
+      ${tail}
+    </div>`;
+  }
+  // done: compare, explain, then show the breakdown
+  const base = parcaGuess(q, sents), rows = base.map(r => { const a = ai && d.cumleler.find(x => x.i === r.i); return a ? a : r; });
+  const qt = document.querySelector('.view.active #qcard-' + id + ' .q-text') || document.querySelector('#qcard-' + id + ' .q-text');
+  const res = ai ? parcaResult(id, qt) : null;
+  let sc = '';
+  if (res && res.krit.length) {
+    const f = res.krit.filter(k => k.found).length, extra = res.groups.filter(g => !g.hit);
+    const tone = f === res.krit.length && !extra.length ? 'ok' : f ? 'mid' : 'bad';
+    sc = `<div class="parca-score ${tone}">${res.groups.length ? `${res.krit.length} kritik yerden <b>${f}</b> tanesini buldun${extra.length ? ` · ${extra.length} gereksiz seçim` : ''}` : 'Seçim yapmadın; kritik yerler aşağıda.'}${tone === 'ok' ? ' 🎯' : ''}</div>
+      <ul class="parca-res">${res.krit.map(k => `<li class="${k.found ? 'ok' : 'miss'}"><span class="parca-tag">${k.found ? '✓ buldun' : '○ kaçırdın'}</span><span class="parca-q">“${escHtml(k.o)}”</span>${k.neden ? `<span class="parca-why">${escHtml(k.neden)}</span>` : ''}</li>`).join('')}
+      ${extra.map(g => `<li class="extra"><span class="parca-tag">✕ gereksiz</span><span class="parca-q">“${escHtml(g.text)}”</span><span class="parca-why">Bu kısım arka plan; şıkları ayırt etmiyor. Bunu hızlı geçebilirsin.</span></li>`).join('')}</ul>`;
+  } else if (!ai) sc = `<div class="parca-score mid">${busy ? '<span class="ai-spin"></span> AI hazırlıyor…' : 'AI kontrolü yapılamadı; aşağıda hızlı görünüm var.'}</div>`;
+  return `<div class="parca-panel" data-parca="${id}">
+    <div class="parca-h">✂️ Aslında buralara odaklanmalısın <button type="button" class="bb-link" data-parca-again="${id}">tekrar dene</button></div>
+    ${sc}${ask}
+    <ol class="parca-list">${rows.map(r => { const role = PARCA_ROLES[r.rol] || PARCA_ROLES.kanit, s = sents[r.i - 1] || ''; return `<li class="parca-row${r.odak ? ' odak' : ''}" data-parca-i="${r.i}"><span class="parca-n">${r.i}</span><span class="parca-chip ${role[1]}">${role[0]}</span><span class="parca-tr">${r.tr ? escHtml(r.tr) : `<i>${escHtml(s.split(/\s+/).slice(0, 7).join(' '))}…</i>`}</span>${r.odak ? '<span class="parca-star" title="Soru için kritik">★ odak</span>' : ''}</li>`; }).join('')}</ol>
+    ${ai && d.iskelet ? `<div class="parca-sk"><b>İskelet:</b> ${escHtml(d.iskelet)}</div>` : ''}
+    ${ai && d.nereye ? `<div class="parca-go">👉 ${escHtml(d.nereye)}</div>` : ''}
+    ${tail}
+  </div>`;
+}
+function parcaApply() {
+  const H = { pick: [], ok: [], miss: [], extra: [], hover: [], piv: [] };
+  document.querySelectorAll('.q-card[id^="qcard-"]').forEach(card => {
+    const id = card.id.slice(6), q = RAW_QUESTIONS.find(x => x.id === id);
+    const btn = card.querySelector('[data-parca-btn]'); if (btn) btn.classList.toggle('on', !!PARCA.open[id]);
+    let panel = card.querySelector('.parca-panel');
+    card.classList.toggle('parca-picking', !!(PARCA.open[id] && (PARCA.stage[id] || 'pick') === 'pick'));
+    if (!PARCA.open[id] || !q) { if (panel) panel.remove(); return; }
+    const qt = card.querySelector('.q-text'); if (!qt) return;
+    const stage = PARCA.stage[id] || 'pick', pick = PARCA.pick[id] || new Set();
+    // a pending check finishes as soon as the AI result is in
+    if (stage === 'wait' && (parcaData(id) || !PARCA.busy[id])) PARCA.stage[id] = 'done';
+    const sig = JSON.stringify([!!parcaData(id), !!PARCA.busy[id], PARCA.err[id] || '', !!aiKey(), PARCA.stage[id] || 'pick', [...pick].sort().join(',')]);
+    if (!panel || panel.dataset.sig !== sig) {
+      const tmp = document.createElement('div'); tmp.innerHTML = parcaPanel(id, q); const np = tmp.firstElementChild; np.dataset.sig = sig;
+      if (panel) panel.replaceWith(np); else qt.after(np);
+      panel = np;
+    }
+    if (!card.offsetParent || !(window.CSS && CSS.highlights)) return;
+    const toks = parcaTokens(qt), tokRange = i => { const t = toks[i]; if (!t) return null; const r = document.createRange(); r.setStart(t.node, t.s); r.setEnd(t.node, t.e); return r; };
+    const groupRange = g => { const a = toks[g[0]], b = toks[g[g.length - 1]]; if (!a || !b) return null; const r = document.createRange(); r.setStart(a.node, a.s); r.setEnd(b.node, b.e); return r; };
+    if ((PARCA.stage[id] || 'pick') !== 'done') { parcaGroups(pick).forEach(g => { const r = groupRange(g); if (r) H.pick.push(r); }); return; }
+    const sents = parcaSentences(q);
+    if (PARCA.hover && PARCA.hover[0] === id) { const r = tourFind(qt, sents[PARCA.hover[1] - 1]); if (r) H.hover.push(r); }
+    const res = parcaResult(id, qt);
+    if (res) {
+      res.krit.forEach(k => { const r = tourFind(qt, k.o); if (r) (k.found ? H.ok : H.miss).push(r); });
+      res.groups.filter(g => !g.hit).forEach(g => { const r = groupRange(g.g); if (r) H.extra.push(r); });
+      return;
+    }
+    [...panel.querySelectorAll('.parca-row.odak')].forEach(li => {
+      const s = sents[+li.dataset.parcaI - 1] || '', m = s.match(/\b(however|but|yet|although|though|whereas|nevertheless|nonetheless|in contrast|instead|rather than|despite|only|not)\b/i);
+      if (m) { const rr = tourFind(qt, s.slice(m.index).split(/\s+/).slice(0, 4).join(' ')); if (rr) H.piv.push(rr); }
+    });
+  });
+  if (window.CSS && CSS.highlights) {
+    CSS.highlights.set('parca-pick', new Highlight(...H.pick));
+    CSS.highlights.set('parca-ok', new Highlight(...H.ok));
+    CSS.highlights.set('parca-odak', new Highlight(...H.miss));
+    CSS.highlights.set('parca-extra', new Highlight(...H.extra));
+    CSS.highlights.set('parca-donus', new Highlight(...H.piv));
+    CSS.highlights.set('parca-hover', new Highlight(...H.hover));
+  }
+}
+function parcaToggle(id) {
+  PARCA.open[id] = !PARCA.open[id];
+  if (PARCA.open[id] && !PARCA.stage[id]) PARCA.stage[id] = 'pick';
+  parcaApply();
+  if (PARCA.open[id] && !parcaData(id) && aiKey()) parcaAI(id);   // prepares in the background while you pick
+}
+function parcaCheck(id, skip) {
+  if (!skip && !(PARCA.pick[id] && PARCA.pick[id].size)) {
+    const p = document.querySelector('.view.active .parca-panel[data-parca="' + id + '"]') || document.querySelector('.parca-panel[data-parca="' + id + '"]');
+    if (p) { p.classList.remove('nudge'); void p.offsetWidth; p.classList.add('nudge'); const c = p.querySelector('.parca-cnt'); if (c) c.textContent = 'Önce metinde en az bir yere dokun'; }
+    return;
+  }
+  if (skip) PARCA.pick[id] = new Set();
+  PARCA.stage[id] = parcaData(id) || !aiKey() ? 'done' : 'wait';
+  if (!parcaData(id) && aiKey() && !PARCA.busy[id]) parcaAI(id);
+  parcaApply();
+}
+// tap a word in the passage while picking
+document.addEventListener('click', e => {
+  const qt = e.target.closest && e.target.closest('.q-card.parca-picking .q-text'); if (!qt) return;
+  const sel = window.getSelection && window.getSelection(); if (sel && !sel.isCollapsed && String(sel).trim()) return;
+  const card = qt.closest('.q-card'), id = card.id.slice(6);
+  let node = null, off = 0;
+  if (document.caretPositionFromPoint) { const p = document.caretPositionFromPoint(e.clientX, e.clientY); if (p) { node = p.offsetNode; off = p.offset; } }
+  else if (document.caretRangeFromPoint) { const r = document.caretRangeFromPoint(e.clientX, e.clientY); if (r) { node = r.startContainer; off = r.startOffset; } }
+  if (!node || node.nodeType !== 3 || !qt.contains(node)) return;
+  const toks = parcaTokens(qt);
+  let i = toks.findIndex(t => t.node === node && off >= t.s && off <= t.e);
+  if (i < 0) return;
+  e.preventDefault(); e.stopPropagation();
+  const set = PARCA.pick[id] || (PARCA.pick[id] = new Set());
+  if (set.has(i)) set.delete(i); else set.add(i);
+  parcaApply();
+}, true);
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('[data-parca-check],[data-parca-skip],[data-parca-clear],[data-parca-again]'); if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  const d = t.dataset;
+  if (d.parcaCheck) parcaCheck(d.parcaCheck, false);
+  else if (d.parcaSkip) parcaCheck(d.parcaSkip, true);
+  else if (d.parcaClear) { PARCA.pick[d.parcaClear] = new Set(); parcaApply(); }
+  else if (d.parcaAgain) { PARCA.pick[d.parcaAgain] = new Set(); PARCA.stage[d.parcaAgain] = 'pick'; PARCA.hover = null; parcaApply(); }
+}, true);
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
