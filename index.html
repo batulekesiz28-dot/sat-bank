@@ -1004,6 +1004,27 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .trw-ex{font-family:var(--serif, Georgia, serif);font-size:14px;color:var(--fg2);font-style:italic;margin-top:3px}
 .trw-empty{color:var(--fg3)}
 @media (max-width:600px){.trw-n{margin-left:0;white-space:normal}}
+
+.ii-focus-card{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;padding:14px 16px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-dim);margin-bottom:16px}
+.ii-focus-card p{margin:6px 0 0;font-size:14px;color:var(--fg2);line-height:1.55}
+.ii-badge{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:9px;background:var(--surface);color:var(--accent);margin-left:6px}
+.ii-card{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:16px 18px;margin-bottom:12px}
+.ii-card h3{margin:0;font-size:16px;color:var(--fg)}
+.ii-sub{margin:4px 0 8px;color:var(--fg2);font-size:14px}
+.ii-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.55;color:var(--fg)}
+.ii-steps.plain{list-style:none;padding-left:0}
+.ii-tip{margin:10px 0 0;font-size:13.5px;color:var(--fg2)}
+.ii-traps{margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(220,38,38,.06);font-size:13.5px}
+.ii-traps ul{margin:4px 0 0;padding-left:18px}
+.ii-tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:12px;font-weight:600}
+.ii-tag.bg{background:var(--surface2);color:var(--fg2)} .ii-tag.ev{background:rgba(37,99,235,.12);color:#1d4ed8} .ii-tag.cl{background:rgba(234,179,8,.22);color:#854d0e} .ii-tag.tw{background:rgba(220,38,38,.1);color:#b91c1c}
+.ii-go{margin:6px 0 20px}
+.q-card.ii-s0 .q-passage{filter:blur(6px);pointer-events:none;user-select:none}
+.q-card.ii-s0 .choices,.q-card.ii-s1 .choices{filter:blur(5px);pointer-events:none;user-select:none}
+.ii-bar{margin:0 0 12px;padding:12px 14px;border-radius:10px;border:1px solid var(--accent);background:var(--accent-dim);display:flex;flex-direction:column;gap:8px;font-size:14px}
+.ii-guess{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg);font-size:14px}
+.ii-next{align-self:flex-start}
+.ii-mine{margin:0 0 10px;padding:6px 10px;border-radius:8px;background:var(--surface2);font-size:13.5px;color:var(--fg2)}
 </style>
 
 <!-- TOPBAR -->
@@ -1193,7 +1214,7 @@ b.rat-l{font-weight:700;color:var(--fg)}
     <div class="section-title-row">
       <div><div class="section-h">Çalış</div><div class="section-sub">Yanlışlarını aralıklı tekrar et, soru türlerine göre çalış.</div></div>
     </div>
-    <div class="st-tabs"><button class="st-tab" data-study-tab="review">Bugün tekrar <span class="st-n">0</span></button><button class="st-tab" data-study-tab="types">Türler ve kurallar</button></div>
+    <div class="st-tabs"><button class="st-tab" data-study-tab="review">Bugün tekrar <span class="st-n">0</span></button><button class="st-tab" data-study-tab="types">Türler ve kurallar</button><button class="st-tab" data-study-tab="ii">Info &amp; Ideas rehberi</button></div>
     <div id="studyBody"></div>
   </div>
 
@@ -1482,6 +1503,7 @@ function renderStudy() {
   const due = rvDue();
   const rb = document.querySelector('[data-study-tab="review"] .st-n'); if (rb) rb.textContent = due.length;
   if (study.tab === 'review') return renderReview(host);
+  if (study.tab === 'ii') return renderII(host);
   if (study.sub) return renderSubPractice(host);
   renderSubList(host);
 }
@@ -1597,6 +1619,119 @@ setTimeout(() => {
   saveState = function () { const ch = rvWatch(); orig.apply(this, arguments); if (ch || currentView !== 'study') rvBadge(); };
   rvBadge();
 }, 0);
+
+// ══════════════ INFO & IDEAS: guide + focus mode (question first, predict before choices) ══════════════
+const II_GUIDE = [
+  { plain: 1, t: 'Her soruda aynı 4 adım', s: 'Metni baştan sona anlamaya çalışma. Soru sana neyi araman gerektiğini söyler.', steps: [
+    '<b>1. Önce soruyu oku.</b> Ne isteniyor: ana fikir mi, detay mı, boşluk mu, destek/zayıflatma mı, tablo mu?',
+    '<b>2. Hedef cümleyi bul.</b> Çoğu zaman son cümlededir: <i>claim, hypothesis, conclude, suggests</i> kelimelerini ya da boşluğu ara. Bunu kendi cümlenle 5–8 kelimeyle yaz.',
+    '<b>3. Metni rollere ayırarak oku.</b> Her cümleye bir etiket koy: <span class="ii-tag bg">Arka plan</span> <span class="ii-tag ev">Kanıt / model</span> <span class="ii-tag cl">İddia</span> <span class="ii-tag tw">Dönüş</span>. Arka planı anlamasan da olur; iddia ve kanıt yeter.',
+    '<b>4. Şıklara bakmadan tahmin et, sonra ele.</b> Tahminine en yakın şıkkı seç. Diğerlerini 4 tuzağa göre ele (aşağıda).'
+  ], tip: 'Dönüş kelimeleri metnin yönünü değiştirir: <b>However, But, Yet, Although, In contrast</b>. Ondan sonraki cümle genelde asıl iddiadır.' },
+  { plain: 1, t: 'Kaybolmamak için sinyal kelimeler', s: 'Bu kelimeleri görünce dur; metnin iskeleti onlarla kurulur.', steps: [
+    '<b>İddia / hipotez:</b> claim, argue, hypothesize, propose, suggest, conclude, believe',
+    '<b>Kanıt / model:</b> found, showed, In humans…, Previous studies…, is known to, is associated with, plays a role in',
+    '<b>Dönüş:</b> however, but, yet, although, while, in contrast, surprisingly',
+    '<b>Sebep:</b> because, since, due to, as a result, therefore'
+  ] },
+  { t: 'Ana fikir (main idea)', s: 'Metnin tamamını kapsayan cümleyi seç.', steps: [
+    'Metni 1 cümlede özetle: <i>Kim / ne + ne yaptı / ne buldu + neden önemli?</i>',
+    'Dönüş kelimesinden sonraki kısım ve son cümle genelde ana fikirdir.',
+    'Şıkkın kapsamı tam metninkine eşit olmalı: daha geniş ya da daha dar olmamalı.'
+  ], traps: ['Çok dar: metindeki tek bir detay ya da sayı', 'Çok geniş: metnin söylemediği genel bir iddia', 'Metindeki kelimeleri aynen tekrar eden şık genelde detaydır'] },
+  { t: 'Detay (According to the text…)', s: 'Cevap metinde neredeyse aynen yazar.', steps: [
+    'Sorudaki anahtar kelimeyi (isim, kavram) metinde bul.',
+    'O cümleyi ve bir sonrakini oku; başka yere bakma.',
+    'Aynı anlamı başka kelimelerle söyleyen şıkkı seç.'
+  ], traps: ['Metindeki kelimeleri kullanıp anlamı ters çeviren şık (sebep ↔ sonuç)', 'Doğru ama soruyla ilgisiz bilgi'] },
+  { t: 'Boşluk tamamlama (Inferences)', s: 'Boşluk, metnin mantıksal sonucudur.', steps: [
+    'Boşluklu cümleyi ve hemen öncesindeki 1–2 cümleyi oku. Bağlaca dikkat et: <i>therefore, thus, suggests that</i>.',
+    'Boşluğu şıklara bakmadan kendi cümlenle doldur. Metnin kanıtı neyi gösteriyor?',
+    'Tahminine en yakın ve en temkinli şıkkı seç.'
+  ], traps: ['Metinden bir adım fazla giden (all, always, never, must)', 'Gerçek hayatta doğru ama metinde dayanağı olmayan', 'Konuyu değiştiren ya da yeni bir şey ekleyen'] },
+  { t: 'Destekleyen / zayıflatan bulgu', s: 'Hipotezi X ↔ Y olarak yaz.', steps: [
+    'Hipotezi iki parçaya böl: <b>X ↔ Y</b> (ör. LINE ↔ zeka).',
+    'Metinde hem X\'in hem Y\'nin geçtiği <b>model cümleyi</b> tara (In humans…, Previous studies…). Doğru cevap çoğu zaman bu modelin hipotezdeki canlıda ya da durumda tekrar edilmiş halidir.',
+    'Her şıkka 3 soru sor: X var mı? Y var mı? Doğru canlı/grup mu? Üçünden de geçen şıkkı seç.',
+    'Zayıflatma sorusunda tersini ara: X var ama Y yok, ya da Y var ama X yok.'
+  ], traps: ['Kelime benzerliği: metindeki kelimeler var ama X ↔ Y ilişkisi yok', 'Yanlış canlı ya da grup (insan yerine ahtapot gibi)', 'Destek istenirken zayıflatan şık, ya da tersi'] },
+  { t: 'İddiayı gösteren alıntı (Which quotation…)', s: 'Alıntılar şiir ya da romandan; iddia soruda yazıyor.', steps: [
+    'Giriş bilgisini atla, sadece iddiayı oku ve kendi cümlenle yaz (ör. "konuşmacı yalnız hissediyor").',
+    'İddiada genelde iki parça vardır (ör. hem umut hem pişmanlık). Alıntı ikisini de göstermeli.',
+    'Her alıntıyı iddiaya karşı oku; duygu ya da fikir doğrudan görünmeli.'
+  ], traps: ['Konuyla ilgili ama iddiadaki duyguyu göstermeyen alıntı', 'İddianın sadece yarısını gösteren alıntı'] },
+  { t: 'Tablo / grafik', s: 'Önce iddia, sonra veri.', steps: [
+    'Metnin son cümlesindeki iddiayı bul. Neyi kanıtlamamız isteniyor?',
+    'Tablonun ya da grafiğin başlığını, eksenlerini ve birimlerini oku.',
+    'Sadece iddiayla ilgili satırlara ya da çizgilere bak.',
+    'Şıklardaki her sayıyı tek tek doğrula. Hem doğru hem iddiayla ilgili olmalı.'
+  ], traps: ['Verisi doğru ama iddiayla ilgisiz şık (en yaygın tuzak)', 'Yanlış satır, yıl ya da grup', 'İddianın sadece bir parçasını gösteren şık'] }
+];
+function renderII(host) {
+  const on = iiFocusOn();
+  host.innerHTML = `<div class="ii-focus-card">
+      <div><b>Odak modu</b> <span class="ii-badge">${on ? 'Açık' : 'Kapalı'}</span>
+      <p>Information &amp; Ideas sorularında önce sadece soruyu görürsün; metin "Soruyu okudum" deyince açılır. Şıklar da sen tahminini yazınca açılır. Böylece metinde kaybolmadan, ne aradığını bilerek okursun.</p></div>
+      <button class="act-btn" data-ii-focus>${on ? 'Kapat' : 'Aç'}</button>
+    </div>` + II_GUIDE.map(g => `<section class="ii-card"><h3>${g.t}</h3><p class="ii-sub">${g.s}</p>
+      ${g.plain ? '<ul class="ii-steps plain">' : '<ol class="ii-steps">'}${g.steps.map(x => `<li>${x}</li>`).join('')}${g.plain ? '</ul>' : '</ol>'}
+      ${g.tip ? `<p class="ii-tip">${g.tip}</p>` : ''}
+      ${g.traps ? `<div class="ii-traps"><b>Tuzaklar</b><ul>${g.traps.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
+    </section>`).join('') +
+    `<button class="act-btn ii-go" data-study-tab="types">Info &amp; Ideas türlerinden çalışmaya başla →</button>`;
+}
+const iiFocusOn = () => { try { return localStorage.getItem('sat_ii_focus') === '1'; } catch { return false; } };
+window.__iiStage = window.__iiStage || {};
+(function () {
+  function apply() {
+    const on = iiFocusOn();
+    document.querySelectorAll('.q-card[id^="qcard-"]').forEach(card => {
+      const id = card.id.slice(6);
+      const q = RAW_QUESTIONS.find(x => x.id === id);
+      const active = on && q && q.domain === 'Information and Ideas' && state.answers[id] === undefined && !state.revealed[id] && card.querySelector('.q-passage');
+      const stage = active ? (window.__iiStage[id] || 0) : 3;
+      card.classList.toggle('ii-s0', stage === 0);
+      card.classList.toggle('ii-s1', stage === 1);
+      let bar = card.querySelector('.ii-bar');
+      if (stage >= 2) { if (bar) bar.remove(); return; }
+      if (!bar) {
+        bar = document.createElement('div'); bar.className = 'ii-bar';
+        const side = card.querySelector('.q-side'), prompt = side && side.querySelector('.q-prompt');
+        if (!side) return;
+        if (prompt) prompt.after(bar); else side.prepend(bar);
+      }
+      const want = stage === 0 ? 's0' : 's1';
+      if (bar.dataset.s === want) return;
+      bar.dataset.s = want;
+      bar.innerHTML = stage === 0
+        ? `<div class="ii-step"><b>1.</b> Soruyu oku. Ne arıyorsun: ana fikir, detay, boşluk, destek/zayıflatma, tablo?</div><button class="act-btn ii-next" data-ii-next="${id}">Soruyu okudum → metni aç</button>`
+        : `<div class="ii-step"><b>2.</b> Metinde hedef cümleyi bul ve şıklara bakmadan tahminini yaz. Destek sorusunda X ↔ Y yaz.</div>
+           <input class="ii-guess" placeholder="Tahminim (ör. LINE ↔ zeka)" data-ii-guess="${id}" value="${(window.__iiGuess && window.__iiGuess[id]) || ''}">
+           <button class="act-btn ii-next" data-ii-next="${id}">Şıkları göster</button>`;
+    });
+  }
+  window.__iiApply = apply;
+  let t = null;
+  const sched = () => { if (t) return; t = requestAnimationFrame(() => { t = null; apply(); }); };
+  const start = () => { new MutationObserver(m => { if (m.some(r => [...r.addedNodes].some(n => n.nodeType === 1 && (n.matches('.q-card') || n.querySelector && n.querySelector('.q-card'))))) sched(); }).observe(document.body, { childList: true, subtree: true }); sched(); };
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+  window.__iiGuess = window.__iiGuess || {};
+  document.addEventListener('input', e => { const g = e.target.closest && e.target.closest('[data-ii-guess]'); if (g) window.__iiGuess[g.dataset.iiGuess] = g.value; });
+  document.addEventListener('click', e => {
+    const n = e.target.closest && e.target.closest('[data-ii-next],[data-ii-focus]');
+    if (!n) return;
+    e.preventDefault(); e.stopPropagation();
+    if (n.hasAttribute('data-ii-focus')) { try { localStorage.setItem('sat_ii_focus', iiFocusOn() ? '0' : '1'); } catch {} renderStudy(); apply(); return; }
+    const id = n.dataset.iiNext;
+    window.__iiStage[id] = (window.__iiStage[id] || 0) + 1;
+    apply();
+    if (window.__iiStage[id] === 2) {
+      const card = document.getElementById('qcard-' + id);
+      const g = window.__iiGuess[id];
+      if (card && g && !card.querySelector('.ii-mine')) { const d = document.createElement('div'); d.className = 'ii-mine'; d.textContent = 'Tahminin: ' + g; const ch = card.querySelector('.choices'); if (ch) ch.before(d); }
+    }
+  }, true);
+})();
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
