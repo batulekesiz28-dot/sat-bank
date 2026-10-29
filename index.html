@@ -1751,9 +1751,7 @@ window.__iiStage = window.__iiStage || {};
       const want = stage === 0 ? 's0' : 's1';
       if (bar.dataset.s === want) return;
       bar.dataset.s = want;
-      bar.innerHTML = stage === 0
-        ? `<div class="ii-step"><b>1.</b> Soruyu oku. Ne arıyorsun: ana fikir, detay, boşluk, destek/zayıflatma, tablo?</div><button class="act-btn ii-next" data-ii-next="${id}">Soruyu okudum → metni aç</button>`
-        : `<div class="ii-step"><b>2.</b> Metinde hedef cümleyi bul ve şıklara bakmadan tahminini aşağıdaki <b>Tahminim</b> kutusuna yaz. Destek sorusunda X ↔ Y yaz.</div>`;
+      bar.innerHTML = iiBarInner(id, stage);
     });
   }
   window.__iiApply = apply;
@@ -1931,19 +1929,18 @@ function renderSet(host) {
       const ch = card.querySelector('.choices'); if (!ch) return;
       if (!box) {
         box = document.createElement('div'); box.className = 'pg-box';
-        box.innerHTML = `<label class="pg-lbl" for="pg-${id}">✍️ Tahminim <span>şıklara bakmadan, kendi cümlenle</span></label>
-          <textarea id="pg-${id}" class="pg-ta" rows="1" data-pg="${id}" placeholder="Ör. LINE ↔ zeka  /  boşluk: iki sayım aynı şeyi göstermiyor  /  ana fikir: ..."></textarea>
-          <div class="pg-actions"><button type="button" class="act-btn pg-go" data-pg-go="${id}">Şıkları göster</button><span class="pg-hint">ya da Enter</span><button class="pg-skip" data-pg-skip="${id}">tahminsiz aç</button></div>`;
+        box.innerHTML = pgBoxInner(id, '');
         ch.before(box);
         const ta = box.querySelector('textarea');
         ta.value = (rfGet(id).g) || '';
         fit(ta);
       }
       box.classList.toggle('opened', open);
+      const ta0 = box.querySelector('textarea'); if (ta0 && !ta0.dataset.fit) { ta0.dataset.fit = '1'; fit(ta0); }
       const go = box.querySelector('.pg-go'); if (go) go.classList.toggle('ready', box.querySelector('textarea').value.trim().length >= 2);
     });
   }
-  const fit = ta => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
+  const fit = ta => { const b = ta.offsetHeight - ta.clientHeight; ta.style.height = 'auto'; const h = Math.min(ta.scrollHeight + b, 160); if (Math.abs(ta.offsetHeight - h) > 0.5) ta.style.height = h + 'px'; else ta.style.height = ''; };
   window.__pgBoxes = boxes;
   window.__pgOpen = window.__pgOpen || {};
   function openChoices(id, save, ta) {
@@ -1991,6 +1988,47 @@ function renderSet(host) {
     e.stopPropagation();
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (ta.value.trim().length >= 1) openChoices(ta.dataset.pg, true, ta); }
   }, true);
+})();
+
+// ══════════════ draw the prediction box / focus bar together with the card (no jump on re-render) ══════════════
+function iiBarInner(id, stage) {
+  return stage === 0
+    ? `<div class="ii-step"><b>1.</b> Soruyu oku. Ne arıyorsun: ana fikir, detay, boşluk, destek/zayıflatma, tablo?</div><button class="act-btn ii-next" data-ii-next="${id}">Soruyu okudum → metni aç</button>`
+    : `<div class="ii-step"><b>2.</b> Metinde hedef cümleyi bul ve şıklara bakmadan tahminini aşağıdaki <b>Tahminim</b> kutusuna yaz. Destek sorusunda X ↔ Y yaz.</div>`;
+}
+function pgBoxInner(id, val) {
+  return `<label class="pg-lbl" for="pg-${id}">✍️ Tahminim <span>şıklara bakmadan, kendi cümlenle</span></label>
+          <textarea id="pg-${id}" class="pg-ta" rows="1" data-pg="${id}" placeholder="Ör. LINE ↔ zeka  /  boşluk: iki sayım aynı şeyi göstermiyor  /  ana fikir: ...">${escHtml(val || '')}</textarea>
+          <div class="pg-actions"><button type="button" class="act-btn pg-go${String(val || '').trim() ? ' ready' : ''}" data-pg-go="${id}">Şıkları göster</button><span class="pg-hint">ya da Enter</span><button class="pg-skip" data-pg-skip="${id}">tahminsiz aç</button></div>`;
+}
+(function () {
+  const orig = renderQuestion;
+  renderQuestion = function (q) {
+    let h = orig.apply(this, arguments);
+    try {
+      if (!q || q.domain !== 'Information and Ideas' || state.answers[q.id] !== undefined || state.revealed[q.id]) return h;
+      const id = q.id, open = !!(window.__pgOpen && window.__pgOpen[id]);
+      const cls = [];
+      if (!open) cls.push('pg-locked');
+      let bar = '';
+      const focus = (typeof iiFocusOn === 'function' && iiFocusOn()) && h.includes('class="q-passage"');
+      if (focus) {
+        const st = (window.__iiStage && window.__iiStage[id]) || 0;
+        if (st === 0) cls.push('ii-s0'); else if (st === 1) cls.push('ii-s1');
+        if (st < 2) bar = `<div class="ii-bar" data-s="s${st}">${iiBarInner(id, st)}</div>`;
+      }
+      if (cls.length) h = h.replace(/class="q-card/, 'class="q-card ' + cls.join(' ') + ' ');
+      const g = (typeof rfGet === 'function' && rfGet(id).g) || (document.querySelector('[data-pg="' + id + '"]') || {}).value || '';
+      const ch = '<div class="choices" id="choices-' + id + '"';
+      const at = h.indexOf(ch);
+      if (at >= 0) h = h.slice(0, at) + `<div class="pg-box${open ? ' opened' : ''}">${pgBoxInner(id, g)}</div>` + h.slice(at);
+      if (bar) {
+        const pi = h.indexOf('<p class="q-prompt">');
+        if (pi >= 0) { const pe = h.indexOf('</p>', pi) + 4; h = h.slice(0, pe) + bar + h.slice(pe); }
+      }
+    } catch {}
+    return h;
+  };
 })();
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
