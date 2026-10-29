@@ -1059,6 +1059,12 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .pg-lbl span{font-weight:500;color:var(--fg2)}
 .pg-ta{width:100%;box-sizing:border-box;resize:none;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg);font:inherit;font-size:14.5px;line-height:1.5;min-height:38px}
 .pg-ta:focus{outline:2px solid var(--accent);outline-offset:0}
+.q-card.pg-locked .choices{filter:blur(6px);pointer-events:none;user-select:none}
+.pg-actions{display:flex;align-items:center;gap:10px;margin-top:8px}
+.pg-go[disabled]{opacity:.45;cursor:default}
+.pg-hint{font-size:12px;color:var(--fg3)}
+.pg-skip{margin-left:auto;border:0;background:none;color:var(--fg3);font-size:12px;text-decoration:underline;cursor:pointer}
+.pg-box.opened .pg-actions{display:none}
 .pg-show{margin-top:4px;padding:8px 10px;border-radius:8px;background:var(--surface);border:1px dashed var(--accent);font-size:14px;color:var(--fg)}
 .pg-show .rf-q{margin-right:6px}
 </style>
@@ -1744,8 +1750,7 @@ window.__iiStage = window.__iiStage || {};
       bar.dataset.s = want;
       bar.innerHTML = stage === 0
         ? `<div class="ii-step"><b>1.</b> Soruyu oku. Ne arıyorsun: ana fikir, detay, boşluk, destek/zayıflatma, tablo?</div><button class="act-btn ii-next" data-ii-next="${id}">Soruyu okudum → metni aç</button>`
-        : `<div class="ii-step"><b>2.</b> Metinde hedef cümleyi bul ve şıklara bakmadan tahminini aşağıdaki <b>Tahminim</b> kutusuna yaz. Destek sorusunda X ↔ Y yaz.</div>
-           <button class="act-btn ii-next" data-ii-next="${id}">Şıkları göster</button>`;
+        : `<div class="ii-step"><b>2.</b> Metinde hedef cümleyi bul ve şıklara bakmadan tahminini aşağıdaki <b>Tahminim</b> kutusuna yaz. Destek sorusunda X ↔ Y yaz.</div>`;
     });
   }
   window.__iiApply = apply;
@@ -1916,21 +1921,40 @@ function renderSet(host) {
       const id = card.id.slice(6);
       const answered = state.answers[id] !== undefined || !!state.revealed[id];
       let box = card.querySelector('.pg-box');
-      if (answered) { if (box) box.remove(); return; }
+      if (answered) { card.classList.remove('pg-locked'); if (box) box.remove(); return; }
+      const open = !!window.__pgOpen[id];
+      card.classList.toggle('pg-locked', !open);
       const ch = card.querySelector('.choices'); if (!ch) return;
       if (!box) {
         box = document.createElement('div'); box.className = 'pg-box';
         box.innerHTML = `<label class="pg-lbl" for="pg-${id}">✍️ Tahminim <span>şıklara bakmadan, kendi cümlenle</span></label>
-          <textarea id="pg-${id}" class="pg-ta" rows="1" data-pg="${id}" placeholder="Ör. LINE ↔ zeka  /  boşluk: iki sayım aynı şeyi göstermiyor  /  ana fikir: ..."></textarea>`;
+          <textarea id="pg-${id}" class="pg-ta" rows="1" data-pg="${id}" placeholder="Ör. LINE ↔ zeka  /  boşluk: iki sayım aynı şeyi göstermiyor  /  ana fikir: ..."></textarea>
+          <div class="pg-actions"><button class="act-btn pg-go" data-pg-go="${id}" disabled>Şıkları göster</button><span class="pg-hint">ya da Enter</span><button class="pg-skip" data-pg-skip="${id}">tahminsiz aç</button></div>`;
         ch.before(box);
         const ta = box.querySelector('textarea');
         ta.value = (rfGet(id).g) || '';
         fit(ta);
       }
+      box.classList.toggle('opened', open);
+      const go = box.querySelector('.pg-go'); if (go) go.disabled = box.querySelector('textarea').value.trim().length < 2;
     });
   }
   const fit = ta => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
   window.__pgBoxes = boxes;
+  window.__pgOpen = window.__pgOpen || {};
+  function openChoices(id, save) {
+    const ta = document.querySelector('[data-pg="' + id + '"]');
+    if (save && ta) { clearTimeout(timers[id]); rfSet(id, { g: ta.value.trim() || undefined }); }
+    window.__pgOpen[id] = true;
+    if (window.__iiStage && (window.__iiStage[id] || 0) < 2) { window.__iiStage[id] = 2; window.__iiApply && window.__iiApply(); }
+    boxes();
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-pg-go],[data-pg-skip]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (b.dataset.pgGo) { const ta = document.querySelector('[data-pg="' + b.dataset.pgGo + '"]'); if (ta && ta.value.trim().length >= 2) openChoices(b.dataset.pgGo, true); }
+    else openChoices(b.dataset.pgSkip, false);
+  }, true);
   let t = null; const sched = () => { if (t) return; t = setTimeout(() => { t = null; boxes(); }, 50); };
   const start = () => { new MutationObserver(sched).observe(document.body, { childList: true, subtree: true }); sched(); };
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
@@ -1938,6 +1962,7 @@ function renderSet(host) {
     const ta = e.target.closest && e.target.closest('[data-pg]'); if (!ta) return;
     fit(ta);
     const id = ta.dataset.pg;
+    const go = ta.closest('.pg-box') && ta.closest('.pg-box').querySelector('.pg-go'); if (go) go.disabled = ta.value.trim().length < 2;
     clearTimeout(timers[id]);
     timers[id] = setTimeout(() => { rfSet(id, { g: ta.value.trim() || undefined }); }, 500);
   }, true);
@@ -1948,7 +1973,11 @@ function renderSet(host) {
     if (ta) { clearTimeout(timers[c.dataset.qid]); const v = ta.value.trim(); if ((rfGet(c.dataset.qid).g || '') !== v) rfSet(c.dataset.qid, { g: v || undefined }); }
   }, true);
   // a guess must not trigger the app's keyboard shortcuts
-  document.addEventListener('keydown', e => { if (e.target.closest && e.target.closest('[data-pg]')) e.stopPropagation(); }, true);
+  document.addEventListener('keydown', e => {
+    const ta = e.target.closest && e.target.closest('[data-pg]'); if (!ta) return;
+    e.stopPropagation();
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (ta.value.trim().length >= 2) openChoices(ta.dataset.pg, true); }
+  }, true);
 })();
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
