@@ -2242,11 +2242,9 @@ function aiSettingsHtml() {
     <div class="ai-set-row"><input type="password" id="aiKeyIn" placeholder="${k ? '•••••••• (değiştirmek için yeni anahtar yapıştır)' : 'Gemini API anahtarını yapıştır'}" autocomplete="off">
       <select id="aiModelIn">${AI_MODELS.map(([v, l]) => `<option value="${v}" ${v === m ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <div class="ai-set-row"><button class="act-btn" data-ai-save>Kaydet ve test et</button>${k ? '<button class="act-btn" data-ai-del>Anahtarı sil</button>' : ''}<span class="ai-set-msg">${aiEsc(AI.settingsMsg)}</span></div>
-    <details class="ai-sec-tip"><summary>Güvenlik için önerilen ayar (2 dk)</summary>
-      <p>Google Cloud Console → APIs &amp; Services → Credentials → anahtarını aç:</p>
-      <ol><li><b>Application restrictions:</b> Websites → <code>https://batulekesiz28-dot.github.io/*</code> ekle.</li>
-      <li><b>API restrictions:</b> Restrict key → sadece <b>Generative Language API</b>.</li></ol>
-      <p>Böylece anahtar başka bir yerde ele geçse bile işe yaramaz.</p></details>
+    <details class="ai-sec-tip"><summary>Anahtar ve güvenlik</summary>
+      <p>Yeni Gemini anahtarları <code>AQ.</code> ile başlar (eski <code>AIza</code> anahtarlar Eylül 2026’da kapatıldı). Anahtarı olduğu gibi yapıştır; başında ya da sonunda boşluk olmasın.</p>
+      <p>Önerilen: AI Studio → API Keys sayfasında anahtarın yanındaki menüden <b>Restrict to Gemini API only</b> seç. Anahtarı kimseyle paylaşma; ele geçerse aynı sayfadan silip yenisini oluştur.</p></details>
   </div>`;
 }
 // ── coach report (stats)
