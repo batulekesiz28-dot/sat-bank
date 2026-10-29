@@ -1165,6 +1165,8 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .q-card.notes-locked .notes-list{filter:blur(6px);user-select:none;pointer-events:none}
 .notes-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1.5px dashed var(--accent);border-radius:10px;background:var(--accent-dim);font-size:13.5px;color:var(--fg)}
 .notes-bar span{flex:1;min-width:200px}
+.q-tour-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-left:6px}
+.q-tour-btn:hover{filter:brightness(1.05)}
 </style>
 
 <!-- TOPBAR -->
@@ -2113,6 +2115,7 @@ function pgBoxInner(id, val) {
   renderQuestion = function (q) {
     let h = orig.apply(this, arguments);
     try { if (q && (q.domain in PG_DOMAINS)) { const btn = pgToggleHtml(q.domain); h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', btn + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', btn + '<span class="q-status-icon">'); } } catch {}
+    try { if (q && state.answers[q.id] !== undefined) { const tb = `<button type="button" class="q-tour-btn" data-tour="${q.id}" title="AI soruyu ekranda anlatsın">🎬 Ekranda göster</button>`; h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', tb + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', tb + '<span class="q-status-icon">'); } } catch {}
     try {
       if (!q || !pgOn(q.domain) || state.answers[q.id] !== undefined || state.revealed[q.id]) return h;
       if (q.skill === 'Rhetorical Synthesis') {
@@ -2317,14 +2320,13 @@ function aiFill(z) {
   z.dataset.sig = sig;
   if (!n || !n.a) {
     z.innerHTML = busy ? `<div class="ai-card ai-loading"><span class="ai-spin"></span><span class="ai-status">${aiEsc(AI.status[id] || 'AI analiz ediyor…')}</span><span class="ai-elapsed">${Math.round((Date.now() - (AI.started[id] || Date.now())) / 1000)} sn</span><button class="ai-redo" data-ai-cancel="${id}">İptal</button></div>`
-      : (TOUR.err[id] ? `<div class="ai-err">${aiEsc(TOUR.err[id])}</div>` : '') + `<div class="ai-start"><button class="act-btn ai-btn" data-ai-run="${id}">🤖 AI analiz: nerede koptum?</button><button class="act-btn ai-btn tour-btn" data-tour="${id}">🎬 Ekranda göster</button>${aiKey() ? '' : '<span class="ai-hint">Önce Çalış → Info & Ideas rehberi → AI Koç ayarlarından anahtarını gir.</span>'}</div>` + (err ? `<div class="ai-err">${aiEsc(err)}</div>` : '');
+      : (TOUR.err[id] ? `<div class="ai-err">${aiEsc(TOUR.err[id])}</div>` : '') + `<div class="ai-start"><button class="act-btn ai-btn" data-ai-run="${id}">🤖 AI analiz: nerede koptum?</button>${aiKey() ? '' : '<span class="ai-hint">Önce Çalış → Info & Ideas rehberi → AI Koç ayarlarından anahtarını gir.</span>'}</div>` + (err ? `<div class="ai-err">${aiEsc(err)}</div>` : '');
     return;
   }
   const a = n.a || {}, rf = rfGet(id);
   const tdur = { dogru: ['Doğru', 'ok'], kismen: ['Kısmen', 'mid'], yanlis: ['Yanlış', 'bad'], yok: ['Tahmin yok', 'none'] }[String(a.tahmin_durum || '').trim()] || null;
   const trapKey = String(a.tuzak || '').trim(), trapOk = trapKey && RF_TRAPS[trapKey] && !(rf.t || []).includes(trapKey) && state.answers[id] !== (RAW_QUESTIONS.find(x => x.id === id) || {}).correct;
   z.innerHTML = `<div class="ai-card">
-    <button class="act-btn ai-btn tour-btn tour-big" data-tour="${id}">🎬 Ekranda göster: AI soruyu ekranda anlatsın</button>
     <div class="ai-h">🤖 AI analiz <span>${aiEsc(n.m || '')}</span>${busy ? `<span class="ai-status">${aiEsc(AI.status[id] || '')}</span> <span class="ai-elapsed"></span><button class="ai-redo" data-ai-cancel="${id}">İptal</button>` : `<button class="ai-redo" data-ai-run="${id}">yeniden analiz et</button>`}</div>
     ${a.ozet ? `<p class="ai-sum">${aiEsc(a.ozet)}</p>` : ''}
     ${a.hedef_cumle ? `<div class="ai-sec"><div class="ai-l">Hedef cümle</div><blockquote class="ai-quote">${aiEsc(a.hedef_cumle)}</blockquote><button class="ai-link" data-ai-show="${id}">Metinde göster</button></div>` : ''}
