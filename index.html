@@ -1059,9 +1059,12 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .pg-lbl span{font-weight:500;color:var(--fg2)}
 .pg-ta{width:100%;box-sizing:border-box;resize:none;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg);font:inherit;font-size:14.5px;line-height:1.5;min-height:38px}
 .pg-ta:focus{outline:2px solid var(--accent);outline-offset:0}
-.q-card.pg-locked .choices{filter:blur(6px);pointer-events:none;user-select:none}
+.q-card.pg-locked .choices{filter:blur(6px);user-select:none;cursor:pointer}
+.q-card.pg-locked .choices *{pointer-events:none}
+.pg-go:not(.ready){opacity:.6}
+.pg-box.nudge{animation:pgnudge .4s}
+@keyframes pgnudge{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .pg-actions{display:flex;align-items:center;gap:10px;margin-top:8px}
-.pg-go[disabled]{opacity:.45;cursor:default}
 .pg-hint{font-size:12px;color:var(--fg3)}
 .pg-skip{margin-left:auto;border:0;background:none;color:var(--fg3);font-size:12px;text-decoration:underline;cursor:pointer}
 .pg-box.opened .pg-actions{display:none}
@@ -1930,21 +1933,21 @@ function renderSet(host) {
         box = document.createElement('div'); box.className = 'pg-box';
         box.innerHTML = `<label class="pg-lbl" for="pg-${id}">✍️ Tahminim <span>şıklara bakmadan, kendi cümlenle</span></label>
           <textarea id="pg-${id}" class="pg-ta" rows="1" data-pg="${id}" placeholder="Ör. LINE ↔ zeka  /  boşluk: iki sayım aynı şeyi göstermiyor  /  ana fikir: ..."></textarea>
-          <div class="pg-actions"><button class="act-btn pg-go" data-pg-go="${id}" disabled>Şıkları göster</button><span class="pg-hint">ya da Enter</span><button class="pg-skip" data-pg-skip="${id}">tahminsiz aç</button></div>`;
+          <div class="pg-actions"><button type="button" class="act-btn pg-go" data-pg-go="${id}">Şıkları göster</button><span class="pg-hint">ya da Enter</span><button class="pg-skip" data-pg-skip="${id}">tahminsiz aç</button></div>`;
         ch.before(box);
         const ta = box.querySelector('textarea');
         ta.value = (rfGet(id).g) || '';
         fit(ta);
       }
       box.classList.toggle('opened', open);
-      const go = box.querySelector('.pg-go'); if (go) go.disabled = box.querySelector('textarea').value.trim().length < 2;
+      const go = box.querySelector('.pg-go'); if (go) go.classList.toggle('ready', box.querySelector('textarea').value.trim().length >= 2);
     });
   }
   const fit = ta => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
   window.__pgBoxes = boxes;
   window.__pgOpen = window.__pgOpen || {};
-  function openChoices(id, save) {
-    const ta = document.querySelector('[data-pg="' + id + '"]');
+  function openChoices(id, save, ta) {
+    ta = ta || document.querySelector('.view.active [data-pg="' + id + '"]') || document.querySelector('[data-pg="' + id + '"]');
     if (save && ta) { clearTimeout(timers[id]); rfSet(id, { g: ta.value.trim() || undefined }); }
     window.__pgOpen[id] = true;
     if (window.__iiStage && (window.__iiStage[id] || 0) < 2) { window.__iiStage[id] = 2; window.__iiApply && window.__iiApply(); }
@@ -1953,8 +1956,17 @@ function renderSet(host) {
   document.addEventListener('click', e => {
     const b = e.target.closest && e.target.closest('[data-pg-go],[data-pg-skip]'); if (!b) return;
     e.preventDefault(); e.stopPropagation();
-    if (b.dataset.pgGo) { const ta = document.querySelector('[data-pg="' + b.dataset.pgGo + '"]'); if (ta && ta.value.trim().length >= 2) openChoices(b.dataset.pgGo, true); }
-    else openChoices(b.dataset.pgSkip, false);
+    const box = b.closest('.pg-box'), ta = box && box.querySelector('textarea');
+    if (b.dataset.pgGo) {
+      if (ta && ta.value.trim().length >= 1) openChoices(b.dataset.pgGo, true, ta);
+      else if (ta) { ta.focus(); box.classList.remove('nudge'); void box.offsetWidth; box.classList.add('nudge'); ta.placeholder = 'Önce tahminini yaz, sonra Şıkları göster’e bas'; }
+    } else openChoices(b.dataset.pgSkip, false, ta);
+  }, true);
+  // tapping the blurred choices sends you to the box
+  document.addEventListener('click', e => {
+    const card = e.target.closest && e.target.closest('.q-card.pg-locked'); if (!card || !e.target.closest('.choices')) return;
+    const box = card.querySelector('.pg-box'), ta = box && box.querySelector('textarea'); if (!ta) return;
+    ta.focus(); box.classList.remove('nudge'); void box.offsetWidth; box.classList.add('nudge');
   }, true);
   let t = null; const sched = () => { if (t) return; t = setTimeout(() => { t = null; boxes(); }, 50); };
   const start = () => { new MutationObserver(sched).observe(document.body, { childList: true, subtree: true }); sched(); };
@@ -1963,7 +1975,7 @@ function renderSet(host) {
     const ta = e.target.closest && e.target.closest('[data-pg]'); if (!ta) return;
     fit(ta);
     const id = ta.dataset.pg;
-    const go = ta.closest('.pg-box') && ta.closest('.pg-box').querySelector('.pg-go'); if (go) go.disabled = ta.value.trim().length < 2;
+    const go = ta.closest('.pg-box') && ta.closest('.pg-box').querySelector('.pg-go'); if (go) go.classList.toggle('ready', ta.value.trim().length >= 2);
     clearTimeout(timers[id]);
     timers[id] = setTimeout(() => { rfSet(id, { g: ta.value.trim() || undefined }); }, 500);
   }, true);
@@ -1977,7 +1989,7 @@ function renderSet(host) {
   document.addEventListener('keydown', e => {
     const ta = e.target.closest && e.target.closest('[data-pg]'); if (!ta) return;
     e.stopPropagation();
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (ta.value.trim().length >= 2) openChoices(ta.dataset.pg, true); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (ta.value.trim().length >= 1) openChoices(ta.dataset.pg, true, ta); }
   }, true);
 })();
 window.__howOpen = window.__howOpen || new Set();
