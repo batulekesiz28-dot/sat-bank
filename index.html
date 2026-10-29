@@ -1920,8 +1920,9 @@ function renderSet(host) {
     document.querySelectorAll('.q-card[id^="qcard-"]').forEach(card => {
       const id = card.id.slice(6);
       const answered = state.answers[id] !== undefined || !!state.revealed[id];
+      const qq = RAW_QUESTIONS.find(x => x.id === id);
       let box = card.querySelector('.pg-box');
-      if (answered) { card.classList.remove('pg-locked'); if (box) box.remove(); return; }
+      if (answered || !qq || qq.domain !== 'Information and Ideas') { card.classList.remove('pg-locked'); if (box) box.remove(); return; }
       const open = !!window.__pgOpen[id];
       card.classList.toggle('pg-locked', !open);
       const ch = card.querySelector('.choices'); if (!ch) return;
