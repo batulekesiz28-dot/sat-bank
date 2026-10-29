@@ -1079,6 +1079,7 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .ai-err{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(220,38,38,.08);color:var(--red);font-size:13px}
 .ai-card{margin-top:8px;padding:12px 14px;border-radius:12px;border:1px solid rgba(124,58,237,.35);background:rgba(124,58,237,.05);font-size:14px;line-height:1.55;color:var(--fg)}
 .ai-loading{display:flex;align-items:center;gap:10px;color:var(--fg2)}
+.ai-elapsed{font-variant-numeric:tabular-nums;color:var(--fg3);font-size:12.5px}
 .ai-spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(124,58,237,.25);border-top-color:#7c3aed;display:inline-block;animation:aispin .8s linear infinite}
 @keyframes aispin{to{transform:rotate(360deg)}}
 .ai-h{display:flex;align-items:baseline;gap:8px;font-weight:700;font-size:14px}
@@ -2078,7 +2079,7 @@ function pgBoxInner(id, val) {
 
 // ══════════════ AI KOÇ (Gemini): per-question diagnosis, follow-up chat, coach report ══════════════
 const AI_MODELS = [['gemini-3.8-flash', 'Gemini 3.8 Flash (önerilen)'], ['gemini-3.5-flash-lite', 'Gemini 3.5 Flash-Lite (en hızlı)'], ['gemini-3.6-flash', 'Gemini 3.6 Flash'], ['gemini-3.1-pro-preview', 'Gemini 3.1 Pro preview (en güçlü, yavaş)']];
-const AI = { busy: {}, err: {}, chat: {}, chatBusy: {}, reportBusy: false, reportErr: '', settingsMsg: '' };
+const AI = { busy: {}, err: {}, chat: {}, chatBusy: {}, reportBusy: false, reportErr: '', settingsMsg: '', status: {}, started: {}, ctrl: {}, cancelled: {} };
 const aiLS = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { return ''; } };
 const aiKey = () => aiLS('sat_gemini_key');
 const aiModel = () => aiLS('sat_gemini_model') || AI_MODELS[0][0];
@@ -2089,7 +2090,9 @@ function aiErrText(e) {
   if (s === 403) return 'Anahtar bu siteden kullanılamıyor. Google Cloud’da anahtarın web sitesi kısıtlamasına batulekesiz28-dot.github.io/* ekli mi?';
   if (s === 404) return 'Model bulunamadı. Ayarlardan başka bir model seç.';
   if (s === 429) return 'Gemini kotası doldu (ücretsiz planda dakikalık/günlük sınır var). Biraz bekleyip tekrar dene.';
-  if (s >= 500) return 'Gemini şu an çok yoğun (' + s + '). Tüm modelleri birkaç kez denedim; 1-2 dakika sonra tekrar dene.';
+  if (m === 'CANCEL') return 'İptal edildi.';
+  if (s === 'timeout') return 'Gemini zamanında cevap vermedi (tüm modeller denendi). 1-2 dakika sonra tekrar dene.';
+  if (s >= 500) return 'Gemini şu an çok yoğun (' + s + '). Tüm modelleri denedim; 1-2 dakika sonra tekrar dene.';
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Bağlantı kurulamadı. İnternetini kontrol et.';
   return 'AI hatası: ' + m.slice(0, 200);
 }
@@ -2105,17 +2108,19 @@ async function aiCall(parts, opt) {
   const chain = [first, ...AI_MODELS.map(m => m[0]).filter(m => m !== first && m !== 'gemini-3.1-pro-preview')];
   let lastErr = null;
   for (let mi = 0; mi < chain.length; mi++) {
-    for (let attempt = 0; attempt < (mi === 0 ? 3 : 2); attempt++) {
+    for (let attempt = 0; attempt < (mi === 0 ? 2 : 1); attempt++) {
+      if (opt.cancel && opt.cancel()) { const e = new Error('CANCEL'); throw e; }
       try {
-        if (opt.onStatus) opt.onStatus(mi === 0 && attempt === 0 ? '' : (mi > 0 ? chain[mi] + ' deneniyor…' : 'Gemini yoğun, tekrar deneniyor (' + (attempt + 1) + ')…'));
+        if (opt.onStatus) opt.onStatus(mi === 0 && attempt === 0 ? chain[mi] + ' düşünüyor…' : (mi > 0 ? chain[mi] + ' deneniyor (öncekiler yoğun)…' : chain[mi] + ' yoğun, tekrar deneniyor…'));
         const out = await aiCallOnce(parts, opt, chain[mi]);
         AI.lastModel = chain[mi];
         return out;
       } catch (e) {
         lastErr = e;
-        const busy = e && (e.status === 503 || e.status === 500 || e.status === 429 || e.status === 504);
+        if (e && e.message === 'CANCEL') throw e;
+        const busy = e && (e.status === 503 || e.status === 500 || e.status === 429 || e.status === 504 || e.status === 'timeout');
         if (!busy) throw e;
-        await new Promise(r => setTimeout(r, attempt === 0 ? 1200 : 3500));
+        await new Promise(r => setTimeout(r, 1500));
       }
     }
   }
@@ -2125,9 +2130,21 @@ async function aiCallOnce(parts, opt, model) {
   const key = aiKey(); if (!key) throw new Error('NOKEY');
   const body = { contents: opt.contents || [{ role: 'user', parts }], generationConfig: { temperature: opt.temp == null ? 0.3 : opt.temp } };
   if (opt.json !== false) body.generationConfig.responseMimeType = 'application/json';
-  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body)
-  });
+  const ctrl = new AbortController();
+  if (opt.onAbort) opt.onAbort(ctrl);
+  const tmo = setTimeout(() => ctrl.abort('timeout'), opt.timeout || window.__aiTimeout || 35000);
+  let res;
+  try {
+    res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body), signal: ctrl.signal
+    });
+  } catch (err) {
+    clearTimeout(tmo);
+    if (opt.cancel && opt.cancel()) throw new Error('CANCEL');
+    if (ctrl.signal.aborted) { const e = new Error('Gemini 35 saniyede cevap vermedi'); e.status = 'timeout'; throw e; }
+    throw err;
+  }
+  clearTimeout(tmo);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { const e = new Error((data.error && data.error.message) || ('HTTP ' + res.status)); e.status = res.status; throw e; }
   const cand = data.candidates && data.candidates[0];
@@ -2184,13 +2201,19 @@ ${q.rationale || ''}`;
 function aiNote(id) { const n = state.aiNote && state.aiNote[id]; return n && typeof n === 'object' ? n : null; }
 async function aiAnalyze(id) {
   const q = RAW_QUESTIONS.find(x => x.id === id); if (!q || AI.busy[id]) return;
-  AI.busy[id] = true; AI.err[id] = ''; aiRefresh(id);
+  AI.busy[id] = true; AI.err[id] = ''; AI.status[id] = ''; AI.started[id] = Date.now(); AI.cancelled[id] = false; aiRefresh(id);
+  const tick = setInterval(() => document.querySelectorAll('.ai-zone[data-ai="' + id + '"] .ai-elapsed').forEach(el => { el.textContent = Math.round((Date.now() - AI.started[id]) / 1000) + ' sn'; }), 1000);
   try {
-    const a = await aiCall(aiQuestionParts(q));
+    const a = await aiCall(aiQuestionParts(q), {
+      onStatus: s => { AI.status[id] = s; document.querySelectorAll('.ai-zone[data-ai="' + id + '"] .ai-status').forEach(el => { el.textContent = s; }); },
+      onAbort: ctrl => { AI.ctrl[id] = ctrl; },
+      cancel: () => AI.cancelled[id]
+    });
     if (!state.aiNote || typeof state.aiNote !== 'object') state.aiNote = {};
     state.aiNote[id] = { a, m: AI.lastModel || aiModel(), at: Date.now(), ans: state.answers[id] };
     saveState();
   } catch (e) { AI.err[id] = aiErrText(e); }
+  clearInterval(tick);
   AI.busy[id] = false; aiRefresh(id);
 }
 async function aiAsk(id, text) {
@@ -2216,7 +2239,7 @@ function aiFill(z) {
   const draft = (z.querySelector('.ai-ask input') || {}).value || '';
   z.dataset.sig = sig;
   if (!n) {
-    z.innerHTML = busy ? '<div class="ai-card ai-loading"><span class="ai-spin"></span> AI analiz ediyor… (5–20 sn)</div>'
+    z.innerHTML = busy ? `<div class="ai-card ai-loading"><span class="ai-spin"></span><span class="ai-status">${aiEsc(AI.status[id] || 'AI analiz ediyor…')}</span><span class="ai-elapsed">${Math.round((Date.now() - (AI.started[id] || Date.now())) / 1000)} sn</span><button class="ai-redo" data-ai-cancel="${id}">İptal</button></div>`
       : `<div class="ai-start"><button class="act-btn ai-btn" data-ai-run="${id}">🤖 AI analiz: nerede koptum?</button>${aiKey() ? '' : '<span class="ai-hint">Önce Çalış → Info & Ideas rehberi → AI Koç ayarlarından anahtarını gir.</span>'}</div>` + (err ? `<div class="ai-err">${aiEsc(err)}</div>` : '');
     return;
   }
@@ -2224,7 +2247,7 @@ function aiFill(z) {
   const tdur = { dogru: ['Doğru', 'ok'], kismen: ['Kısmen', 'mid'], yanlis: ['Yanlış', 'bad'], yok: ['Tahmin yok', 'none'] }[String(a.tahmin_durum || '').trim()] || null;
   const trapKey = String(a.tuzak || '').trim(), trapOk = trapKey && RF_TRAPS[trapKey] && !(rf.t || []).includes(trapKey) && state.answers[id] !== (RAW_QUESTIONS.find(x => x.id === id) || {}).correct;
   z.innerHTML = `<div class="ai-card">
-    <div class="ai-h">🤖 AI analiz <span>${aiEsc(n.m || '')}</span><button class="ai-redo" data-ai-run="${id}" ${busy ? 'disabled' : ''}>${busy ? 'analiz ediliyor…' : 'yeniden analiz et'}</button></div>
+    <div class="ai-h">🤖 AI analiz <span>${aiEsc(n.m || '')}</span>${busy ? `<span class="ai-status">${aiEsc(AI.status[id] || '')}</span> <span class="ai-elapsed"></span><button class="ai-redo" data-ai-cancel="${id}">İptal</button>` : `<button class="ai-redo" data-ai-run="${id}">yeniden analiz et</button>`}</div>
     ${a.ozet ? `<p class="ai-sum">${aiEsc(a.ozet)}</p>` : ''}
     ${a.hedef_cumle ? `<div class="ai-sec"><div class="ai-l">Hedef cümle</div><blockquote class="ai-quote">${aiEsc(a.hedef_cumle)}</blockquote><button class="ai-link" data-ai-show="${id}">Metinde göster</button></div>` : ''}
     ${tdur || a.tahmin_yorum ? `<div class="ai-sec"><div class="ai-l">Tahminin ${tdur ? `<span class="ai-badge ${tdur[1]}">${tdur[0]}</span>` : ''}</div><p>${aiEsc(a.tahmin_yorum)}</p></div>` : ''}
@@ -2315,6 +2338,8 @@ YANLIŞLAR (etiketli olanlar önce, en fazla 60): ${JSON.stringify(sample)}`;
 }
 // ── events
 document.addEventListener('click', e => {
+  const cx = e.target.closest && e.target.closest('[data-ai-cancel]');
+  if (cx) { e.preventDefault(); e.stopPropagation(); const id = cx.dataset.aiCancel; AI.cancelled[id] = true; if (AI.ctrl[id]) try { AI.ctrl[id].abort('cancel'); } catch {} return; }
   const b = e.target.closest && e.target.closest('[data-ai-run],[data-ai-show],[data-ai-tag],[data-ai-save],[data-ai-del],[data-ai-report],[data-ai-sub]');
   if (!b) return;
   e.preventDefault(); e.stopPropagation();
