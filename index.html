@@ -1025,6 +1025,34 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .ii-guess{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg);font-size:14px}
 .ii-next{align-self:flex-start}
 .ii-mine{margin:0 0 10px;padding:6px 10px;border-radius:8px;background:var(--surface2);font-size:13.5px;color:var(--fg2)}
+
+.rf{margin-top:12px}
+.rf:empty{display:none}
+.rf-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.rf-q{font-size:12px;font-weight:700;color:var(--fg2);margin-right:4px;text-transform:uppercase;letter-spacing:.04em}
+.rf-chip{padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--fg2);font-size:12.5px;cursor:pointer}
+.rf-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.rf-chip.trap.on{background:var(--red);border-color:var(--red)}
+.rf-advice{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(220,38,38,.06);font-size:13px;line-height:1.5}
+.rf-advice p{margin:2px 0}
+.rf-note{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(234,179,8,.15);font-size:13px}
+.rf-stats{margin-top:26px}
+.rf-h{margin-bottom:4px}
+.rf-sub{color:var(--fg2);font-size:13.5px;margin:4px 0 12px}
+.rf-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.rf-of{font-size:15px;color:var(--fg3)}
+.rf-bars{display:flex;flex-direction:column;gap:12px}
+.rf-bar-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:14px;margin-bottom:4px}
+.rf-bar-top span{color:var(--fg2);font-size:13px}
+.rf-go{margin-left:auto;border:0;background:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer}
+.rf-tip{font-size:12.5px;color:var(--fg2);margin-top:4px}
+.set-bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:14px;padding:8px 10px 8px 16px;border-radius:999px;background:var(--surface);border:1px solid var(--border);box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:13.5px;white-space:nowrap}
+#view-study:has(.set-bar){padding-bottom:80px}
+.set-time{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--fg)}
+.set-time.over{color:var(--red)}
+.set-bar .act-btn{margin-left:4px}
+.set-sum{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:16px 18px;margin-bottom:18px}
+.set-sum h3{margin:0 0 10px}
 </style>
 
 <!-- TOPBAR -->
@@ -1491,7 +1519,7 @@ function rvWatch() {
 
 const study = { tab: 'review', i: 0, list: null, picked: null, sub: null, filter: 'open', shown: 20 };
 function studyQs(sub, filter) {
-  return RAW_QUESTIONS.filter(q => (HOW_HINTS[q.id] || {}).s === sub).filter(q => {
+  return RAW_QUESTIONS.filter(q => sub.startsWith('__trap:') ? (((state.reflect || {})[q.id] || {}).t || []).includes(sub.slice(7)) : (HOW_HINTS[q.id] || {}).s === sub).filter(q => {
     const a = state.answers[q.id];
     return filter === 'all' ? true : filter === 'wrong' ? a !== undefined && a !== q.correct : a === undefined;
   });
@@ -1503,6 +1531,7 @@ function renderStudy() {
   const due = rvDue();
   const rb = document.querySelector('[data-study-tab="review"] .st-n'); if (rb) rb.textContent = due.length;
   if (study.tab === 'review') return renderReview(host);
+  if (study.set) return renderSet(host);
   if (study.tab === 'ii') return renderII(host);
   if (study.sub) return renderSubPractice(host);
   renderSubList(host);
@@ -1593,8 +1622,8 @@ function renderSubPractice(host) {
   const qs = studyQs(study.sub, study.filter);
   const fl = { open: 'Çözülmemiş', wrong: 'Yanlışlar', all: 'Hepsi' }[study.filter];
   host.innerHTML = `<div class="st-back-row"><button class="act-btn" data-sub-back>← Türler</button>
-      <span class="st-title">${escHtml(SUB_LABEL[study.sub])} · ${fl} (${qs.length})</span></div>
-    <div class="how-box st-rulebox"><p>${(HOW_SUB[study.sub] || '').replace(/^<b>[^<]*<\/b>\s*/, '')}</p>${howExHtml(study.sub)}</div>
+      <span class="st-title">${escHtml(SUB_LABEL[study.sub] || rfTrapLabel(study.sub))} · ${fl} (${qs.length})</span></div>
+    <div class="how-box st-rulebox"><p>${(HOW_SUB[study.sub] || '').replace(/^<b>[^<]*<\/b>\s*/, '')}</p>${howExHtml(study.sub)}${rfAdviceHtml(study.sub)}</div>
     ${qs.length ? qs.slice(0, study.shown).map((q, i) => renderQuestion(q, i, i + 1)).join('') : '<div class="empty-state"><div class="es-text">Bu listede soru kalmadı.</div></div>'}
     ${qs.length > study.shown ? `<button class="act-btn st-more" data-sub-more>Daha fazla göster (${qs.length - study.shown})</button>` : ''}`;
 }
@@ -1602,7 +1631,7 @@ document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('[data-study-tab],[data-rv-pick],[data-rv-next],[data-rv-restart],[data-sub],[data-sub-back],[data-sub-more]');
   if (!t) return;
   e.preventDefault(); e.stopPropagation();
-  if (t.dataset.studyTab) { study.tab = t.dataset.studyTab; study.sub = null; if (study.tab === 'review') study.list = null; }
+  if (t.dataset.studyTab) { study.tab = t.dataset.studyTab; study.sub = null; study.set = null; if (study.tab === 'review') study.list = null; }
   else if (t.dataset.rvPick) return rvPick(t.dataset.rvPick);
   else if (t.hasAttribute('data-rv-next')) { study.i++; study.picked = null; }
   else if (t.hasAttribute('data-rv-restart')) study.list = null;
@@ -1678,6 +1707,8 @@ function renderII(host) {
       ${g.tip ? `<p class="ii-tip">${g.tip}</p>` : ''}
       ${g.traps ? `<div class="ii-traps"><b>Tuzaklar</b><ul>${g.traps.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
     </section>`).join('') +
+    `<div class="ii-card ii-setcard"><h3>⏱ Süreli set</h3><p class="ii-sub">Gerçek sınav temposu: soru başına yaklaşık 70 saniye. Çözmediğin sorulardan rastgele 10 tane gelir.</p>
+       <div class="st-btns"><button class="act-btn" data-set-start="ii">Information &amp; Ideas · 10 soru · 11:40</button><button class="act-btn" data-set-start="all">Karışık (tüm alanlar) · 10 soru · 11:40</button></div></div>` +
     `<button class="act-btn ii-go" data-study-tab="types">Info &amp; Ideas türlerinden çalışmaya başla →</button>`;
 }
 const iiFocusOn = () => { try { return localStorage.getItem('sat_ii_focus') === '1'; } catch { return false; } };
@@ -1732,6 +1763,142 @@ window.__iiStage = window.__iiStage || {};
     }
   }, true);
 })();
+
+// ══════════════ HATA ANALİZİ: prediction check + trap tags + timed sets ══════════════
+const RF_TRAPS = {
+  kelime: ['Kelime benzerliğine kandım', 'Şıkta metindeki kelimeler var diye seçtin. Kelimelere değil, ilişkiye bak: şık iddianın İKİ parçasını da gösteriyor mu?'],
+  genis: ['Çok geniş / aşırı iddia', '“all, always, never, must, prove” gibi kesin ifadeler metnin kanıtından fazlasını söyler. Metnin temkinliliğine uyan şıkkı seç.'],
+  dar: ['Çok dar / tek detay', 'Ana fikir sorularında tek bir detayı veren şık yanlış. Seçmeden önce “bu, metnin tamamını kapsıyor mu?” diye sor.'],
+  disari: ['Metinde olmayan bilgi', 'Gerçek hayatta doğru ama metinde dayanağı olmayan şık. Her şık için metinde parmağınla gösterebileceğin bir cümle ara.'],
+  grup: ['Yanlış grup / konu', 'Şık başka bir canlıdan, gruptan ya da dönemden söz ediyor. Hipotezin konusu kimse şık da onu anlatmalı.'],
+  yon: ['Destek ↔ zayıflatma karıştı', 'Soruyu okurken “support” mu “weaken” mı, işaretle. Şıkkı seçtikten sonra bir kez daha kontrol et.'],
+  veri: ['Tablo/grafiği yanlış okudum', 'Önce eksenleri ve birimleri oku. Şıktaki her sayıyı tabloda tek tek doğrula.'],
+  iliski: ['İlişkiyi yanlış kurdum', 'Boşluktan önceki ve sonraki cümlenin ilişkisini (zıtlık, sonuç, ekleme, örnek) şıklara bakmadan adlandır.'],
+  anlam: ['Kelimenin anlamını bilmiyordum', 'Kelimeyi Vocab’a ekle (3 tık) ve bilmecede tekrar et.'],
+  kural: ['Kuralı bilmiyordum', 'Çalış → Türler ve kurallar’da bu türün kuralını ve örneğini oku.'],
+  ozne: ['Özneyi / bağlantılı kelimeyi yanlış buldum', 'Fiile ya da zamire karar vermeden önce bağlı olduğu kelimeyi bul; aradaki “of …”, virgül arası ekleri atla.'],
+  sinir: ['Tam cümleyi göremedim', 'Boşluğun iki tarafını ayrı ayrı oku: her biri tek başına cümle olabilir mi?'],
+  hedef: ['Hedefi kaçırdım (notlar sorusu)', 'Notları okumadan önce hedefi yaz; şık hedefi tam yapmıyorsa doğru bilgi içerse de yanlış.'],
+  anlamadim: ['Metni anlamadım', 'Metni rollere ayır (arka plan / kanıt / iddia / dönüş). Odak modu bu alışkanlığı kazandırır.'],
+  dikkat: ['Dikkatsizlik / acele', 'Seçmeden önce soruyu bir kez daha oku. Çoğu dikkatsizlik hatası “NOT, EXCEPT, weaken” gibi kelimeleri kaçırmaktan gelir.']
+};
+const RF_BY_DOMAIN = {
+  'Information and Ideas': ['kelime', 'genis', 'dar', 'disari', 'grup', 'yon', 'veri', 'anlamadim', 'dikkat'],
+  'Craft and Structure': ['anlam', 'kelime', 'genis', 'dar', 'disari', 'iliski', 'anlamadim', 'dikkat'],
+  'Expression of Ideas': ['iliski', 'hedef', 'kelime', 'genis', 'anlamadim', 'dikkat'],
+  'Standard English Conventions': ['kural', 'ozne', 'sinir', 'dikkat']
+};
+const RF_PRED = [['y', 'Evet'], ['k', 'Kısmen'], ['n', 'Hayır'], ['-', 'Tahmin yapmadım']];
+function rfTrapLabel(sub) { const t = RF_TRAPS[String(sub || '').replace('__trap:', '')]; return t ? 'Tuzak: ' + t[0] : ''; }
+function rfAdviceHtml(sub) { const t = String(sub || '').startsWith('__trap:') && RF_TRAPS[sub.slice(7)]; return t ? `<p><b>Ne yapmalı:</b> ${t[1]}</p>` : ''; }
+function rfGet(id) { const r = state.reflect && state.reflect[id]; return r && typeof r === 'object' ? r : {}; }
+function rfSet(id, patch) {
+  if (!state.reflect || typeof state.reflect !== 'object') state.reflect = {};
+  const r = { ...rfGet(id), ...patch };
+  if (!r.t || !r.t.length) delete r.t;
+  if (!r.p && !r.t) delete state.reflect[id]; else state.reflect[id] = r;
+  saveState();
+}
+function rfFill(el) {
+  const id = el.dataset.rf, q = RAW_QUESTIONS.find(x => x.id === id), a = state.answers[id];
+  if (!q || a === undefined) { el.innerHTML = ''; el.dataset.sig = ''; return; }
+  const r = rfGet(id), wrong = a !== q.correct, sig = a + '|' + JSON.stringify(r);
+  if (el.dataset.sig === sig) return;
+  el.dataset.sig = sig;
+  const traps = (RF_BY_DOMAIN[q.domain] || RF_BY_DOMAIN['Information and Ideas']);
+  el.innerHTML = `<div class="rf-row"><span class="rf-q">Tahminin doğru muydu?</span>${RF_PRED.map(([k, l]) => `<button class="rf-chip${r.p === k ? ' on' : ''}" data-rf-p="${k}" data-rf-id="${id}">${l}</button>`).join('')}</div>` +
+    (wrong ? `<div class="rf-row"><span class="rf-q">Hangi tuzağa düştün?</span>${traps.map(k => `<button class="rf-chip trap${(r.t || []).includes(k) ? ' on' : ''}" data-rf-t="${k}" data-rf-id="${id}">${RF_TRAPS[k][0]}</button>`).join('')}</div>` +
+      ((r.t || []).length ? `<div class="rf-advice">${r.t.map(k => `<p><b>${RF_TRAPS[k][0]}:</b> ${RF_TRAPS[k][1]}</p>`).join('')}</div>` : '') : '') +
+    (r.p === 'y' && wrong ? '<div class="rf-note">Tahminin doğruymuş ama yanlış şıkkı seçmişsin: sorun okumada değil, elemede. Şıkları tahminine göre daha sıkı ele.</div>' : '');
+}
+(function () {
+  const fillAll = root => (root || document).querySelectorAll('.rf[data-rf]').forEach(rfFill);
+  window.__rfFillAll = fillAll;
+  let t = null; const sched = () => { if (t) return; t = setTimeout(() => { t = null; fillAll(); }, 60); };
+  const start = () => { new MutationObserver(sched).observe(document.body, { childList: true, subtree: true }); sched(); };
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+  document.addEventListener('click', e => {
+    if (e.target.closest && e.target.closest('.choice')) { setTimeout(sched, 120); return; }
+    const b = e.target.closest && e.target.closest('[data-rf-p],[data-rf-t],[data-rf-go],[data-set-start],[data-set-end],[data-set-close]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (b.dataset.rfP) { const id = b.dataset.rfId; rfSet(id, { p: rfGet(id).p === b.dataset.rfP ? undefined : b.dataset.rfP }); fillAll(); }
+    else if (b.dataset.rfT) { const id = b.dataset.rfId, cur = new Set(rfGet(id).t || []); cur.has(b.dataset.rfT) ? cur.delete(b.dataset.rfT) : cur.add(b.dataset.rfT); rfSet(id, { t: [...cur] }); fillAll(); }
+    else if (b.dataset.rfGo) { switchView('study'); study.set = null; study.tab = 'types'; study.sub = '__trap:' + b.dataset.rfGo; study.filter = 'all'; study.shown = 20; renderStudy(); window.scrollTo({ top: 0 }); }
+    else if (b.dataset.setStart) { setStart(b.dataset.setStart); }
+    else if (b.dataset.setEnd !== undefined) { if (study.set) { study.set.done = true; study.set.end = study.set.end || Date.now(); } renderStudy(); }
+    else if (b.dataset.setClose !== undefined) { study.set = null; study.tab = 'ii'; renderStudy(); }
+  }, true);
+})();
+
+// ── İstatistik: personal error analysis
+function renderRfStats() {
+  const anchor = document.getElementById('skillProgress'); if (!anchor) return;
+  let box = document.getElementById('rfStats');
+  if (!box) { box = document.createElement('div'); box.id = 'rfStats'; box.className = 'rf-stats'; anchor.after(box); }
+  const R = state.reflect || {};
+  const wrongIds = RAW_QUESTIONS.filter(q => state.answers[q.id] !== undefined && state.answers[q.id] !== q.correct).map(q => q.id);
+  const tagged = wrongIds.filter(id => (rfGet(id).t || []).length).length;
+  const pc = { y: 0, k: 0, n: 0, '-': 0 }; let predOkWrong = 0;
+  for (const id in R) { const r = R[id]; if (r && r.p && pc[r.p] !== undefined) { pc[r.p]++; const q = RAW_QUESTIONS.find(x => x.id === id); if (r.p === 'y' && q && state.answers[id] !== undefined && state.answers[id] !== q.correct) predOkWrong++; } }
+  const tc = {}; for (const id of wrongIds) for (const k of (rfGet(id).t || [])) tc[k] = (tc[k] || 0) + 1;
+  const rows = Object.entries(tc).sort((a, b) => b[1] - a[1]); const max = rows.length ? rows[0][1] : 1;
+  const predTotal = pc.y + pc.k + pc.n;
+  box.innerHTML = `<div class="section-h rf-h">Hata analizi</div>
+    <p class="rf-sub">Cevapladıktan sonra açıklamanın altındaki “Tahminin doğru muydu?” ve “Hangi tuzağa düştün?” sorularını işaretledikçe burası dolar.</p>
+    <div class="rf-cards">
+      <div class="stat-card"><div class="stat-card-num">${tagged}<span class="rf-of">/${wrongIds.length}</span></div><div class="stat-card-label">Etiketlenen yanlış</div></div>
+      <div class="stat-card"><div class="stat-card-num">${predTotal ? Math.round(pc.y / predTotal * 100) + '%' : '—'}</div><div class="stat-card-label">Tahmin isabeti</div></div>
+      <div class="stat-card"><div class="stat-card-num" style="color:var(--red)">${predOkWrong}</div><div class="stat-card-label">Tahmin doğru, şık yanlış</div></div>
+    </div>
+    ${predOkWrong >= 3 ? '<div class="rf-note">Birkaç soruda tahminin doğruyken yanlış şıkkı seçmişsin. Asıl sorun eleme: şıkları tahminine göre kelime kelime karşılaştır.</div>' : ''}
+    ${rows.length ? `<div class="rf-bars">${rows.map(([k, n]) => `<div class="rf-bar-row">
+        <div class="rf-bar-top"><b>${RF_TRAPS[k][0]}</b><span>${n} soru</span><button class="rf-go" data-rf-go="${k}">Bu soruları çalış →</button></div>
+        <div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${Math.round(n / max * 100)}%;background:var(--red)"></div></div>
+        <div class="rf-tip">${RF_TRAPS[k][1]}</div></div>`).join('')}</div>` : '<p class="rf-sub">Henüz etiketlenmiş yanlış yok.</p>'}`;
+}
+setTimeout(() => {
+  if (typeof renderStats === 'function') { const o = renderStats; renderStats = function () { o.apply(this, arguments); try { renderRfStats(); } catch {} }; }
+}, 0);
+
+// ── timed sets
+let setTick = null;
+function setStart(kind) {
+  const pool = RAW_QUESTIONS.filter(q => (kind === 'all' || q.domain === 'Information and Ideas') && state.answers[q.id] === undefined);
+  const pick = pool.sort(() => Math.random() - 0.5).slice(0, 10);
+  if (!pick.length) { showToast('Bu alanda çözülmemiş soru kalmadı.'); return; }
+  study.set = { ids: pick.map(q => q.id), start: Date.now(), limit: pick.length * 70000, kind, done: false, end: null };
+  study.tab = 'ii'; study.sub = null;
+  switchView('study'); renderStudy(); window.scrollTo({ top: 0 });
+}
+const fmtT = ms => { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function renderSet(host) {
+  const S = study.set, n = S.ids.length;
+  const answered = S.ids.filter(id => state.answers[id] !== undefined).length;
+  if (!S.done && answered === n) { S.done = true; S.end = Date.now(); }
+  if (S.done) {
+    clearInterval(setTick); setTick = null;
+    const right = S.ids.filter(id => { const q = RAW_QUESTIONS.find(x => x.id === id); return state.answers[id] === q.correct; }).length;
+    const used = (S.end || Date.now()) - S.start;
+    host.innerHTML = `<div class="set-sum"><h3>Set bitti</h3>
+      <div class="rf-cards"><div class="stat-card"><div class="stat-card-num">${right}/${n}</div><div class="stat-card-label">Doğru</div></div>
+      <div class="stat-card"><div class="stat-card-num">${fmtT(used)}</div><div class="stat-card-label">Süre (hedef ${fmtT(S.limit)})</div></div>
+      <div class="stat-card"><div class="stat-card-num">${answered ? Math.round(used / 1000 / answered) : 0} sn</div><div class="stat-card-label">Soru başına</div></div></div>
+      <p class="rf-sub">${used > S.limit ? 'Süreyi aştın. Arka plan cümlelerinde daha az zaman harcamayı dene: önce soru, sonra hedef cümle.' : 'Süre içinde bitirdin.'} Aşağıdaki yanlışların altında “Hangi tuzağa düştün?” kısmını işaretlemeyi unutma.</p>
+      <button class="act-btn" data-set-close>Rehbere dön</button></div>` +
+      S.ids.map((id, i) => renderQuestion(RAW_QUESTIONS.find(x => x.id === id), i, i + 1)).join('');
+    return;
+  }
+  host.innerHTML = `<div class="set-bar"><span class="set-time" id="setTime">${fmtT(S.limit - (Date.now() - S.start))}</span><span>${answered}/${n} cevaplandı</span><button class="act-btn" data-set-end>Seti bitir</button></div>` +
+    S.ids.map((id, i) => renderQuestion(RAW_QUESTIONS.find(x => x.id === id), i, i + 1)).join('');
+  if (!setTick) setTick = setInterval(() => {
+    const st = study.set; if (!st || st.done) { clearInterval(setTick); setTick = null; return; }
+    const left = st.limit - (Date.now() - st.start), el = document.getElementById('setTime');
+    const a = st.ids.filter(id => state.answers[id] !== undefined).length;
+    if (a === st.ids.length) { renderStudy(); return; }
+    if (el) { el.textContent = left >= 0 ? fmtT(left) : '+' + fmtT(-left); el.classList.toggle('over', left < 0); }
+  }, 500);
+}
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
@@ -1817,7 +1984,7 @@ function ratBodyHtml(q, shortRat, fullRat, hasLongRat, moreLabel) {
     (ps.length > 1 ? `<div class="rat-sec"><div class="rat-lbl">Diğer şıklar neden yanlış?</div>${ps.slice(1).map(p => `<p>${fmt(p)}</p>`).join('')}</div>` : '');
   return `<div class="rat-simple">${paras}</div>
       <button class="rat-orig-btn" data-action="rat-orig" data-qid="${q.id}" aria-expanded="false">Orijinal açıklamayı göster</button>
-      <div class="rat-orig" id="rat-orig-${q.id}" hidden>${orig}</div>`;
+      <div class="rat-orig" id="rat-orig-${q.id}" hidden>${orig}</div><div class="rf" data-rf="${q.id}"></div>`;
 }
 
 
@@ -1896,7 +2063,7 @@ function cardEl(prefix, qid) {
   return visible || document.getElementById(prefix + qid);
 }
 function normalizeState() {
-  ['answers', 'flags', 'notes', 'revealed', 'timers', 'highlights', 'sessionAnswers', 'lastSeenByDomain', 'domainPages', 'eliminated', 'focusIdx', 'ratHidden', 'frontier', 'review'].forEach(k => {
+  ['answers', 'flags', 'notes', 'revealed', 'timers', 'highlights', 'sessionAnswers', 'lastSeenByDomain', 'domainPages', 'eliminated', 'focusIdx', 'ratHidden', 'frontier', 'review', 'reflect'].forEach(k => {
     if (!state[k] || typeof state[k] !== 'object' || Array.isArray(state[k])) state[k] = {};
   });
   // a stored highlight must never contain buttons/inputs (broken selection)
@@ -4549,9 +4716,9 @@ const SAT_WEB = {
 (function initSync(){
   const SB = 'sat_bank_v2', INK = 'sat_bank_ink_v1', VC = 'sat_bank_vocab_v1', NB = 'sat_bank_notebook_v1';
   const KV = ['sat_custom_set_v1', 'sat_custom_set_progress_v1', 'sat_saved_sets'];
-  const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4 };
+  const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4 };
   // progress belongs to the page owner (the student): the teacher sees it but never changes it
-  const OWNER_ONLY = new Set(['review', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'sat_custom_set_progress_v1', 'sat_saved_sets']);
+  const OWNER_ONLY = new Set(['review', 'reflect', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'sat_custom_set_progress_v1', 'sat_saved_sets']);
   const BACKUP_KEYS = [SB, INK, VC, NB, ...KV, 'sat_bank_vocab_seed', 'sat_bank_vocab_unsuggest_v1'];
   const BASE_KEY = 'sat_sync_base_v1', IMPORT_FLAG = 'sat_sync_import_pending';
   const groupOf = k => k === SB ? 'st' : k === INK ? 'ink' : k === VC ? 'vc' : k === NB ? 'nb' : KV.includes(k) ? 'kv' : null;
