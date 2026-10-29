@@ -1053,6 +1053,14 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .set-bar .act-btn{margin-left:4px}
 .set-sum{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:16px 18px;margin-bottom:18px}
 .set-sum h3{margin:0 0 10px}
+
+.pg-box{margin:0 0 12px;padding:10px 12px;border:1.5px dashed var(--accent);border-radius:10px;background:var(--accent-dim)}
+.pg-lbl{display:block;font-size:12.5px;font-weight:700;color:var(--fg);margin-bottom:6px}
+.pg-lbl span{font-weight:500;color:var(--fg2)}
+.pg-ta{width:100%;box-sizing:border-box;resize:none;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg);font:inherit;font-size:14.5px;line-height:1.5;min-height:38px}
+.pg-ta:focus{outline:2px solid var(--accent);outline-offset:0}
+.pg-show{margin-top:4px;padding:8px 10px;border-radius:8px;background:var(--surface);border:1px dashed var(--accent);font-size:14px;color:var(--fg)}
+.pg-show .rf-q{margin-right:6px}
 </style>
 
 <!-- TOPBAR -->
@@ -1736,8 +1744,7 @@ window.__iiStage = window.__iiStage || {};
       bar.dataset.s = want;
       bar.innerHTML = stage === 0
         ? `<div class="ii-step"><b>1.</b> Soruyu oku. Ne arıyorsun: ana fikir, detay, boşluk, destek/zayıflatma, tablo?</div><button class="act-btn ii-next" data-ii-next="${id}">Soruyu okudum → metni aç</button>`
-        : `<div class="ii-step"><b>2.</b> Metinde hedef cümleyi bul ve şıklara bakmadan tahminini yaz. Destek sorusunda X ↔ Y yaz.</div>
-           <input class="ii-guess" placeholder="Tahminim (ör. LINE ↔ zeka)" data-ii-guess="${id}" value="${(window.__iiGuess && window.__iiGuess[id]) || ''}">
+        : `<div class="ii-step"><b>2.</b> Metinde hedef cümleyi bul ve şıklara bakmadan tahminini aşağıdaki <b>Tahminim</b> kutusuna yaz. Destek sorusunda X ↔ Y yaz.</div>
            <button class="act-btn ii-next" data-ii-next="${id}">Şıkları göster</button>`;
     });
   }
@@ -1796,7 +1803,8 @@ function rfSet(id, patch) {
   if (!state.reflect || typeof state.reflect !== 'object') state.reflect = {};
   const r = { ...rfGet(id), ...patch };
   if (!r.t || !r.t.length) delete r.t;
-  if (!r.p && !r.t) delete state.reflect[id]; else state.reflect[id] = r;
+  if (!r.g) delete r.g;
+  if (!r.p && !r.t && !r.g) delete state.reflect[id]; else state.reflect[id] = r;
   saveState();
 }
 function rfFill(el) {
@@ -1806,7 +1814,7 @@ function rfFill(el) {
   if (el.dataset.sig === sig) return;
   el.dataset.sig = sig;
   const traps = (RF_BY_DOMAIN[q.domain] || RF_BY_DOMAIN['Information and Ideas']);
-  el.innerHTML = `<div class="rf-row"><span class="rf-q">Tahminin doğru muydu?</span>${RF_PRED.map(([k, l]) => `<button class="rf-chip${r.p === k ? ' on' : ''}" data-rf-p="${k}" data-rf-id="${id}">${l}</button>`).join('')}</div>` +
+  el.innerHTML = (r.g ? `<div class="pg-show"><span class="rf-q">Tahminin</span> ${escHtml(r.g)}</div>` : '') + `<div class="rf-row"><span class="rf-q">Tahminin doğru muydu?</span>${RF_PRED.map(([k, l]) => `<button class="rf-chip${r.p === k ? ' on' : ''}" data-rf-p="${k}" data-rf-id="${id}">${l}</button>`).join('')}</div>` +
     (wrong ? `<div class="rf-row"><span class="rf-q">Hangi tuzağa düştün?</span>${traps.map(k => `<button class="rf-chip trap${(r.t || []).includes(k) ? ' on' : ''}" data-rf-t="${k}" data-rf-id="${id}">${RF_TRAPS[k][0]}</button>`).join('')}</div>` +
       ((r.t || []).length ? `<div class="rf-advice">${r.t.map(k => `<p><b>${RF_TRAPS[k][0]}:</b> ${RF_TRAPS[k][1]}</p>`).join('')}</div>` : '') : '') +
     (r.p === 'y' && wrong ? '<div class="rf-note">Tahminin doğruymuş ama yanlış şıkkı seçmişsin: sorun okumada değil, elemede. Şıkları tahminine göre daha sıkı ele.</div>' : '');
@@ -1899,6 +1907,49 @@ function renderSet(host) {
     if (el) { el.textContent = left >= 0 ? fmtT(left) : '+' + fmtT(-left); el.classList.toggle('over', left < 0); }
   }, 500);
 }
+
+// ══════════════ TAHMİNİM: write your own prediction before looking at the choices ══════════════
+(function () {
+  const timers = {};
+  function boxes() {
+    document.querySelectorAll('.q-card[id^="qcard-"]').forEach(card => {
+      const id = card.id.slice(6);
+      const answered = state.answers[id] !== undefined || !!state.revealed[id];
+      let box = card.querySelector('.pg-box');
+      if (answered) { if (box) box.remove(); return; }
+      const ch = card.querySelector('.choices'); if (!ch) return;
+      if (!box) {
+        box = document.createElement('div'); box.className = 'pg-box';
+        box.innerHTML = `<label class="pg-lbl" for="pg-${id}">✍️ Tahminim <span>şıklara bakmadan, kendi cümlenle</span></label>
+          <textarea id="pg-${id}" class="pg-ta" rows="1" data-pg="${id}" placeholder="Ör. LINE ↔ zeka  /  boşluk: iki sayım aynı şeyi göstermiyor  /  ana fikir: ..."></textarea>`;
+        ch.before(box);
+        const ta = box.querySelector('textarea');
+        ta.value = (rfGet(id).g) || '';
+        fit(ta);
+      }
+    });
+  }
+  const fit = ta => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
+  window.__pgBoxes = boxes;
+  let t = null; const sched = () => { if (t) return; t = setTimeout(() => { t = null; boxes(); }, 50); };
+  const start = () => { new MutationObserver(sched).observe(document.body, { childList: true, subtree: true }); sched(); };
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+  document.addEventListener('input', e => {
+    const ta = e.target.closest && e.target.closest('[data-pg]'); if (!ta) return;
+    fit(ta);
+    const id = ta.dataset.pg;
+    clearTimeout(timers[id]);
+    timers[id] = setTimeout(() => { rfSet(id, { g: ta.value.trim() || undefined }); }, 500);
+  }, true);
+  // save immediately when a choice is picked, so the guess is never lost
+  document.addEventListener('mousedown', e => {
+    const c = e.target.closest && e.target.closest('.choice[data-qid]'); if (!c) return;
+    const ta = document.querySelector('[data-pg="' + c.dataset.qid + '"]');
+    if (ta) { clearTimeout(timers[c.dataset.qid]); const v = ta.value.trim(); if ((rfGet(c.dataset.qid).g || '') !== v) rfSet(c.dataset.qid, { g: v || undefined }); }
+  }, true);
+  // a guess must not trigger the app's keyboard shortcuts
+  document.addEventListener('keydown', e => { if (e.target.closest && e.target.closest('[data-pg]')) e.stopPropagation(); }, true);
+})();
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
