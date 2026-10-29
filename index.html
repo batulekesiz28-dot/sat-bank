@@ -1161,6 +1161,10 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .tour-cap.end .tour-nav{justify-content:center}
 .tour-end-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#a78bfa;font-weight:700;margin-bottom:8px}
 .tour-end-t{font-size:21px;line-height:1.5}
+
+.q-card.notes-locked .notes-list{filter:blur(6px);user-select:none;pointer-events:none}
+.notes-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1.5px dashed var(--accent);border-radius:10px;background:var(--accent-dim);font-size:13.5px;color:var(--fg)}
+.notes-bar span{flex:1;min-width:200px}
 </style>
 
 <!-- TOPBAR -->
@@ -2014,6 +2018,18 @@ function renderSet(host) {
       const answered = state.answers[id] !== undefined || !!state.revealed[id];
       const qq = RAW_QUESTIONS.find(x => x.id === id);
       let box = card.querySelector('.pg-box');
+      const isNotes = qq && qq.skill === 'Rhetorical Synthesis' && pgOn(qq.domain);
+      if (isNotes) {
+        if (box) box.remove();
+        card.classList.remove('pg-locked');
+        const openN = answered || !!window.__pgOpen[id];
+        card.classList.toggle('notes-locked', !openN);
+        let bar = card.querySelector('.notes-bar');
+        if (openN) { if (bar) bar.remove(); }
+        else if (!bar) { const ch = card.querySelector('.choices'); if (ch) ch.insertAdjacentHTML('beforebegin', `<div class="notes-bar"><span>📝 Notlar gizli: önce sorudaki <b>hedefi</b> oku, şıklardan hedefi tam yapanı seç.</span><button type="button" class="act-btn" data-notes-open="${id}">Notları göster</button></div>`); }
+        return;
+      }
+      card.classList.remove('notes-locked');
       if (answered || !qq || !pgOn(qq.domain)) { card.classList.remove('pg-locked'); if (box) box.remove(); return; }
       const open = !!window.__pgOpen[id];
       card.classList.toggle('pg-locked', !open);
@@ -2099,6 +2115,14 @@ function pgBoxInner(id, val) {
     try { if (q && (q.domain in PG_DOMAINS)) { const btn = pgToggleHtml(q.domain); h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', btn + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', btn + '<span class="q-status-icon">'); } } catch {}
     try {
       if (!q || !pgOn(q.domain) || state.answers[q.id] !== undefined || state.revealed[q.id]) return h;
+      if (q.skill === 'Rhetorical Synthesis') {
+        const id = q.id;
+        if (window.__pgOpen && window.__pgOpen[id]) return h;
+        h = h.replace(/class="q-card/, 'class="q-card notes-locked ');
+        const ch = '<div class="choices" id="choices-' + id + '"', at = h.indexOf(ch);
+        if (at >= 0) h = h.slice(0, at) + `<div class="notes-bar"><span>📝 Notlar gizli: önce sorudaki <b>hedefi</b> oku, şıklardan hedefi tam yapanı seç.</span><button type="button" class="act-btn" data-notes-open="${id}">Notları göster</button></div>` + h.slice(at);
+        return h;
+      }
       const id = q.id, open = !!(window.__pgOpen && window.__pgOpen[id]);
       const cls = [];
       if (!open) cls.push('pg-locked');
@@ -2833,6 +2857,13 @@ document.addEventListener('click', e => {
     const T = TOUR.cur; if (T) tourSay(T.done ? T.ders : T.steps[T.i].metin);
     if (!('speechSynthesis' in window)) showToast('Bu tarayıcı sesli okumayı desteklemiyor.');
   }
+}, true);
+
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-notes-open]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  window.__pgOpen = window.__pgOpen || {}; window.__pgOpen[b.dataset.notesOpen] = true;
+  window.__pgBoxes && window.__pgBoxes();
 }, true);
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
