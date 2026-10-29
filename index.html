@@ -1167,6 +1167,54 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .notes-bar span{flex:1;min-width:200px}
 .q-tour-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-left:6px}
 .q-tour-btn:hover{filter:brightness(1.05)}
+
+.bb-card{margin:0 0 22px;padding:18px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.bb-head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.bb-title{font-size:17px;font-weight:700;color:var(--fg)}
+.bb-sub{font-size:12.5px;color:var(--fg3);margin-top:2px}
+.bb-acts{display:flex;flex-wrap:wrap;gap:8px}
+.bb-up{cursor:pointer}
+.bb-l{font-size:12px;color:var(--fg2);margin-bottom:6px}
+.bb-nums{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.bb-num{flex:1 1 110px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;gap:2px;position:relative}
+.bb-num b{font-size:24px;color:var(--fg);line-height:1.1}
+.bb-num span{font-size:11.5px;color:var(--fg3)}
+.bb-num.hl{border-color:var(--accent);background:var(--accent-dim)}
+.bb-num .bb-diff{position:absolute;top:8px;right:10px}
+.bb-diff{font-size:11.5px;font-weight:700}
+.bb-diff.up{color:var(--green)}.bb-diff.down{color:var(--red)}
+.bb-drow{display:grid;grid-template-columns:minmax(150px,1.3fr) auto 54px 1fr auto;align-items:center;gap:10px;padding:6px 8px;border-radius:8px}
+.bb-drow.weak{background:var(--red-dim)}
+.bb-dn{font-size:13.5px;color:var(--fg);font-weight:600}
+.bb-dn small{display:block;font-weight:400;font-size:11px;color:var(--fg3)}
+.bb-bar{display:inline-flex;gap:3px}
+.bb-seg{display:inline-block;width:20px;height:10px;border:1.5px solid var(--fg2);border-radius:2px;background:transparent;padding:0}
+.bb-seg.on{background:var(--fg);border-color:var(--fg)}
+button.bb-seg{cursor:pointer;width:26px;height:14px}
+.bb-band{font-size:13px;font-weight:700;color:var(--fg)}
+.bb-acc{font-size:12px;color:var(--fg3)}
+.bb-link{border:0;background:none;color:var(--accent);font-size:12.5px;cursor:pointer;padding:2px 4px}
+.bb-link.red{color:var(--red);font-weight:700}
+.bb-tip{margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--yellow-dim);font-size:13px;color:var(--fg)}
+.bb-trend{margin-top:16px}
+.bb-trend svg{width:100%;max-width:560px;height:auto;display:block}
+.bb-tv{font-size:11px;font-weight:700;fill:var(--fg)}
+.bb-tx{font-size:10px;fill:var(--fg3)}
+.bb-tab{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+.bb-tab th{text-align:left;font-weight:600;color:var(--fg3);font-size:11.5px;padding:6px;border-bottom:1px solid var(--border)}
+.bb-tab td{padding:7px 6px;border-bottom:1px solid var(--border);color:var(--fg)}
+.bb-x{white-space:nowrap;text-align:right}
+.bb-form{margin:0 0 14px;padding:12px;border:1.5px dashed var(--accent);border-radius:10px;background:var(--accent-dim)}
+.bb-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:6px}
+.bb-row label{font-size:12.5px;color:var(--fg2);display:flex;align-items:center;gap:6px}
+.bb-in{padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--fg);font:inherit;font-size:13.5px}
+.bb-form .bb-drow{grid-template-columns:minmax(150px,1fr) auto}
+@media (max-width:640px){
+  .bb-drow{grid-template-columns:1fr auto auto;row-gap:2px}
+  .bb-drow .bb-acc{grid-column:1/3}
+  .bb-tab th:nth-child(n+6),.bb-tab td:nth-child(n+6):not(.bb-x){display:none}
+  .bb-card{padding:14px}
+}
 </style>
 
 <!-- TOPBAR -->
@@ -1413,6 +1461,7 @@ b.rat-l{font-weight:700;color:var(--fg)}
       <button class="export-btn" id="exportStats" style="margin-left:auto">İlerlemeyi indir</button>
     </div>
     <div class="stats-grid" id="statsGrid"></div>
+    <div id="bbHost"></div>
     <div class="progress-section">
       <div class="progress-title">Domain Bazlı Doğruluk</div>
       <div id="domainProgress"></div>
@@ -2867,6 +2916,133 @@ document.addEventListener('click', e => {
   window.__pgOpen = window.__pgOpen || {}; window.__pgOpen[b.dataset.notesOpen] = true;
   window.__pgBoxes && window.__pgBoxes();
 }, true);
+
+// ══════════════ BLUEBOOK practice test scores ══════════════
+const BB_DOM = [['ii', 'Information and Ideas', 'info', '12–14 soru'], ['ca', 'Craft and Structure', 'craft', '13–15 soru'], ['ex', 'Expression of Ideas', 'ideas', '8–12 soru'], ['se', 'Standard English Conventions', 'sec', '11–15 soru']];
+const BB_SEED = { 'bb_2026-10-25_sat-practice-7': { n: 'SAT Practice 7', d: '2026-10-25', t: 1330, rw: 580, m: 750, rc: 34, rq: 54, mc: 40, mq: 44, b: { ii: 5, ca: 4, ex: 5, se: 6 } } };
+const BB = { form: null, busy: false, err: '', del: '' };
+function bbSeed() {
+  try {
+    if (localStorage.getItem('sat_bb_seed_v1')) return;
+    if (!state.bluebook || typeof state.bluebook !== 'object') state.bluebook = {};
+    Object.keys(BB_SEED).forEach(k => { if (!state.bluebook[k]) state.bluebook[k] = BB_SEED[k]; });
+    localStorage.setItem('sat_bb_seed_v1', '1'); saveState();
+  } catch {}
+}
+setTimeout(bbSeed, 0);
+const bbList = () => Object.entries(state.bluebook || {}).filter(([, r]) => r && typeof r === 'object' && r.d).map(([id, r]) => ({ id, ...r })).sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0);
+const bbDate = d => { const p = String(d || '').split('-'); return p.length === 3 ? `${+p[2]} ${['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'][+p[1] - 1] || ''} ${p[0]}` : escHtml(d || ''); };
+const bbSlug = s => String(s || 'test').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'test';
+function bbBar(n, edit, key) {
+  let h = '';
+  for (let i = 1; i <= 7; i++) h += edit ? `<button type="button" class="bb-seg${i <= n ? ' on' : ''}" data-bb-band="${key}" data-v="${i}" aria-label="${i}/7"></button>` : `<span class="bb-seg${i <= n ? ' on' : ''}"></span>`;
+  return `<span class="bb-bar">${h}</span>`;
+}
+function bbBankAcc(domain) {
+  const qs = RAW_QUESTIONS.filter(q => q.domain === domain && state.answers[q.id] !== undefined);
+  if (!qs.length) return null;
+  return Math.round(qs.filter(q => state.answers[q.id] === q.correct).length / qs.length * 100);
+}
+function bbTrend(list) {
+  if (list.length < 2) return '';
+  const W = 520, H = 120, P = 26, vals = list.map(r => +r.rw || 0), lo = Math.max(200, Math.min(...vals) - 40), hi = Math.min(800, Math.max(...vals) + 40);
+  const x = i => P + i * (W - 2 * P) / (list.length - 1), y = v => H - P + 6 - (v - lo) / Math.max(1, hi - lo) * (H - 2 * P);
+  const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<div class="bb-trend"><div class="bb-l">Reading & Writing puanı, testten teste</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="R&W puan grafiği">
+    <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${vals.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="var(--accent)"/><text x="${x(i)}" y="${y(v) - 9}" text-anchor="middle" class="bb-tv">${v}</text><text x="${x(i)}" y="${H - 4}" text-anchor="middle" class="bb-tx">${escHtml(String(list[i].n || '').replace(/^SAT\s*/i, ''))}</text>`).join('')}
+  </svg></div>`;
+}
+function bbFormHtml() {
+  const f = BB.form;
+  const inp = (k, ph, w) => `<input class="bb-in" data-bb-f="${k}" value="${escHtml(f[k] == null ? '' : String(f[k]))}" placeholder="${ph}" style="width:${w || 70}px" inputmode="${k === 'n' || k === 'd' ? 'text' : 'numeric'}">`;
+  return `<div class="bb-form">
+    <div class="bb-row"><label>Test adı ${inp('n', 'SAT Practice 8', 150)}</label><label>Tarih <input class="bb-in" type="date" data-bb-f="d" value="${escHtml(f.d || '')}"></label></div>
+    <div class="bb-row"><label>R&W puanı ${inp('rw', '580')}</label><label>Math puanı ${inp('m', '750')}</label><label>R&W doğru ${inp('rc', '34', 50)} / ${inp('rq', '54', 50)}</label><label>Math doğru ${inp('mc', '40', 50)} / ${inp('mq', '44', 50)}</label></div>
+    <div class="bb-l" style="margin-top:8px">Knowledge and Skills: dolu kutu sayısına tıkla</div>
+    ${BB_DOM.map(([k, name]) => `<div class="bb-drow"><span class="bb-dn">${name}</span>${bbBar((f.b || {})[k] || 0, true, k)}</div>`).join('')}
+    <div class="bb-row" style="margin-top:10px"><button type="button" class="act-btn" data-bb-save>Kaydet</button><button type="button" class="bb-link" data-bb-cancel>Vazgeç</button></div>
+  </div>`;
+}
+function bbRender() {
+  const host = document.getElementById('bbHost'); if (!host) return;
+  const list = bbList(), last = list[list.length - 1], prev = list[list.length - 2];
+  let h = `<div class="bb-card"><div class="bb-head"><div><div class="bb-title">📘 Bluebook pratik testleri</div><div class="bb-sub">College Board skor raporun. Puanlar sadece senin; öğretmen görür ama değiştiremez.</div></div>
+    <div class="bb-acts"><label class="act-btn bb-up">📄 Skor raporu yükle (AI okur)<input type="file" accept="application/pdf,image/*" data-bb-file hidden></label><button type="button" class="act-btn" data-bb-new>✏️ Elle ekle</button></div></div>`;
+  if (BB.busy) h += '<div class="ai-card ai-loading"><span class="ai-spin"></span> AI skor raporunu okuyor… (5–30 sn)</div>';
+  if (BB.err) h += `<div class="ai-err">${escHtml(BB.err)}</div>`;
+  if (BB.form) h += bbFormHtml();
+  if (!last) h += '<p class="bb-sub">Henüz test yok. My Practice’ten skor raporunu indirip buraya yükle.</p>';
+  else {
+    const diff = (a, b) => prev && b != null ? `<span class="bb-diff ${a - b >= 0 ? 'up' : 'down'}">${a - b >= 0 ? '+' : ''}${a - b}</span>` : '';
+    const weak = BB_DOM.filter(([k]) => last.b && last.b[k]).sort((a, b) => last.b[a[0]] - last.b[b[0]])[0];
+    h += `<div class="bb-last"><div class="bb-l">Son test: <b>${escHtml(last.n)}</b> · ${bbDate(last.d)}</div>
+      <div class="bb-nums">
+        <div class="bb-num"><b>${last.t || (+last.rw + +last.m)}</b><span>Toplam</span>${diff(last.t || (+last.rw + +last.m), prev && (prev.t || (+prev.rw + +prev.m)))}</div>
+        <div class="bb-num hl"><b>${last.rw}</b><span>Reading & Writing</span>${diff(+last.rw, prev && +prev.rw)}</div>
+        <div class="bb-num"><b>${last.m}</b><span>Math</span>${diff(+last.m, prev && +prev.m)}</div>
+        ${last.rq ? `<div class="bb-num"><b>${last.rc}/${last.rq}</b><span>R&W doğru · ${last.rq - last.rc} yanlış</span></div>` : ''}
+      </div>
+      <div class="bb-l" style="margin-top:12px">R&W bölümleri (Bluebook) ve bankadaki doğruluğun</div>
+      ${BB_DOM.map(([k, name, view, cnt]) => { const n = (last.b || {})[k] || 0, acc = bbBankAcc(name), pv = prev && prev.b && prev.b[k]; return `<div class="bb-drow${weak && weak[0] === k ? ' weak' : ''}"><span class="bb-dn">${name}<small>${cnt}</small></span>${bbBar(n)}<span class="bb-band">${n}/7${pv && pv !== n ? ` <span class="bb-diff ${n > pv ? 'up' : 'down'}">${n > pv ? '+' : ''}${n - pv}</span>` : ''}</span><span class="bb-acc">${acc == null ? 'bankada henüz yok' : 'bankada %' + acc}</span><button type="button" class="bb-link" data-bb-go="${view}">çalış →</button></div>`; }).join('')}
+      ${weak ? `<div class="bb-tip">En zayıf bölümün <b>${weak[1]}</b> (${last.b[weak[0]]}/7). Önce oradan çalış: Yanlışlarım’daki bu bölüm sorularını tekrar çöz, sonra yeni sorulara geç.</div>` : ''}
+    </div>`;
+    h += bbTrend(list);
+    h += `<table class="bb-tab"><thead><tr><th>Test</th><th>Tarih</th><th>Toplam</th><th>R&W</th><th>Math</th>${BB_DOM.map(([k, n]) => `<th title="${n}">${{ ii: 'I&I', ca: 'C&S', ex: 'EoI', se: 'SEC' }[k]}</th>`).join('')}<th></th></tr></thead><tbody>
+      ${list.slice().reverse().map(r => `<tr><td>${escHtml(r.n)}</td><td>${bbDate(r.d)}</td><td>${r.t || (+r.rw + +r.m)}</td><td><b>${r.rw}</b></td><td>${r.m}</td>${BB_DOM.map(([k]) => `<td>${(r.b || {})[k] || '–'}</td>`).join('')}<td class="bb-x">${BB.del === r.id ? `<button class="bb-link red" data-bb-del2="${r.id}">sil?</button>` : `<button class="bb-link" data-bb-edit="${r.id}">düzenle</button><button class="bb-link" data-bb-del="${r.id}">✕</button>`}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+  host.innerHTML = h + '</div>';
+}
+(function () { const o = renderStats; renderStats = function () { o.apply(this, arguments); try { bbSeed(); bbRender(); } catch (e) { console.error(e); } }; })();
+function bbSave() {
+  const f = BB.form, num = v => { const n = parseInt(String(v == null ? '' : v).replace(/\D/g, ''), 10); return isNaN(n) ? null : n; };
+  const r = { n: String(f.n || '').trim() || 'SAT Practice', d: f.d || new Date().toISOString().slice(0, 10), rw: num(f.rw), m: num(f.m), rc: num(f.rc), rq: num(f.rq), mc: num(f.mc), mq: num(f.mq), b: {} };
+  if (r.rw == null || r.rw < 200 || r.rw > 800) { BB.err = 'R&W puanını 200–800 arası gir.'; return bbRender(); }
+  if (r.m != null && (r.m < 200 || r.m > 800)) { BB.err = 'Math puanı 200–800 arası olmalı.'; return bbRender(); }
+  r.t = r.m != null ? r.rw + r.m : null;
+  BB_DOM.forEach(([k]) => { const v = (f.b || {})[k]; if (v >= 1 && v <= 7) r.b[k] = v; });
+  Object.keys(r).forEach(k => { if (r[k] == null) delete r[k]; });
+  if (!state.bluebook || typeof state.bluebook !== 'object') state.bluebook = {};
+  const id = f.id || ('bb_' + r.d + '_' + bbSlug(r.n));
+  state.bluebook[id] = r; saveState();
+  BB.form = null; BB.err = ''; bbRender();
+}
+async function bbRead(file) {
+  BB.err = ''; BB.form = null;
+  if (!aiKey()) { BB.err = 'AI okuması için Gemini anahtarı gerekli (Çalış → Info & Ideas rehberi → AI Koç). Anahtarsız da “Elle ekle” ile girebilirsin.'; return bbRender(); }
+  if (file.size > 15e6) { BB.err = 'Dosya çok büyük (15 MB üstü).'; return bbRender(); }
+  BB.busy = true; bbRender();
+  try {
+    const b64 = await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = no; fr.readAsDataURL(file); });
+    const prompt = `This is a College Board SAT (Bluebook / My Practice) practice score report. Read it and return JSON only:
+{"n": test name e.g. "SAT Practice 7", "d": test date as YYYY-MM-DD, "t": total score, "rw": Reading and Writing score, "m": Math score, "rc": R&W correct answers, "rq": R&W total questions, "mc": Math correct answers, "mq": Math total questions,
+ "b": {"ii": filled boxes (1-7) for Information and Ideas, "ca": Craft and Structure, "ex": Expression of Ideas, "se": Standard English Conventions}}
+The KNOWLEDGE AND SKILLS section shows 7 boxes per domain; count the FILLED (black) boxes only. Use null for anything not on the page.`;
+    const out = await aiCall([{ inline_data: { mime_type: file.type || 'application/pdf', data: b64 } }, { text: prompt }], { temp: 0, timeout: 60000 });
+    const b = out && out.b || {};
+    BB.form = { n: out.n || '', d: /^\d{4}-\d{2}-\d{2}$/.test(out.d || '') ? out.d : '', rw: out.rw, m: out.m, rc: out.rc, rq: out.rq, mc: out.mc, mq: out.mq, b: { ii: +b.ii || 0, ca: +b.ca || 0, ex: +b.ex || 0, se: +b.se || 0 } };
+    BB.err = 'AI okudu. Rakamları kontrol et, doğruysa Kaydet’e bas.';
+  } catch (e) { BB.err = aiErrText(e) + ' “Elle ekle” ile de girebilirsin.'; }
+  BB.busy = false; bbRender();
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('[data-bb-new],[data-bb-cancel],[data-bb-save],[data-bb-band],[data-bb-go],[data-bb-edit],[data-bb-del],[data-bb-del2]'); if (!t) return;
+  e.preventDefault();
+  const d = t.dataset;
+  if (d.bbNew !== undefined) { BB.form = { b: {}, d: new Date().toISOString().slice(0, 10) }; BB.err = ''; }
+  else if (d.bbCancel !== undefined) { BB.form = null; BB.err = ''; }
+  else if (d.bbSave !== undefined) return bbSave();
+  else if (d.bbBand) { BB.form.b = BB.form.b || {}; const v = +d.v; BB.form.b[d.bbBand] = BB.form.b[d.bbBand] === v ? v - 1 : v; }
+  else if (d.bbGo) return switchView(d.bbGo);
+  else if (d.bbEdit) { const r = (state.bluebook || {})[d.bbEdit]; if (r) { BB.form = { id: d.bbEdit, ...JSON.parse(JSON.stringify(r)) }; BB.form.b = BB.form.b || {}; BB.err = ''; } }
+  else if (d.bbDel) { BB.del = d.bbDel; setTimeout(() => { if (BB.del === d.bbDel) { BB.del = ''; bbRender(); } }, 4000); }
+  else if (d.bbDel2) { delete state.bluebook[d.bbDel2]; BB.del = ''; saveState(); }
+  bbRender();
+}, true);
+document.addEventListener('input', e => { const t = e.target.closest && e.target.closest('[data-bb-f]'); if (t && BB.form) BB.form[t.dataset.bbF] = t.value; }, true);
+document.addEventListener('keydown', e => { if (e.target.closest && e.target.closest('.bb-form')) e.stopPropagation(); }, true);
+document.addEventListener('change', e => { const t = e.target.closest && e.target.closest('[data-bb-file]'); if (t && t.files && t.files[0]) { const f = t.files[0]; t.value = ''; bbRead(f); } }, true);
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
@@ -3031,7 +3207,7 @@ function cardEl(prefix, qid) {
   return visible || document.getElementById(prefix + qid);
 }
 function normalizeState() {
-  ['answers', 'flags', 'notes', 'revealed', 'timers', 'highlights', 'sessionAnswers', 'lastSeenByDomain', 'domainPages', 'eliminated', 'focusIdx', 'ratHidden', 'frontier', 'review', 'reflect', 'aiNote'].forEach(k => {
+  ['answers', 'flags', 'notes', 'revealed', 'timers', 'highlights', 'sessionAnswers', 'lastSeenByDomain', 'domainPages', 'eliminated', 'focusIdx', 'ratHidden', 'frontier', 'review', 'reflect', 'aiNote', 'bluebook'].forEach(k => {
     if (!state[k] || typeof state[k] !== 'object' || Array.isArray(state[k])) state[k] = {};
   });
   // a stored highlight must never contain buttons/inputs (broken selection)
@@ -5699,9 +5875,9 @@ const SAT_WEB = {
 (function initSync(){
   const SB = 'sat_bank_v2', INK = 'sat_bank_ink_v1', VC = 'sat_bank_vocab_v1', NB = 'sat_bank_notebook_v1';
   const KV = ['sat_custom_set_v1', 'sat_custom_set_progress_v1', 'sat_saved_sets'];
-  const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4, aiNote: 16 };
+  const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4, aiNote: 16, bluebook: 1 };
   // progress belongs to the page owner (the student): the teacher sees it but never changes it
-  const OWNER_ONLY = new Set(['review', 'reflect', 'aiNote', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'sat_custom_set_progress_v1', 'sat_saved_sets']);
+  const OWNER_ONLY = new Set(['review', 'reflect', 'aiNote', 'bluebook', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'sat_custom_set_progress_v1', 'sat_saved_sets']);
   const BACKUP_KEYS = [SB, INK, VC, NB, ...KV, 'sat_bank_vocab_seed', 'sat_bank_vocab_unsuggest_v1'];
   const BASE_KEY = 'sat_sync_base_v1', IMPORT_FLAG = 'sat_sync_import_pending';
   const groupOf = k => k === SB ? 'st' : k === INK ? 'ink' : k === VC ? 'vc' : k === NB ? 'nb' : KV.includes(k) ? 'kv' : null;
