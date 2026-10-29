@@ -1070,6 +1070,49 @@ b.rat-l{font-weight:700;color:var(--fg)}
 .pg-box.opened .pg-actions{display:none}
 .pg-show{margin-top:4px;padding:8px 10px;border-radius:8px;background:var(--surface);border:1px dashed var(--accent);font-size:14px;color:var(--fg)}
 .pg-show .rf-q{margin-right:6px}
+
+.ai-zone{margin-top:12px}
+.ai-start{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ai-btn{border-color:#7c3aed !important;color:#6d28d9 !important;font-weight:600}
+[data-theme="dark"] .ai-btn{color:#c4b5fd !important}
+.ai-hint{font-size:12px;color:var(--fg3)}
+.ai-err{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(220,38,38,.08);color:var(--red);font-size:13px}
+.ai-card{margin-top:8px;padding:12px 14px;border-radius:12px;border:1px solid rgba(124,58,237,.35);background:rgba(124,58,237,.05);font-size:14px;line-height:1.55;color:var(--fg)}
+.ai-loading{display:flex;align-items:center;gap:10px;color:var(--fg2)}
+.ai-spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(124,58,237,.25);border-top-color:#7c3aed;display:inline-block;animation:aispin .8s linear infinite}
+@keyframes aispin{to{transform:rotate(360deg)}}
+.ai-h{display:flex;align-items:baseline;gap:8px;font-weight:700;font-size:14px}
+.ai-h span{font-weight:500;font-size:11.5px;color:var(--fg3)}
+.ai-redo{margin-left:auto;border:0;background:none;color:var(--fg3);font-size:12px;text-decoration:underline;cursor:pointer}
+.ai-sum{margin:8px 0 4px;font-weight:600}
+.ai-sec{margin-top:10px}
+.ai-sec p{margin:2px 0}
+.ai-sec ol{margin:4px 0 0;padding-left:20px}
+.ai-l{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#6d28d9;margin-bottom:2px}
+[data-theme="dark"] .ai-l{color:#c4b5fd}
+.ai-quote{margin:4px 0;padding:6px 10px;border-left:3px solid #7c3aed;background:var(--surface);font-family:var(--serif, Georgia, serif);font-style:italic}
+.ai-link{border:0;background:none;padding:0;color:#6d28d9;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px}
+.ai-badge{display:inline-block;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:700;margin-left:6px;text-transform:none;letter-spacing:0}
+.ai-badge.ok{background:rgba(22,163,74,.15);color:var(--green)} .ai-badge.mid{background:rgba(234,179,8,.2);color:#a16207} .ai-badge.bad{background:rgba(220,38,38,.12);color:var(--red)} .ai-badge.none{background:var(--surface2);color:var(--fg2)}
+.ai-rule{margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(124,58,237,.12)}
+.ai-chat{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.ai-msg{padding:7px 10px;border-radius:10px;max-width:92%;font-size:13.5px}
+.ai-msg.me{align-self:flex-end;background:var(--accent);color:#fff}
+.ai-msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--border)}
+.ai-msg.err{align-self:flex-start;background:rgba(220,38,38,.08);color:var(--red)}
+.ai-ask{display:flex;gap:6px;margin-top:8px}
+.ai-ask input{flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg);font:inherit;font-size:13.5px}
+::highlight(ai-look){background-color:rgba(167,139,250,.45);color:inherit}
+.ai-set{border:1px solid rgba(124,58,237,.4);border-radius:12px;background:rgba(124,58,237,.05);padding:14px 16px;margin-bottom:14px}
+.ai-set-h{font-weight:700;font-size:15px;color:var(--fg)}
+.ai-set-p{margin:6px 0 10px;font-size:13.5px;color:var(--fg2)}
+.ai-set-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.ai-set-row input{flex:1;min-width:200px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg)}
+.ai-set-row select{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg)}
+.ai-set-msg{font-size:13px;color:var(--fg2)}
+.ai-sec-tip{font-size:13px;color:var(--fg2)}
+.ai-sec-tip summary{cursor:pointer;font-weight:600}
+.ai-report{margin-top:26px}
 </style>
 
 <!-- TOPBAR -->
@@ -1715,7 +1758,7 @@ const II_GUIDE = [
 ];
 function renderII(host) {
   const on = iiFocusOn();
-  host.innerHTML = `<div class="ii-focus-card">
+  host.innerHTML = aiSettingsHtml() + `<div class="ii-focus-card">
       <div><b>Odak modu</b> <span class="ii-badge">${on ? 'Açık' : 'Kapalı'}</span>
       <p>Information &amp; Ideas sorularında önce sadece soruyu görürsün; metin "Soruyu okudum" deyince açılır. Şıklar da sen tahminini yazınca açılır. Böylece metinde kaybolmadan, ne aradığını bilerek okursun.</p></div>
       <button class="act-btn" data-ii-focus>${on ? 'Kapat' : 'Aç'}</button>
@@ -1817,13 +1860,15 @@ function rfFill(el) {
   const id = el.dataset.rf, q = RAW_QUESTIONS.find(x => x.id === id), a = state.answers[id];
   if (!q || a === undefined) { el.innerHTML = ''; el.dataset.sig = ''; return; }
   const r = rfGet(id), wrong = a !== q.correct, sig = a + '|' + JSON.stringify(r);
-  if (el.dataset.sig === sig) return;
+  if (el.dataset.sig === sig) { const z = el.querySelector('.ai-zone'); if (z) aiFill(z); return; }
   el.dataset.sig = sig;
   const traps = (RF_BY_DOMAIN[q.domain] || RF_BY_DOMAIN['Information and Ideas']);
   el.innerHTML = (r.g ? `<div class="pg-show"><span class="rf-q">Tahminin</span> ${escHtml(r.g)}</div>` : '') + `<div class="rf-row"><span class="rf-q">Tahminin doğru muydu?</span>${RF_PRED.map(([k, l]) => `<button class="rf-chip${r.p === k ? ' on' : ''}" data-rf-p="${k}" data-rf-id="${id}">${l}</button>`).join('')}</div>` +
     (wrong ? `<div class="rf-row"><span class="rf-q">Hangi tuzağa düştün?</span>${traps.map(k => `<button class="rf-chip trap${(r.t || []).includes(k) ? ' on' : ''}" data-rf-t="${k}" data-rf-id="${id}">${RF_TRAPS[k][0]}</button>`).join('')}</div>` +
       ((r.t || []).length ? `<div class="rf-advice">${r.t.map(k => `<p><b>${RF_TRAPS[k][0]}:</b> ${RF_TRAPS[k][1]}</p>`).join('')}</div>` : '') : '') +
-    (r.p === 'y' && wrong ? '<div class="rf-note">Tahminin doğruymuş ama yanlış şıkkı seçmişsin: sorun okumada değil, elemede. Şıkları tahminine göre daha sıkı ele.</div>' : '');
+    (r.p === 'y' && wrong ? '<div class="rf-note">Tahminin doğruymuş ama yanlış şıkkı seçmişsin: sorun okumada değil, elemede. Şıkları tahminine göre daha sıkı ele.</div>' : '') +
+    `<div class="ai-zone" data-ai="${id}"></div>`;
+  aiFill(el.querySelector('.ai-zone'));
 }
 (function () {
   const fillAll = root => (root || document).querySelectorAll('.rf[data-rf]').forEach(rfFill);
@@ -1869,7 +1914,7 @@ function renderRfStats() {
     ${rows.length ? `<div class="rf-bars">${rows.map(([k, n]) => `<div class="rf-bar-row">
         <div class="rf-bar-top"><b>${RF_TRAPS[k][0]}</b><span>${n} soru</span><button class="rf-go" data-rf-go="${k}">Bu soruları çalış →</button></div>
         <div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${Math.round(n / max * 100)}%;background:var(--red)"></div></div>
-        <div class="rf-tip">${RF_TRAPS[k][1]}</div></div>`).join('')}</div>` : '<p class="rf-sub">Henüz etiketlenmiş yanlış yok.</p>'}`;
+        <div class="rf-tip">${RF_TRAPS[k][1]}</div></div>`).join('')}</div>` : '<p class="rf-sub">Henüz etiketlenmiş yanlış yok.</p>'}` + aiReportHtml();
 }
 setTimeout(() => {
   if (typeof renderStats === 'function') { const o = renderStats; renderStats = function () { o.apply(this, arguments); try { renderRfStats(); } catch {} }; }
@@ -2030,6 +2075,252 @@ function pgBoxInner(id, val) {
     return h;
   };
 })();
+
+// ══════════════ AI KOÇ (Gemini): per-question diagnosis, follow-up chat, coach report ══════════════
+const AI_MODELS = [['gemini-3.8-flash', 'Gemini 3.8 Flash (önerilen)'], ['gemini-3.5-flash-lite', 'Gemini 3.5 Flash-Lite (en hızlı)'], ['gemini-3.6-flash', 'Gemini 3.6 Flash'], ['gemini-3.1-pro-preview', 'Gemini 3.1 Pro preview (en güçlü, yavaş)']];
+const AI = { busy: {}, err: {}, chat: {}, chatBusy: {}, reportBusy: false, reportErr: '', settingsMsg: '' };
+const aiLS = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { return ''; } };
+const aiKey = () => aiLS('sat_gemini_key');
+const aiModel = () => aiLS('sat_gemini_model') || AI_MODELS[0][0];
+function aiErrText(e) {
+  const s = e && e.status, m = String((e && e.message) || e || '');
+  if (m === 'NOKEY') return 'Önce Çalış → Info & Ideas rehberi → AI Koç ayarlarından Gemini anahtarını gir.';
+  if (s === 400 && /key/i.test(m)) return 'Anahtar geçersiz. Ayarlardan kontrol et.';
+  if (s === 403) return 'Anahtar bu siteden kullanılamıyor. Google Cloud’da anahtarın web sitesi kısıtlamasına batulekesiz28-dot.github.io/* ekli mi?';
+  if (s === 404) return 'Model bulunamadı. Ayarlardan başka bir model seç.';
+  if (s === 429) return 'Gemini kotası doldu. Biraz bekleyip tekrar dene ya da ayarlardan Flash-Lite modeline geç.';
+  if (s >= 500) return 'Gemini şu an yanıt vermiyor (' + s + '). Biraz sonra tekrar dene.';
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Bağlantı kurulamadı. İnternetini kontrol et.';
+  return 'AI hatası: ' + m.slice(0, 200);
+}
+function aiParse(t) {
+  try { return JSON.parse(t); } catch {}
+  const m = String(t).replace(/```json|```/g, '').match(/\{[\s\S]*\}/);
+  if (m) return JSON.parse(m[0]);
+  throw new Error('AI beklenen biçimde cevap vermedi, tekrar dene.');
+}
+async function aiCall(parts, opt) {
+  opt = opt || {};
+  const key = aiKey(); if (!key) throw new Error('NOKEY');
+  const body = { contents: opt.contents || [{ role: 'user', parts }], generationConfig: { temperature: opt.temp == null ? 0.3 : opt.temp } };
+  if (opt.json !== false) body.generationConfig.responseMimeType = 'application/json';
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(aiModel()) + ':generateContent', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { const e = new Error((data.error && data.error.message) || ('HTTP ' + res.status)); e.status = res.status; throw e; }
+  const cand = data.candidates && data.candidates[0];
+  const text = ((cand && cand.content && cand.content.parts) || []).map(p => p.text || '').join('');
+  if (!text) { const e = new Error(cand && cand.finishReason ? 'Cevap boş geldi (' + cand.finishReason + ').' : 'Cevap boş geldi.'); throw e; }
+  return opt.json === false ? text : aiParse(text);
+}
+const AI_SYS = `Sen deneyimli bir Digital SAT Reading & Writing koçusun. Öğrencin Türk, İngilizcesi orta-iyi seviyede.
+Görevin: öğrencinin bu soruda NEREDE ve NEDEN koptuğunu teşhis etmek ve bir dahaki sefere işe yarayacak somut bir yöntem vermek.
+Kurallar:
+- Resmi açıklama ve doğru cevap kesin doğrudur; asla onlara aykırı bir şey söyleme.
+- Türkçe, kısa ve net yaz; genel tavsiye değil, BU soruya özel konuş.
+- Metinden alıntı yaparken İngilizce cümleyi BİREBİR kopyala (tek harf değiştirme).
+- Öğrencinin kendi tahmini varsa onu ciddiye al: doğru cevaba ne kadar yakındı, neyi eksik ya da fazla söyledi?
+- Öğrenci doğru cevap verdiyse: yöntemi sağlam mıydı yoksa şans mı, kısa değerlendir.
+Sadece şu JSON nesnesini döndür:
+{"ozet":"tek cümle: nerede koptu",
+ "hedef_cumle":"metinde cevabın dayandığı cümle, BİREBİR (yoksa boş string)",
+ "tahmin_durum":"dogru | kismen | yanlis | yok",
+ "tahmin_yorum":"tahmini hakkında 1-2 cümle (yoksa: şıklara bakmadan önce ne yazması gerektiği)",
+ "secim_analizi":"seçtiği şık neden cazip geldi ve tam olarak hangi noktada yanlış (doğruysa neden doğru)",
+ "dogru_yol":["3-4 kısa adım: soruyu okumaktan doğru şıkka kadar"],
+ "tuzak":"şu anahtarlardan en uygun olanı ya da boş: TRAP_KEYS",
+ "kural":"bir dahaki sefere uygulanacak tek cümlelik kural"}`;
+function aiQuestionParts(q, header) {
+  const sp = splitQuestion(q.question), r = rfGet(q.id), tm = (state.timers && state.timers[q.id]) || {};
+  const traps = RF_BY_DOMAIN[q.domain] || RF_BY_DOMAIN['Information and Ideas'];
+  const sub = (HOW_HINTS[q.id] || {}).s;
+  const txt = (header || AI_SYS.replace('TRAP_KEYS', traps.join(', '))) + `
+
+PASSAGE:
+${sp.passage}
+
+QUESTION: ${sp.prompt || '(see passage)'}
+
+CHOICES:
+${Object.entries(q.choices).map(([k, v]) => k + ') ' + v).join('\n')}
+
+CORRECT ANSWER: ${q.correct}
+STUDENT'S ANSWER: ${state.answers[q.id]}
+STUDENT'S OWN PREDICTION (written before seeing the choices): ${r.g || '(none)'}
+STUDENT'S SELF-TAGGED TRAPS: ${(r.t || []).map(k => RF_TRAPS[k] ? RF_TRAPS[k][0] : k).join(', ') || '(none)'}
+STUDENT SAID PREDICTION WAS CORRECT: ${({ y: 'yes', k: 'partly', n: 'no', '-': 'no prediction' })[r.p] || '(not answered)'}
+TIME SPENT: ${tm.total ? Math.round(tm.total / 1000) + ' seconds' : 'unknown'}
+QUESTION TYPE: ${q.domain} / ${q.skill}${sub && SUB_LABEL[sub] ? ' / ' + SUB_LABEL[sub] : ''}
+
+OFFICIAL EXPLANATION (ground truth):
+${q.rationale || ''}`;
+  const parts = [];
+  if (q.fig && /^data:image\//.test(q.fig)) { const m = q.fig.match(/^data:([^;]+);base64,(.*)$/); if (m) parts.push({ inlineData: { mimeType: m[1], data: m[2] } }); }
+  parts.push({ text: txt });
+  return parts;
+}
+function aiNote(id) { const n = state.aiNote && state.aiNote[id]; return n && typeof n === 'object' ? n : null; }
+async function aiAnalyze(id) {
+  const q = RAW_QUESTIONS.find(x => x.id === id); if (!q || AI.busy[id]) return;
+  AI.busy[id] = true; AI.err[id] = ''; aiRefresh(id);
+  try {
+    const a = await aiCall(aiQuestionParts(q));
+    if (!state.aiNote || typeof state.aiNote !== 'object') state.aiNote = {};
+    state.aiNote[id] = { a, m: aiModel(), at: Date.now(), ans: state.answers[id] };
+    saveState();
+  } catch (e) { AI.err[id] = aiErrText(e); }
+  AI.busy[id] = false; aiRefresh(id);
+}
+async function aiAsk(id, text) {
+  const q = RAW_QUESTIONS.find(x => x.id === id); if (!q || !text.trim() || AI.chatBusy[id]) return;
+  const log = AI.chat[id] = AI.chat[id] || [];
+  log.push({ who: 'me', t: text.trim() }); AI.chatBusy[id] = true; aiRefresh(id);
+  try {
+    const n = aiNote(id);
+    const intro = 'Sen bir Digital SAT Reading & Writing koçusun. Aşağıdaki soru hakkında Türk öğrencinin takip sorularını Türkçe, kısa ve net cevapla (en fazla 6 cümle). Resmi açıklama ve doğru cevap kesin doğrudur; onlara aykırı bir şey söyleme. JSON değil, düz metin yaz.' + (n ? '\nDaha önce yaptığın analiz: ' + JSON.stringify(n.a) : '');
+    const contents = [{ role: 'user', parts: aiQuestionParts(q, intro) }, { role: 'model', parts: [{ text: 'Tamam, soruyu ve öğrencinin cevabını inceledim. Sorusunu bekliyorum.' }] }];
+    log.forEach(m => contents.push({ role: m.who === 'me' ? 'user' : 'model', parts: [{ text: m.t }] }));
+    const out = await aiCall(null, { contents, json: false, temp: 0.4 });
+    log.push({ who: 'ai', t: out.trim() });
+  } catch (e) { log.push({ who: 'err', t: aiErrText(e) }); }
+  AI.chatBusy[id] = false; aiRefresh(id);
+}
+const aiEsc = s => escHtml(String(s == null ? '' : s));
+function aiFill(z) {
+  if (!z) return;
+  const id = z.dataset.ai, n = aiNote(id), busy = !!AI.busy[id], err = AI.err[id] || '', log = AI.chat[id] || [], cb = !!AI.chatBusy[id];
+  const sig = JSON.stringify([n && n.at, busy, err, log.length, cb, !!aiKey()]);
+  if (z.dataset.sig === sig) return;
+  const draft = (z.querySelector('.ai-ask input') || {}).value || '';
+  z.dataset.sig = sig;
+  if (!n) {
+    z.innerHTML = busy ? '<div class="ai-card ai-loading"><span class="ai-spin"></span> AI analiz ediyor… (5–20 sn)</div>'
+      : `<div class="ai-start"><button class="act-btn ai-btn" data-ai-run="${id}">🤖 AI analiz: nerede koptum?</button>${aiKey() ? '' : '<span class="ai-hint">Önce Çalış → Info & Ideas rehberi → AI Koç ayarlarından anahtarını gir.</span>'}</div>` + (err ? `<div class="ai-err">${aiEsc(err)}</div>` : '');
+    return;
+  }
+  const a = n.a || {}, rf = rfGet(id);
+  const tdur = { dogru: ['Doğru', 'ok'], kismen: ['Kısmen', 'mid'], yanlis: ['Yanlış', 'bad'], yok: ['Tahmin yok', 'none'] }[String(a.tahmin_durum || '').trim()] || null;
+  const trapKey = String(a.tuzak || '').trim(), trapOk = trapKey && RF_TRAPS[trapKey] && !(rf.t || []).includes(trapKey) && state.answers[id] !== (RAW_QUESTIONS.find(x => x.id === id) || {}).correct;
+  z.innerHTML = `<div class="ai-card">
+    <div class="ai-h">🤖 AI analiz <span>${aiEsc(n.m || '')}</span><button class="ai-redo" data-ai-run="${id}" ${busy ? 'disabled' : ''}>${busy ? 'analiz ediliyor…' : 'yeniden analiz et'}</button></div>
+    ${a.ozet ? `<p class="ai-sum">${aiEsc(a.ozet)}</p>` : ''}
+    ${a.hedef_cumle ? `<div class="ai-sec"><div class="ai-l">Hedef cümle</div><blockquote class="ai-quote">${aiEsc(a.hedef_cumle)}</blockquote><button class="ai-link" data-ai-show="${id}">Metinde göster</button></div>` : ''}
+    ${tdur || a.tahmin_yorum ? `<div class="ai-sec"><div class="ai-l">Tahminin ${tdur ? `<span class="ai-badge ${tdur[1]}">${tdur[0]}</span>` : ''}</div><p>${aiEsc(a.tahmin_yorum)}</p></div>` : ''}
+    ${a.secim_analizi ? `<div class="ai-sec"><div class="ai-l">Seçimin</div><p>${aiEsc(a.secim_analizi)}</p></div>` : ''}
+    ${Array.isArray(a.dogru_yol) && a.dogru_yol.length ? `<div class="ai-sec"><div class="ai-l">Doğru cevaba giden yol</div><ol>${a.dogru_yol.map(s => `<li>${aiEsc(s)}</li>`).join('')}</ol></div>` : ''}
+    ${a.kural ? `<div class="ai-rule"><b>Bir dahaki sefere:</b> ${aiEsc(a.kural)}</div>` : ''}
+    ${trapOk ? `<button class="ai-link" data-ai-tag="${id}" data-trap="${trapKey}">AI’nın önerdiği tuzağı etiketle: ${aiEsc(RF_TRAPS[trapKey][0])}</button>` : ''}
+    ${err ? `<div class="ai-err">${aiEsc(err)}</div>` : ''}
+    <div class="ai-chat">${log.map(m => `<div class="ai-msg ${m.who}">${aiEsc(m.t).replace(/\n/g, '<br>')}</div>`).join('')}${cb ? '<div class="ai-msg ai"><span class="ai-spin"></span></div>' : ''}</div>
+    <form class="ai-ask" data-ai-ask="${id}"><input placeholder="AI’ya bu soru hakkında sor… (ör. neden C yanlış?)" value="${aiEsc(draft)}"><button class="act-btn" ${cb ? 'disabled' : ''}>Sor</button></form>
+  </div>`;
+}
+function aiRefresh(id) { document.querySelectorAll('.ai-zone[data-ai="' + id + '"]').forEach(aiFill); }
+function aiShowQuote(id) {
+  const n = aiNote(id), quote = n && n.a && n.a.hedef_cumle; if (!quote || !window.CSS || !CSS.highlights) return;
+  const card = [...document.querySelectorAll('[id="qcard-' + id + '"]')].find(c => c.offsetParent) || document.getElementById('qcard-' + id); if (!card) return;
+  const NQ = { '‘': "'", '’': "'", '“': '"', '”': '"' }, nch = ch => (NQ[ch] || ch).toLowerCase();
+  const tw = document.createTreeWalker(card.querySelector('.q-text') || card, NodeFilter.SHOW_TEXT);
+  let S = '', map = [], node;
+  while ((node = tw.nextNode())) { const t = node.nodeValue; for (let i = 0; i < t.length; i++) if (!/\s/.test(t[i])) { S += nch(t[i]); map.push([node, i]); } }
+  let P = ''; for (const ch of quote) if (!/\s/.test(ch)) P += nch(ch);
+  let at = S.indexOf(P), len = P.length;
+  if (at < 0 && P.length > 40) { at = S.indexOf(P.slice(0, 40)); len = 40; }     // tolerate small differences at the end
+  if (at < 0) { showToast('Alıntı metinde birebir bulunamadı.'); return; }
+  const r = document.createRange(); r.setStart(map[at][0], map[at][1]); r.setEnd(map[at + len - 1][0], map[at + len - 1][1] + 1);
+  CSS.highlights.set('ai-look', new Highlight(r));
+  const el = map[at][0].parentElement; if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+// ── settings
+function aiSettingsHtml() {
+  const k = aiKey(), m = aiModel();
+  return `<div class="ai-set">
+    <div class="ai-set-h">🤖 AI Koç (Gemini) <span class="ai-badge ${k ? 'ok' : 'none'}">${k ? 'Anahtar kayıtlı' : 'Anahtar yok'}</span></div>
+    <p class="ai-set-p">Anahtar <b>sadece bu tarayıcıda</b> saklanır; koda, GitHub’a ya da Firebase’e gitmez. Her cihazda bir kez girmen gerekir. Anahtarı Google AI Studio’dan (aistudio.google.com → Get API key) alabilirsin.</p>
+    <div class="ai-set-row"><input type="password" id="aiKeyIn" placeholder="${k ? '•••••••• (değiştirmek için yeni anahtar yapıştır)' : 'Gemini API anahtarını yapıştır'}" autocomplete="off">
+      <select id="aiModelIn">${AI_MODELS.map(([v, l]) => `<option value="${v}" ${v === m ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="ai-set-row"><button class="act-btn" data-ai-save>Kaydet ve test et</button>${k ? '<button class="act-btn" data-ai-del>Anahtarı sil</button>' : ''}<span class="ai-set-msg">${aiEsc(AI.settingsMsg)}</span></div>
+    <details class="ai-sec-tip"><summary>Güvenlik için önerilen ayar (2 dk)</summary>
+      <p>Google Cloud Console → APIs &amp; Services → Credentials → anahtarını aç:</p>
+      <ol><li><b>Application restrictions:</b> Websites → <code>https://batulekesiz28-dot.github.io/*</code> ekle.</li>
+      <li><b>API restrictions:</b> Restrict key → sadece <b>Generative Language API</b>.</li></ol>
+      <p>Böylece anahtar başka bir yerde ele geçse bile işe yaramaz.</p></details>
+  </div>`;
+}
+// ── coach report (stats)
+function aiReportGet() { try { return JSON.parse(localStorage.getItem('sat_ai_report') || 'null'); } catch { return null; } }
+function aiReportHtml() {
+  const rep = aiReportGet(), a = rep && rep.a;
+  const wrong = RAW_QUESTIONS.filter(q => state.answers[q.id] !== undefined && state.answers[q.id] !== q.correct).length;
+  let body = '';
+  if (AI.reportBusy) body = '<div class="ai-card ai-loading"><span class="ai-spin"></span> Koç raporu hazırlanıyor… (10–40 sn)</div>';
+  else if (a) body = `<div class="ai-card">
+      <div class="ai-h">Koç raporu <span>${new Date(rep.at).toLocaleDateString('tr-TR')} · ${aiEsc(rep.m)}</span></div>
+      ${a.genel ? `<p class="ai-sum">${aiEsc(a.genel)}</p>` : ''}
+      ${(a.sorunlar || []).map((s, i) => `<div class="ai-sec"><div class="ai-l">${i + 1}. ${aiEsc(s.baslik)}</div><p><b>Kanıt:</b> ${aiEsc(s.kanit)}</p><p><b>Çözüm:</b> ${aiEsc(s.cozum)}</p></div>`).join('')}
+      ${(a.plan || []).length ? `<div class="ai-sec"><div class="ai-l">7 günlük plan</div><ol>${a.plan.map(p => `<li><b>${aiEsc(p.gun)}:</b> ${aiEsc(p.gorev)}</li>`).join('')}</ol></div>` : ''}
+      ${(a.odak || []).filter(k => SUB_LABEL[k]).length ? `<div class="ai-sec"><div class="ai-l">Önce bu türleri çalış</div><div class="st-btns">${a.odak.filter(k => SUB_LABEL[k]).map(k => `<button class="act-btn" data-ai-sub="${k}">${aiEsc(SUB_LABEL[k])}</button>`).join('')}</div></div>` : ''}
+    </div>`;
+  return `<div class="ai-report"><div class="section-h rf-h">🤖 AI koç raporu</div>
+    <p class="rf-sub">Yanlışlarına, tahminlerine, tuzak etiketlerine ve tür bazında doğruluk oranlarına bakıp en büyük 3 sorununu ve 7 günlük plan çıkarır. Ne kadar çok yanlışı etiketlersen o kadar isabetli olur.</p>
+    <button class="act-btn ai-btn" data-ai-report ${AI.reportBusy || wrong < 3 ? 'disabled' : ''}>${a ? 'Raporu yenile' : 'Koç raporu oluştur'}</button>${wrong < 3 ? ' <span class="ai-hint">En az 3 yanlış cevap gerekiyor.</span>' : ''}
+    ${AI.reportErr ? `<div class="ai-err">${aiEsc(AI.reportErr)}</div>` : ''}${body}</div>`;
+}
+async function aiReport() {
+  if (AI.reportBusy) return;
+  AI.reportBusy = true; AI.reportErr = ''; try { renderStats(); } catch {}
+  try {
+    const wrongQs = RAW_QUESTIONS.filter(q => state.answers[q.id] !== undefined && state.answers[q.id] !== q.correct);
+    const pri = q => ((rfGet(q.id).t || []).length ? 2 : 0) + (aiNote(q.id) ? 1 : 0) + (rfGet(q.id).g ? 1 : 0);
+    const sample = wrongQs.sort((x, y) => pri(y) - pri(x)).slice(0, 60).map(q => {
+      const r = rfGet(q.id), n = aiNote(q.id), sub = (HOW_HINTS[q.id] || {}).s;
+      return { tur: q.skill + (sub && SUB_LABEL[sub] ? ' / ' + SUB_LABEL[sub] : ''), zorluk: q.difficulty, tahmin: r.g || '', tahmin_dogru_mu: r.p || '', tuzaklar: (r.t || []).map(k => RF_TRAPS[k] ? RF_TRAPS[k][0] : k), ai_ozet: n && n.a ? n.a.ozet : '' };
+    });
+    const acc = Object.keys(SUB_LABEL).map(k => { const s = subStats(k); return s.total - s.open >= 3 ? { tur: k, ad: SUB_LABEL[k], cozulen: s.total - s.open, dogruluk: s.pct } : null; }).filter(Boolean);
+    const answered = RAW_QUESTIONS.filter(q => state.answers[q.id] !== undefined).length;
+    const prompt = `Sen deneyimli bir Digital SAT Reading & Writing koçusun. Türk bir öğrencinin çalışma verilerini analiz et.
+Hedef: en büyük 3 zayıflığını VERİYE DAYANARAK bul ve uygulanabilir 7 günlük bir plan yap (her gün 30-45 dk). Türkçe, kısa ve somut yaz; genel geçer tavsiye verme.
+Plan, uygulamadaki araçları kullansın: "Odak modu", "Tahminim kutusu", "Süreli set (10 soru)", "Bugün tekrar", "Türler ve kurallar", "Vocab bilmece".
+Sadece şu JSON'u döndür:
+{"genel":"2-3 cümlelik genel durum","sorunlar":[{"baslik":"...","kanit":"verideki somut kanıt (sayılar, örüntü)","cozum":"somut yöntem"}],"plan":[{"gun":"1. gün","gorev":"..."}],"odak":["en çok çalışması gereken 2-4 tür anahtarı, sadece şu listeden: ${Object.keys(SUB_LABEL).join(', ')}"]}
+
+GENEL: ${answered} soru çözdü, ${wrongQs.length} yanlış.
+TÜR BAZINDA DOĞRULUK (en az 3 çözülmüş): ${JSON.stringify(acc)}
+YANLIŞLAR (etiketli olanlar önce, en fazla 60): ${JSON.stringify(sample)}`;
+    const a = await aiCall([{ text: prompt }], { temp: 0.4 });
+    aiLS('sat_ai_report', JSON.stringify({ a, m: aiModel(), at: Date.now() }));
+  } catch (e) { AI.reportErr = aiErrText(e); }
+  AI.reportBusy = false; try { renderStats(); } catch {}
+}
+// ── events
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-ai-run],[data-ai-show],[data-ai-tag],[data-ai-save],[data-ai-del],[data-ai-report],[data-ai-sub]');
+  if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  if (b.dataset.aiRun) aiAnalyze(b.dataset.aiRun);
+  else if (b.dataset.aiShow) aiShowQuote(b.dataset.aiShow);
+  else if (b.dataset.aiTag) { const id = b.dataset.aiTag, cur = new Set(rfGet(id).t || []); cur.add(b.dataset.trap); rfSet(id, { t: [...cur] }); window.__rfFillAll && window.__rfFillAll(); }
+  else if (b.hasAttribute('data-ai-save')) {
+    const v = (document.getElementById('aiKeyIn') || {}).value || '', m = (document.getElementById('aiModelIn') || {}).value;
+    if (v.trim()) aiLS('sat_gemini_key', v.trim());
+    if (m) aiLS('sat_gemini_model', m);
+    AI.settingsMsg = 'Test ediliyor…'; renderStudy();
+    aiCall([{ text: 'Sadece "tamam" yaz.' }], { json: false, temp: 0 })
+      .then(() => { AI.settingsMsg = '✓ Çalışıyor (' + aiModel() + ')'; })
+      .catch(err => { AI.settingsMsg = aiErrText(err); })
+      .finally(() => { renderStudy(); });
+  }
+  else if (b.hasAttribute('data-ai-del')) { aiLS('sat_gemini_key', null); AI.settingsMsg = 'Anahtar silindi.'; renderStudy(); }
+  else if (b.hasAttribute('data-ai-report')) aiReport();
+  else if (b.dataset.aiSub) { switchView('study'); study.set = null; study.tab = 'types'; study.sub = b.dataset.aiSub; study.filter = 'all'; study.shown = 20; renderStudy(); window.scrollTo({ top: 0 }); }
+}, true);
+document.addEventListener('submit', e => {
+  const f = e.target.closest && e.target.closest('[data-ai-ask]'); if (!f) return;
+  e.preventDefault(); const inp = f.querySelector('input'); const t = inp.value; inp.value = ''; aiAsk(f.dataset.aiAsk, t);
+}, true);
+document.addEventListener('keydown', e => { if (e.target.closest && e.target.closest('.ai-ask, .ai-set')) e.stopPropagation(); }, true);
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
@@ -2194,7 +2485,7 @@ function cardEl(prefix, qid) {
   return visible || document.getElementById(prefix + qid);
 }
 function normalizeState() {
-  ['answers', 'flags', 'notes', 'revealed', 'timers', 'highlights', 'sessionAnswers', 'lastSeenByDomain', 'domainPages', 'eliminated', 'focusIdx', 'ratHidden', 'frontier', 'review', 'reflect'].forEach(k => {
+  ['answers', 'flags', 'notes', 'revealed', 'timers', 'highlights', 'sessionAnswers', 'lastSeenByDomain', 'domainPages', 'eliminated', 'focusIdx', 'ratHidden', 'frontier', 'review', 'reflect', 'aiNote'].forEach(k => {
     if (!state[k] || typeof state[k] !== 'object' || Array.isArray(state[k])) state[k] = {};
   });
   // a stored highlight must never contain buttons/inputs (broken selection)
@@ -4862,9 +5153,9 @@ const SAT_WEB = {
 (function initSync(){
   const SB = 'sat_bank_v2', INK = 'sat_bank_ink_v1', VC = 'sat_bank_vocab_v1', NB = 'sat_bank_notebook_v1';
   const KV = ['sat_custom_set_v1', 'sat_custom_set_progress_v1', 'sat_saved_sets'];
-  const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4 };
+  const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4, aiNote: 16 };
   // progress belongs to the page owner (the student): the teacher sees it but never changes it
-  const OWNER_ONLY = new Set(['review', 'reflect', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'sat_custom_set_progress_v1', 'sat_saved_sets']);
+  const OWNER_ONLY = new Set(['review', 'reflect', 'aiNote', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'sat_custom_set_progress_v1', 'sat_saved_sets']);
   const BACKUP_KEYS = [SB, INK, VC, NB, ...KV, 'sat_bank_vocab_seed', 'sat_bank_vocab_unsuggest_v1'];
   const BASE_KEY = 'sat_sync_base_v1', IMPORT_FLAG = 'sat_sync_import_pending';
   const groupOf = k => k === SB ? 'st' : k === INK ? 'ink' : k === VC ? 'vc' : k === NB ? 'nb' : KV.includes(k) ? 'kv' : null;
