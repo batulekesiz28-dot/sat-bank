@@ -2929,11 +2929,9 @@ document.addEventListener('mouseup', e => {
     const range = sel.getRangeAt(0);
     const anc = range.commonAncestorContainer;
     hlTargetQText = (anc.nodeType === 1 ? anc : anc.parentElement)?.closest('.q-text') || null;
-    const rect = range.getBoundingClientRect();
     const toolbar = document.getElementById('hlToolbar');
-    toolbar.style.top = (rect.top + window.scrollY - 44) + 'px';
-    toolbar.style.left = Math.max(4, rect.left + rect.width/2 - 80) + 'px';
     toolbar.classList.add('visible');
+    placeHlToolbar();
   } else {
     setTimeout(() => {
       if (!window.getSelection()?.toString().trim()) hideHlToolbar();
@@ -2985,6 +2983,23 @@ function applyHighlight(colorClass) {
   hideHlToolbar();
 }
 
+// the toolbar is position:fixed, so it is placed in screen coordinates (no scroll offset)
+function placeHlToolbar() {
+  const toolbar = document.getElementById('hlToolbar');
+  const sel = window.getSelection();
+  if (!toolbar || !toolbar.classList.contains('visible') || !sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+  const rect = sel.getRangeAt(0).getBoundingClientRect();
+  const tw = toolbar.offsetWidth || 160, th = toolbar.offsetHeight || 40;
+  const topBar = (document.querySelector('.topbar') || {}).offsetHeight || 0;
+  let top = rect.top - th - 8;
+  if (top < topBar + 4) top = rect.bottom + 8;                    // no room above: show below the selection
+  top = Math.max(4, Math.min(top, window.innerHeight - th - 4));
+  const left = Math.max(4, Math.min(rect.left + rect.width / 2 - tw / 2, window.innerWidth - tw - 4));
+  toolbar.style.top = top + 'px';
+  toolbar.style.left = left + 'px';
+}
+window.addEventListener('scroll', () => placeHlToolbar(), { passive: true, capture: true });
+window.addEventListener('resize', () => placeHlToolbar());
 function hideHlToolbar() {
   document.getElementById('hlToolbar')?.classList.remove('visible');
 }
