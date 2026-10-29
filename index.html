@@ -1270,6 +1270,36 @@ button.bb-seg{cursor:pointer;width:26px;height:14px}
 .parca-res li.ok .parca-tag{color:#059669}.parca-res li.miss .parca-tag{color:#a16207}.parca-res li.extra .parca-tag{color:#e11d48}
 .parca-q{font-family:Georgia,serif;font-style:italic;color:var(--fg)}
 .parca-why{flex-basis:100%;font-size:12.5px;color:var(--fg2)}
+
+.q-hf-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--fg2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-left:6px}
+.q-hf-btn.on{border-color:#0d9488;background:rgba(13,148,136,.12);color:#0d9488}
+.q-card.hf-hidden .q-text,.q-card.hf-hidden .parca-panel{filter:blur(9px);user-select:none;pointer-events:none}
+.q-card.hf-hidden .choices,.q-card.hf-hidden .pg-box{filter:blur(7px);pointer-events:none;user-select:none}
+::highlight(hf-yer){background-color:rgba(16,185,129,.35);color:inherit}
+.hf-panel{margin:14px 0 4px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid #0d9488;border-radius:10px;background:rgba(13,148,136,.05);font-family:Inter,system-ui,sans-serif;font-style:normal}
+.hf-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--fg);margin-bottom:6px}
+.hf-sub,.hf-stat{font-weight:500;font-size:12px;color:var(--fg3)}
+.hf-stat{margin-left:auto}
+.hf-txt{font-size:13px;color:var(--fg);line-height:1.45}
+.hf-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
+.hf-clock{font-size:12.5px;color:var(--fg3);font-variant-numeric:tabular-nums}
+.hf-prep{font-size:12px;color:var(--fg3);display:inline-flex;align-items:center;gap:6px}
+.hf-q{margin-top:10px}
+.hf-qs{font-size:13.5px;color:var(--fg);margin-bottom:6px;line-height:1.4}
+.hf-cs{display:flex;flex-direction:column;gap:6px}
+.hf-c{text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg);font:inherit;font-size:13px;cursor:pointer;line-height:1.35}
+.hf-c:hover:not([disabled]){border-color:#0d9488}
+.hf-c.ok{border-color:#10b981;background:rgba(16,185,129,.12)}
+.hf-c.bad{border-color:#e11d48;background:rgba(225,29,72,.08)}
+.hf-c.dim{opacity:.55}
+.hf-c[disabled]{cursor:default}
+.hf-ex{margin-top:6px;font-size:12.5px;color:var(--fg2);line-height:1.4}
+.hf-ex.ok b,.hf-ex.ok{color:var(--fg2)}
+.hf-yer{color:#059669;font-weight:600}
+.hf-score{margin-top:12px;padding:8px 10px;border-radius:8px;font-size:13.5px;color:var(--fg)}
+.hf-score.ok{background:rgba(16,185,129,.14)}.hf-score.mid{background:rgba(250,204,21,.18)}.hf-score.bad{background:rgba(225,29,72,.10)}
+.hf-ta{margin-top:8px}
+.hf-self-show{font-size:13px;color:var(--fg);padding:8px 10px;border:1px dashed #0d9488;border-radius:8px;margin-bottom:6px}
 </style>
 
 <!-- TOPBAR -->
@@ -3404,6 +3434,127 @@ document.addEventListener('click', e => {
   else if (d.parcaClear) { PARCA.pick[d.parcaClear] = new Set(); parcaApply(); }
   else if (d.parcaAgain) { PARCA.pick[d.parcaAgain] = new Set(); PARCA.stage[d.parcaAgain] = 'pick'; PARCA.hover = null; parcaApply(); }
 }, true);
+
+// ══════════════ HAFIZA TESTİ: read, the passage closes, 2 quick questions, then it opens again ══════════════
+const HF = { open: {}, stage: {}, ans: {}, busy: {}, err: {}, t0: {}, readSec: {}, self: {} };
+const HF_DOMAINS = { 'Information and Ideas': 1, 'Craft and Structure': 1 };
+function hfData(id) { const n = aiNote(id); return n && n.hafiza && Array.isArray(n.hafiza.sorular) && n.hafiza.sorular.length ? n.hafiza : null; }
+function hfStats() { try { return JSON.parse(localStorage.getItem('sat_hf_stats') || '{}') || {}; } catch { return {}; } }
+function hfRecord(ok, total) { try { const s = hfStats(); s.ok = (s.ok || 0) + ok; s.total = (s.total || 0) + total; s.n = (s.n || 0) + 1; localStorage.setItem('sat_hf_stats', JSON.stringify(s)); } catch {} }
+async function hfAI(id) {
+  const q = RAW_QUESTIONS.find(x => x.id === id); if (!q || HF.busy[id] || !aiKey() || hfData(id)) return;
+  HF.busy[id] = true; HF.err[id] = ''; hfApply();
+  try {
+    const sp = splitQuestion(q.question);
+    const prompt = `Sen bir Digital SAT Reading & Writing koçusun. Türk öğrenci İngilizce metni okurken aklında tutamıyor. Bir "hafıza testi" hazırlıyorsun: öğrenci metni okuyacak, metin kapanacak ve ezberden 2 soru cevaplayacak.
+METİN:
+${sp.passage}
+(SAT sorusu, sadece bilgi için: ${sp.prompt || ''})
+Kurallar:
+- Tam 2 soru, Türkçe. 1. soru metnin AKIŞI/YAPISI (ne ile başlıyor, nereye varıyor, kim ne diyor). 2. soru metindeki kritik DÖNÜŞ, karşıtlık ya da sorunun bağlı olduğu kritik detay.
+- Her soruda 3 kısa Türkçe şık, sadece biri doğru; yanlış şıklar SAT tuzakları gibi olsun (ters, aşırı, metin dışı).
+- SAT sorusunun cevabını VERME ve onu tekrar sorma; amaç metni anlayıp aklında tutmak.
+- "yer": doğru cevabın dayandığı yer, metinden BİREBİR kopyalanmış 3-10 kelime.
+Sadece şu JSON'u döndür:
+{"sorular":[{"s":"soru","c":["şık 1","şık 2","şık 3"],"d":doğru şıkkın indeksi 0-2,"aciklama":"Türkçe tek kısa cümle","yer":"metinden birebir alıntı"}]}`;
+    const out = await aiCall([{ text: prompt }], { temp: 0.3, timeout: 45000 });
+    const qs = (Array.isArray(out && out.sorular) ? out.sorular : []).filter(x => x && x.s && Array.isArray(x.c) && x.c.length >= 2 && +x.d >= 0 && +x.d < x.c.length).slice(0, 2)
+      .map(x => ({ s: String(x.s).slice(0, 220), c: x.c.slice(0, 4).map(v => String(v).slice(0, 160)), d: +x.d, aciklama: String(x.aciklama || '').slice(0, 260), yer: String(x.yer || '').slice(0, 160) }));
+    if (!qs.length) throw new Error('AI soru hazırlayamadı.');
+    if (!state.aiNote || typeof state.aiNote !== 'object') state.aiNote = {};
+    const n = aiNote(id) || { m: AI.lastModel || aiModel(), at: Date.now(), ans: state.answers[id] };
+    n.hafiza = { v: 1, sorular: qs }; state.aiNote[id] = n; saveState();
+  } catch (e) { HF.err[id] = aiErrText(e); }
+  HF.busy[id] = false; hfApply();
+}
+const hfTime = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+function hfPanel(id) {
+  const st = HF.stage[id] || 'read', d = hfData(id), busy = !!HF.busy[id], err = HF.err[id], S = hfStats();
+  const stat = S.total ? `<span class="hf-stat">Hafıza doğruluğun: %${Math.round(S.ok / S.total * 100)} (${S.n} metin)</span>` : '';
+  const errHtml = err ? `<div class="ai-err">${escHtml(err)}</div>` : '';
+  if (st === 'read') return `<div class="hf-panel" data-hf="${id}"><div class="hf-h">🧠 Hafıza testi ${stat}</div>
+    <div class="hf-txt">Metni bir kez, <b>cümle cümle iskeletini kurarak</b> oku (kafanda: “bağlam → iddia → ama… → sonuç”). Hazır olunca kapat; metin ve şıklar gizlenecek, ezberden 2 soru gelecek.</div>
+    <div class="hf-row"><button type="button" class="act-btn hf-go" data-hf-close="${id}">Okudum, metni kapat →</button><span class="hf-clock" data-hf-clock="${id}">0:00</span>${busy ? '<span class="hf-prep"><span class="ai-spin"></span> sorular hazırlanıyor</span>' : ''}</div>${errHtml}</div>`;
+  if (!d) {
+    if (busy) return `<div class="hf-panel" data-hf="${id}"><div class="hf-h">🧠 Hafıza testi</div><div class="ai-card ai-loading"><span class="ai-spin"></span> Sorular hazırlanıyor… metni hatırlamaya çalış: ne ile başladı, nereye vardı?</div></div>`;
+    // no AI: write it yourself, then compare with the passage
+    const v = HF.self[id] || '';
+    return `<div class="hf-panel" data-hf="${id}"><div class="hf-h">🧠 Hafıza testi <span class="hf-sub">kendi cümlenle</span></div>${errHtml}
+      ${st === 'done' ? `<div class="hf-self-show"><b>Yazdığın:</b> ${escHtml(v) || '<i>boş</i>'}</div><div class="hf-txt">Metinle karşılaştır: akışı ve dönüşü yakaladın mı?</div><div class="hf-row"><button type="button" class="bb-link" data-hf-again="${id}">tekrar</button></div>`
+        : `<div class="hf-txt">Metne bakmadan 1–2 cümle Türkçe yaz: <b>ne ile başladı, ne dönüş oldu, nereye vardı?</b></div><textarea class="pg-ta hf-ta" rows="2" data-hf-self="${id}" placeholder="ör. eski görüş X → ama yeni çalışma Y buldu → sonuç Z">${escHtml(v)}</textarea><div class="hf-row"><button type="button" class="act-btn" data-hf-reveal="${id}">Metni aç ve karşılaştır</button></div>`}</div>`;
+  }
+  const ans = HF.ans[id] || [];
+  const all = d.sorular.every((_, i) => ans[i] !== undefined);
+  const okN = d.sorular.filter((x, i) => ans[i] === x.d).length;
+  return `<div class="hf-panel" data-hf="${id}"><div class="hf-h">🧠 Metin kapalı: ezberden cevapla <span class="hf-sub">okuma süren ${hfTime(HF.readSec[id] || 0)}</span></div>
+    ${d.sorular.map((x, i) => { const a = ans[i]; return `<div class="hf-q"><div class="hf-qs"><b>${i + 1}.</b> ${escHtml(x.s)}</div><div class="hf-cs">${x.c.map((t, j) => `<button type="button" class="hf-c${a === undefined ? '' : j === x.d ? ' ok' : j === a ? ' bad' : ' dim'}" data-hf-pick="${id}" data-q="${i}" data-c="${j}" ${a !== undefined ? 'disabled' : ''}>${escHtml(t)}</button>`).join('')}</div>${a !== undefined ? `<div class="hf-ex ${a === x.d ? 'ok' : 'bad'}">${a === x.d ? '✓ Doğru.' : '✕ Yanlış.'} ${escHtml(x.aciklama)}${x.yer ? ' <span class="hf-yer">Metinde yeşil yer.</span>' : ''}</div>` : ''}</div>`; }).join('')}
+    ${all ? `<div class="hf-score ${okN === d.sorular.length ? 'ok' : okN ? 'mid' : 'bad'}">${okN}/${d.sorular.length} ${okN === d.sorular.length ? '🎯 Metni aklında tutmuşsun. Şimdi soruya geç.' : 'Metin açıldı; kaçırdığın yer yeşil. Onu okuyup soruya geç.'}</div><div class="hf-row"><button type="button" class="bb-link" data-hf-again="${id}">tekrar oku ve dene</button></div>` : ''}
+  </div>`;
+}
+function hfApply() {
+  const yer = [];
+  document.querySelectorAll('.q-card[id^="qcard-"]').forEach(card => {
+    const id = card.id.slice(6);
+    const btn = card.querySelector('[data-hf-btn]'); if (btn) btn.classList.toggle('on', !!HF.open[id]);
+    let panel = card.querySelector('.hf-panel');
+    const st = HF.stage[id] || 'read', d = hfData(id), ans = HF.ans[id] || [];
+    const done = st === 'done' || (st === 'quiz' && d && d.sorular.every((_, i) => ans[i] !== undefined));
+    card.classList.toggle('hf-hidden', !!(HF.open[id] && st === 'quiz' && !done));
+    if (!HF.open[id]) { if (panel) panel.remove(); return; }
+    const qt = card.querySelector('.q-text'); if (!qt) return;
+    const sig = JSON.stringify([st, !!d, !!HF.busy[id], HF.err[id] || '', ans, done]);
+    if (!panel || panel.dataset.sig !== sig) {
+      const tmp = document.createElement('div'); tmp.innerHTML = hfPanel(id); const np = tmp.firstElementChild; np.dataset.sig = sig;
+      const anchor = card.querySelector('.parca-panel') || qt;
+      if (panel) panel.replaceWith(np); else anchor.after(np);
+      panel = np;
+    }
+    if (done && d && card.offsetParent) d.sorular.forEach((x, i) => { if (x.yer && ans[i] !== undefined) { const r = tourFind(qt, x.yer); if (r) yer.push(r); } });
+  });
+  if (window.CSS && CSS.highlights) CSS.highlights.set('hf-yer', new Highlight(...yer));
+}
+setInterval(() => { document.querySelectorAll('[data-hf-clock]').forEach(el => { const id = el.dataset.hfClock; if (HF.t0[id]) el.textContent = hfTime(Math.round((Date.now() - HF.t0[id]) / 1000)); }); }, 1000);
+function hfToggle(id) {
+  HF.open[id] = !HF.open[id];
+  if (HF.open[id]) { HF.stage[id] = 'read'; HF.ans[id] = []; HF.t0[id] = Date.now(); if (aiKey() && !hfData(id)) hfAI(id); }
+  hfApply();
+}
+(function () {
+  const orig = renderQuestion;
+  renderQuestion = function (q) {
+    let h = orig.apply(this, arguments);
+    try {
+      if (q && HF_DOMAINS[q.domain]) {
+        const b = `<button type="button" class="q-hf-btn${HF.open[q.id] ? ' on' : ''}" data-hf-btn="${q.id}" title="Metni oku, kapat, ezberden 2 soru">🧠 Hafıza</button>`;
+        h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', b + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', b + '<span class="q-status-icon">');
+        if (HF.open[q.id] && (HF.stage[q.id] || 'read') === 'quiz') { const d = hfData(q.id), a = HF.ans[q.id] || []; if (!(d && d.sorular.every((_, i) => a[i] !== undefined))) h = h.replace(/class="q-card/, 'class="q-card hf-hidden '); }
+      }
+    } catch {}
+    return h;
+  };
+})();
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('[data-hf-btn],[data-hf-close],[data-hf-pick],[data-hf-again],[data-hf-reveal]'); if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  const d = t.dataset;
+  if (d.hfBtn) return hfToggle(d.hfBtn);
+  if (d.hfClose) { const id = d.hfClose; HF.readSec[id] = Math.round((Date.now() - (HF.t0[id] || Date.now())) / 1000); HF.t0[id] = 0; HF.stage[id] = 'quiz'; HF.ans[id] = []; if (aiKey() && !hfData(id)) hfAI(id); }
+  else if (d.hfPick) {
+    const id = d.hfPick, a = HF.ans[id] || (HF.ans[id] = []), qi = +d.q; if (a[qi] !== undefined) return;
+    a[qi] = +d.c;
+    const D = hfData(id); if (D && D.sorular.every((_, i) => a[i] !== undefined)) hfRecord(D.sorular.filter((x, i) => a[i] === x.d).length, D.sorular.length);
+  }
+  else if (d.hfReveal) { const id = d.hfReveal, ta = document.querySelector('[data-hf-self="' + id + '"]'); if (ta) HF.self[id] = ta.value; HF.stage[id] = 'done'; }
+  else if (d.hfAgain) { const id = d.hfAgain; HF.stage[id] = 'read'; HF.ans[id] = []; HF.t0[id] = Date.now(); }
+  hfApply();
+}, true);
+document.addEventListener('input', e => { const t = e.target.closest && e.target.closest('[data-hf-self]'); if (t) HF.self[t.dataset.hfSelf] = t.value; }, true);
+document.addEventListener('keydown', e => { if (e.target.closest && e.target.closest('[data-hf-self]')) e.stopPropagation(); }, true);
+(function () {
+  let t = null; const sched = () => { if (t) return; t = setTimeout(() => { t = null; try { hfApply(); } catch (e) { console.error(e); } }, 60); };
+  const start = () => new MutationObserver(m => { if (m.some(x => ![...x.addedNodes, ...x.removedNodes].every(n => n.nodeType === 1 && n.classList && (n.classList.contains('hf-panel') || n.classList.contains('parca-panel'))))) sched(); }).observe(document.body, { childList: true, subtree: true });
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
 window.__howOpen = window.__howOpen || new Set();
 function howBoxHtml(q) {
   const open = window.__howOpen.has(q.id);
