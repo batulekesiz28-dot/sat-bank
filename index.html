@@ -1286,6 +1286,9 @@ button.bb-seg{cursor:pointer;width:26px;height:14px}
 .pl-edit{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px dashed var(--border)}
 .pl-edit span{flex:1;font-size:13px;color:var(--fg)}
 .pl-edit small{display:block;font-size:11px;color:var(--fg3)}
+.q-tour-btn{letter-spacing:.03em;font-weight:800;background:linear-gradient(90deg,#7c3aed,#2563eb)!important;color:#fff!important;border-color:transparent!important;box-shadow:0 2px 8px rgba(124,58,237,.3)}
+.q-tour-btn .q-tour-sub{font-weight:600;letter-spacing:0;opacity:.85;font-size:11px;text-transform:none}
+.q-tour-btn.armed{background:#f59e0b!important}
 </style>
 
 <!-- TOPBAR -->
@@ -2238,7 +2241,7 @@ function pgBoxInner(id, val) {
   renderQuestion = function (q) {
     let h = orig.apply(this, arguments);
     try { if (q && (q.domain in PG_DOMAINS)) { const btn = pgToggleHtml(q.domain); h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', btn + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', btn + '<span class="q-status-icon">'); } } catch {}
-    try { if (q) { const tb = `<button type="button" class="q-tour-btn" data-tour="${q.id}" title="AI soruyu ekranda anlatsın">🎬 Ekranda göster</button>`; h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', tb + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', tb + '<span class="q-status-icon">'); } } catch {}
+    try { if (q) { const tb = `<button type="button" class="q-tour-btn" data-tour="${q.id}" title="Yapay zekâ bu soruyu ekranda adım adım anlatsın">✨ AI ANLATIM <span class="q-tour-sub">ekranda</span></button>`; h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', tb + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', tb + '<span class="q-status-icon">'); } } catch {}
     try {
       if (!q || !pgOn(q.domain) || state.answers[q.id] !== undefined || state.revealed[q.id]) return h;
       if (q.skill === 'Rhetorical Synthesis') {
