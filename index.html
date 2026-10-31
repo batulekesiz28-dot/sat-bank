@@ -1438,6 +1438,51 @@ body.ink-on.ink-er .ink-layer{cursor:none}
 .dash-dd i.none{background:var(--none)}
 .dash-dd b{text-align:right;color:var(--fg);font-weight:700}
 @media (max-width:900px){.dash-diff-grid{grid-template-columns:1fr}}
+
+.vs-open{background:linear-gradient(90deg,#f59e0b,#ef4444)!important;color:#fff!important;border-color:transparent!important;font-weight:700}
+.vs-badge{margin-left:6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#fff;color:#dc2626;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.vs-badge[hidden]{display:none}
+.vs{margin:6px 0 24px}
+.vs-card{max-width:680px;margin:0 auto;padding:26px 28px;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.vs-top{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.vs-prog{flex:1;height:6px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.vs-prog i{display:block;height:100%;background:linear-gradient(90deg,#f59e0b,#ef4444);border-radius:999px;transition:width .25s}
+.vs-left{font-size:12px;color:var(--fg3);white-space:nowrap}
+.vs-tag{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--surface2);color:var(--fg2);white-space:nowrap}
+.vs-tag.new{background:rgba(37,99,235,.12);color:#2563eb}.vs-tag.known{background:var(--green-dim);color:var(--green)}
+.vs-word{font-family:var(--serif,Georgia,serif);font-size:40px;font-weight:600;color:var(--fg);text-align:center;letter-spacing:-.01em;margin:6px 0 12px}
+.vs-ex{font-family:var(--serif,Georgia,serif);font-size:17px;line-height:1.6;color:var(--fg2);text-align:center;max-width:560px;margin:0 auto 18px;font-style:italic}
+.vs-hit{color:var(--fg);font-style:normal;background:rgba(245,158,11,.18);padding:0 3px;border-radius:4px}
+.vs-think{text-align:center;font-size:13px;color:var(--fg3);margin:8px 0 14px}
+.vs-btn{border:1px solid var(--border2);background:var(--surface);color:var(--fg);border-radius:12px;padding:11px 20px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.vs-btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+.vs-btn small{font-weight:500;opacity:.75;font-size:12px;margin-left:4px}
+.vs-reveal{display:block;margin:0 auto}
+.vs-ans{border-top:1.5px dashed var(--border2);padding-top:16px;margin-top:4px;text-align:center}
+.vs-tr{font-size:24px;font-weight:800;color:var(--fg)}
+.vs-def{font-size:14.5px;color:var(--fg2);margin-top:6px;line-height:1.5}
+.vs-hint{display:inline-block;margin-top:12px;font-size:13.5px;color:var(--fg);background:rgba(245,158,11,.12);border-radius:10px;padding:8px 12px;text-align:left}
+.vs-hint span{display:block;font-size:11px;font-weight:700;color:#b45309;margin-bottom:2px}
+.vs-q{text-align:center;font-size:12.5px;color:var(--fg3);margin:20px 0 10px}
+.vs-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.vs-g{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font:inherit;color:var(--fg)}
+.vs-g b{font-size:15px}.vs-g small{font-size:11.5px;color:var(--fg3)}
+.vs-g.bad{border-color:rgba(227,73,72,.45)}.vs-g.bad:hover{background:rgba(227,73,72,.08)}
+.vs-g.mid{border-color:rgba(245,158,11,.5)}.vs-g.mid:hover{background:rgba(245,158,11,.08)}
+.vs-g.ok{border-color:rgba(27,175,122,.5)}.vs-g.ok:hover{background:rgba(27,175,122,.08)}
+.vs-end{text-align:center}
+.vs-big{font-size:26px;font-weight:800;color:var(--fg);margin-bottom:12px}
+.vs-sum{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--fg2);margin-bottom:16px}
+.vs-sum b{font-size:22px;margin-right:4px}.vs-sum .ok b{color:var(--green)}.vs-sum .mid b{color:#d97706}.vs-sum .bad b{color:var(--red)}
+.vs-mast{max-width:460px;margin:0 auto 14px}
+.vs-mbar{display:flex;gap:2px;height:10px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.vs-mbar i{display:block;height:100%}.vs-mbar i.known{background:var(--green)}.vs-mbar i.learn{background:#f59e0b}
+.vs-mleg{display:flex;justify-content:center;gap:14px;font-size:12px;color:var(--fg2);margin-top:6px}
+.vs-mleg i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--surface2);margin-right:5px;vertical-align:-1px}
+.vs-mleg i.known{background:var(--green)}.vs-mleg i.learn{background:#f59e0b}
+.vs-p{font-size:13.5px;color:var(--fg2);margin:8px 0 16px}
+.vs-row{display:flex;justify-content:center;gap:10px}
+@media (max-width:600px){.vs-card{padding:18px 16px}.vs-word{font-size:32px}.vs-grade{grid-template-columns:1fr}}
 </style>
 
 <!-- TOPBAR -->
@@ -1652,6 +1697,7 @@ body.ink-on.ink-er .ink-layer{cursor:none}
       <div><div class="section-h">Vocab</div><div class="section-sub">Sorudaki bir kelimeye hızlıca 3 kez tıkla, tabloya eklensin. Hücrelere tıklayıp düzenleyebilirsin.</div></div>
       <div class="vocab-actions">
         <button class="topbar-action-btn" id="trOpenBtn">↔ Transition words</button>
+        <button class="topbar-action-btn vs-open" id="vsOpenBtn" title="Aralıklı tekrar: unuttuğun kelime sık, bildiğin seyrek gelir">⚡ Akıllı tekrar <span class="vs-badge" id="vsBadge" hidden></span></button>
         <button class="topbar-action-btn vq-open" id="vqOpenBtn">🧩 Bilmece</button>
         <button class="topbar-action-btn" id="vocabAddBtn">Kelime ekle</button>
         <label class="topbar-action-btn" for="vocabImportFile" tabindex="0">Notion / CSV içe aktar</label>
@@ -1660,6 +1706,7 @@ body.ink-on.ink-er .ink-layer{cursor:none}
         <button class="topbar-action-btn" id="vocabClearBtn">Listeyi temizle</button>
       </div>
     </div>
+    <div id="vocabSrs" class="vs" hidden></div>
     <div id="vocabQuiz" class="vq" hidden></div>
     <div id="vocabTrans" class="trw" hidden></div>
     <div class="vocab-filter">
@@ -7059,10 +7106,10 @@ const SAT_WEB = {
 // ══════════════════════════════════════════════
 (function initSync(){
   const SB = 'sat_bank_v2', INK = 'sat_bank_ink_v1', VC = 'sat_bank_vocab_v1', NB = 'sat_bank_notebook_v1';
-  const KV = ['sat_custom_set_v1', 'sat_custom_set_progress_v1', 'sat_saved_sets', 'sat_schema_v1', 'sat_ai_report_v1', 'sat_hw_v1'];
+  const KV = ['sat_custom_set_v1', 'sat_custom_set_progress_v1', 'sat_saved_sets', 'sat_schema_v1', 'sat_ai_report_v1', 'sat_hw_v1', 'sat_vocab_srs_v1'];
   const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4, aiNote: 16, bluebook: 1, choiceHl: 8, ansAt: 8 };
   // progress belongs to the page owner (the student): the teacher sees it but never changes it
-  const OWNER_ONLY = new Set(['review', 'reflect', 'aiNote', 'bluebook', 'ansAt', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'sat_custom_set_progress_v1', 'sat_saved_sets', 'sat_schema_v1']);
+  const OWNER_ONLY = new Set(['review', 'reflect', 'aiNote', 'bluebook', 'ansAt', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'sat_custom_set_progress_v1', 'sat_saved_sets', 'sat_schema_v1', 'sat_vocab_srs_v1']);
   const BACKUP_KEYS = [SB, INK, VC, NB, ...KV, 'sat_bank_vocab_seed', 'sat_bank_vocab_unsuggest_v1'];
   const BASE_KEY = 'sat_sync_base_v1', IMPORT_FLAG = 'sat_sync_import_pending';
   const groupOf = k => k === SB ? 'st' : k === INK ? 'ink' : k === VC ? 'vc' : k === NB ? 'nb' : KV.includes(k) ? 'kv' : null;
@@ -7347,6 +7394,133 @@ const SAT_WEB = {
 })();
 </script>
 
+<script>
+// ══════════════ ⚡ AKILLI TEKRAR: spaced repetition for the vocab table ══════════════
+// Recall first (see the word in a sentence, think of the meaning), then reveal and rate yourself.
+// Forgotten words come back in the same session and tomorrow; known ones step out to 2, 4, 7 days.
+(function () {
+  const VKEY = 'sat_bank_vocab_v1', KEY = 'sat_vocab_srs_v1', QKEY = 'sat_vocab_quiz_v1';
+  const DAY = 864e5, GAP = [0, 0, DAY, 2 * DAY, 4 * DAY, 7 * DAY];   // box -> wait before it is due again
+  const SIZE = 20;
+  const S = { on: false, queue: [], cur: null, shown: false, done: 0, res: { 1: 0, 2: 0, 3: 0 }, seenNew: 0, startBoxes: null };
+  const norm = w => String(w || '').replace(/İ/g, 'I').replace(/ı/g, 'i').trim().toLowerCase();
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const cap = w => { const t = String(w || '').trim(); return t.charAt(0).toUpperCase() + t.slice(1); };
+  const words = () => { try { const a = JSON.parse(localStorage.getItem(VKEY) || '[]'); const seen = new Set(); return (Array.isArray(a) ? a : []).filter(w => { const n = norm(w && w.word); if (!n || seen.has(n) || !(String(w.meaning || '').trim() || String(w.def || '').trim())) return false; seen.add(n); return true; }); } catch { return []; } };
+  const prog = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { return {}; } };
+  const saveProg = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {} };
+  const quizMiss = () => { try { return JSON.parse(localStorage.getItem(QKEY) || '{}') || {}; } catch { return {}; } };
+  function counts() {
+    const P = prog(), now = Date.now(); let due = 0, nw = 0, learning = 0, known = 0;
+    words().forEach(w => { const p = P[norm(w.word)]; if (!p || !p.b) { nw++; return; } if (p.d <= now) due++; if (p.b >= 4) known++; else learning++; });
+    return { due, nw, learning, known, total: words().length };
+  }
+  function badge() { const b = document.getElementById('vsBadge'); if (!b) return; const k = counts(), n = k.due; b.hidden = !n; b.textContent = n; }
+  function build() {
+    const P = prog(), Q = quizMiss(), now = Date.now(), W = words();
+    const due = W.filter(w => { const p = P[norm(w.word)]; return p && p.b && p.d <= now; }).sort((a, b) => (P[norm(a.word)].b - P[norm(b.word)].b) || (P[norm(a.word)].d - P[norm(b.word)].d));
+    const fresh = W.filter(w => { const p = P[norm(w.word)]; return !p || !p.b; })
+      .sort((a, b) => ((Q[norm(b.word)] || {}).w || 0) - ((Q[norm(a.word)] || {}).w || 0) || Math.random() - 0.5);   // words missed in Bilmece first
+    const nNew = Math.max(6, SIZE - due.length);
+    S.queue = [...due.slice(0, SIZE), ...fresh.slice(0, nNew)].slice(0, Math.max(SIZE, Math.min(due.length, 40)));
+    for (let i = S.queue.length - 1; i > 0; i--) { if (Math.random() < 0.35) { const j = Math.floor(Math.random() * (i + 1)); [S.queue[i], S.queue[j]] = [S.queue[j], S.queue[i]]; } }
+    S.cur = S.queue.shift() || null; S.shown = false; S.done = 0; S.res = { 1: 0, 2: 0, 3: 0 }; S.startBoxes = counts(); S.again = {};
+  }
+  function sentence(w) {
+    const ex = String(w.example || '').trim(); if (!ex) return '';
+    const n = norm(w.word), stem = n.length > 5 ? n.slice(0, n.length - 2) : n;
+    const re = new RegExp('\\b(' + stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[a-z’\'-]*)', 'gi');
+    return esc(ex).replace(re, '<b class="vs-hit">$1</b>');
+  }
+  function boxLabel(b) { return !b ? 'yeni' : b >= 4 ? 'öğrenildi' : 'öğreniliyor'; }
+  function render() {
+    const host = document.getElementById('vocabSrs'); if (!host) return;
+    host.hidden = !S.on;
+    const btn = document.getElementById('vsOpenBtn');
+    if (btn) btn.firstChild.textContent = S.on ? '← Tabloya dön ' : '⚡ Akıllı tekrar ';
+    if (!S.on) return;
+    document.querySelectorAll('#view-vocab .vocab-filter, #view-vocab .vocab-table-wrap').forEach(el => { el.style.display = 'none'; });
+    const k = counts();
+    if (!S.cur) {
+      const total = S.res[1] + S.res[2] + S.res[3];
+      host.innerHTML = `<div class="vs-card vs-end">
+        <div class="vs-big">${total ? '🎉 Tur bitti' : 'Tekrar edilecek kelime yok'}</div>
+        ${total ? `<div class="vs-sum"><span class="ok"><b>${S.res[3]}</b> biliyordum</span><span class="mid"><b>${S.res[2]}</b> zorlandım</span><span class="bad"><b>${S.res[1]}</b> bilmiyordum</span></div>` : '<p class="vs-p">Tablodaki kelimelerin Türkçesi ya da İngilizce anlamı dolu olmalı.</p>'}
+        ${mastery(k)}
+        <p class="vs-p">${k.due ? `Şu an <b>${k.due}</b> kelimenin tekrar zamanı geldi.` : 'Bugünlük tekrar zamanı gelen kelime kalmadı. Yarın yeni tekrarlar açılır.'} ${k.nw ? `${k.nw} kelimeyi henüz hiç çalışmadın.` : ''}</p>
+        <div class="vs-row"><button class="vs-btn primary" data-vs="again">${k.due || k.nw ? 'Yeni tur başlat' : 'Yine de bir tur'}</button><button class="vs-btn" data-vs="close">Tabloya dön</button></div>
+      </div>`;
+      badge(); return;
+    }
+    const w = S.cur, P = prog(), p = P[norm(w.word)] || {}, left = S.queue.length + 1;
+    const pct = Math.round(S.done / (S.done + left) * 100);
+    host.innerHTML = `<div class="vs-card">
+      <div class="vs-top"><span class="vs-prog"><i style="width:${pct}%"></i></span><span class="vs-left">${left} kart kaldı</span><span class="vs-tag ${!p.b ? 'new' : p.b >= 4 ? 'known' : ''}">${boxLabel(p.b)}${p.l ? ` · ${p.l} kez unuttun` : ''}</span></div>
+      <div class="vs-word">${esc(cap(w.word))}</div>
+      ${sentence(w) ? `<div class="vs-ex">${sentence(w)}</div>` : ''}
+      ${S.shown ? `<div class="vs-ans">
+          ${w.meaning ? `<div class="vs-tr">${esc(w.meaning)}</div>` : ''}
+          ${w.def ? `<div class="vs-def">${esc(w.def)}</div>` : ''}
+          ${w.hint ? `<div class="vs-hint"><span>💡 İpucu</span>${esc(w.hint)}</div>` : ''}
+        </div>
+        <div class="vs-q">Ne kadar iyi biliyordun?</div>
+        <div class="vs-grade">
+          <button class="vs-g bad" data-vs-g="1"><b>Bilmiyordum</b><small>1 · bu turda tekrar gelir</small></button>
+          <button class="vs-g mid" data-vs-g="2"><b>Zorlandım</b><small>2 · yarın tekrar</small></button>
+          <button class="vs-g ok" data-vs-g="3"><b>Biliyordum</b><small>3 · ${!p.b ? '2 gün sonra' : p.b >= 4 ? '1 hafta sonra' : (GAP[Math.min(5, p.b + 1)] / DAY) + ' gün sonra'}</small></button>
+        </div>`
+      : `<div class="vs-think">Anlamını aklından söyle, sonra kontrol et.</div><button class="vs-btn primary vs-reveal" data-vs="show">Anlamı göster <small>(boşluk)</small></button>`}
+    </div>`;
+  }
+  function mastery(k) {
+    const t = k.total || 1;
+    return `<div class="vs-mast"><div class="vs-mbar"><i class="known" style="width:${k.known / t * 100}%"></i><i class="learn" style="width:${k.learning / t * 100}%"></i></div>
+      <div class="vs-mleg"><span><i class="known"></i>Öğrenildi <b>${k.known}</b></span><span><i class="learn"></i>Öğreniliyor <b>${k.learning}</b></span><span><i></i>Yeni <b>${k.nw}</b></span></div></div>`;
+  }
+  function grade(g) {
+    const w = S.cur; if (!w || !S.shown) return;
+    const P = prog(), key = norm(w.word), p = P[key] || { b: 0, l: 0, n: 0 }, now = Date.now();
+    p.n = (p.n || 0) + 1;
+    if (g === 1) { p.b = 1; p.l = (p.l || 0) + (p.b0 ? 1 : 0); p.d = now; S.queue.splice(Math.min(3, S.queue.length), 0, w); S.again[key] = 1; }
+    else if (g === 2) { p.b = Math.max(1, Math.min(p.b || 1, 3)); p.d = now + DAY; }
+    else { p.b = S.again[key] ? 2 : !p.b ? 3 : Math.min(5, p.b + 1); p.d = now + GAP[p.b]; }
+    if (g === 1 && !S.again['_c' + key]) { S.res[1]++; S.again['_c' + key] = 1; } else if (g !== 1 && !S.again['_c' + key]) { S.res[g]++; S.again['_c' + key] = 1; }
+    p.b0 = 1; P[key] = p; saveProg(P);
+    if (g !== 1) S.done++;
+    S.cur = S.queue.shift() || null; S.shown = false;
+    render(); badge();
+  }
+  function open(on) {
+    S.on = on;
+    if (on) {
+      if (window.__vq && window.__vq.on) { window.__vq.on = false; const qz = document.getElementById('vocabQuiz'); if (qz) qz.hidden = true; const qb = document.getElementById('vqOpenBtn'); if (qb) qb.textContent = '🧩 Bilmece'; }
+      const tr = document.getElementById('vocabTrans'); if (tr && !tr.hidden) document.getElementById('trOpenBtn')?.click();
+      build();
+    } else document.querySelectorAll('#view-vocab .vocab-filter, #view-vocab .vocab-table-wrap').forEach(el => { el.style.display = ''; });
+    render();
+  }
+  document.addEventListener('click', e => {
+    const t = e.target.closest && e.target.closest('#vsOpenBtn,[data-vs],[data-vs-g],#vqOpenBtn,#trOpenBtn');
+    if (!t) return;
+    if (t.id === 'vqOpenBtn' || t.id === 'trOpenBtn') { if (S.on) { S.on = false; const h = document.getElementById('vocabSrs'); if (h) h.hidden = true; const b = document.getElementById('vsOpenBtn'); if (b) b.firstChild.textContent = '⚡ Akıllı tekrar '; } return; }
+    e.preventDefault(); e.stopPropagation();
+    if (t.id === 'vsOpenBtn') return open(!S.on);
+    if (t.dataset.vsG) return grade(+t.dataset.vsG);
+    const a = t.dataset.vs;
+    if (a === 'show') { S.shown = true; render(); }
+    else if (a === 'again') { build(); render(); }
+    else if (a === 'close') open(false);
+  }, true);
+  document.addEventListener('keydown', e => {
+    if (!S.on || !S.cur) return;
+    const tg = e.target; if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
+    if (!S.shown && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); S.shown = true; render(); }
+    else if (S.shown && /^[123]$/.test(e.key)) { e.preventDefault(); grade(+e.key); }
+  });
+  window.__vs = S;
+  badge(); setInterval(badge, 30000);
+})();
+</script>
 <script>
 // ══════════════ VOCAB BİLMECE: English definition -> pick the word ══════════════
 (function () {
