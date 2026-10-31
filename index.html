@@ -1506,6 +1506,13 @@ body.ink-on.ink-er .ink-layer{cursor:none}
 body.ink-lz .lz-layer{pointer-events:auto;touch-action:none;cursor:crosshair}
 .ink-tool.ink-lz svg{display:block}
 body.ink-lz .ink-palette{z-index:2600}
+
+.vs-meetlist{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow:auto}
+.vs-mrow{border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:left}
+.vs-mtop{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.vs-mtop b{font-family:var(--serif,Georgia,serif);font-size:21px;color:var(--fg)}.vs-mtop span{font-size:15px;font-weight:700;color:var(--fg2)}
+.vs-mex{font-family:var(--serif,Georgia,serif);font-style:italic;font-size:14.5px;color:var(--fg2);margin-top:3px}
+.vs-mhook{font-size:13px;color:var(--fg);margin-top:5px}.vs-mhook em{color:var(--fg3)}.vs-mhook .vs-mini{margin:0 0 0 6px;padding:2px 8px}
+.vs-stop{border:1px solid var(--border2);background:var(--surface);color:var(--fg2);border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
 </style>
 
 <!-- TOPBAR -->
@@ -7470,7 +7477,7 @@ const SAT_WEB = {
 //    then it returns on later days (1, 2, 4, 7 days) until it sticks.
 (function () {
   const VKEY = 'sat_bank_vocab_v1', KEY = 'sat_vocab_srs_v1', MKEY = 'sat_vocab_mn_v1', QKEY = 'sat_vocab_quiz_v1';
-  const DAY = 864e5, GAP = [0, DAY, DAY, 2 * DAY, 4 * DAY, 7 * DAY], SET = 8;
+  const DAY = 864e5, GAP = [0, DAY, DAY, 2 * DAY, 4 * DAY, 7 * DAY], SET = 5;
   const S = { on: false, phase: 'idle', set: [], meet: [], mi: 0, queue: [], cur: null, ans: null, typed: '', hint: 0, stat: {}, mnBusy: {} };
   const norm = w => String(w || '').replace(/İ/g, 'I').replace(/ı/g, 'i').trim().toLowerCase();
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -7497,7 +7504,7 @@ const SAT_WEB = {
     const fresh = shuffle(W.filter(w => { const p = P[norm(w.word)]; return !p || !p.b; })).sort((a, b) => ((Q[norm(b.word)] || {}).w || 0) - ((Q[norm(a.word)] || {}).w || 0));
     let set = due.slice(0, SET); if (set.length < SET) set = set.concat(fresh.slice(0, SET - set.length));
     S.set = set; S.stat = {};
-    set.forEach(w => { const p = P[norm(w.word)]; S.stat[norm(w.word)] = { w, lvl: p && p.b ? 1 : 0, ok: 0, miss: 0, isNew: !(p && p.b) }; });
+    set.forEach(w => { const p = P[norm(w.word)]; S.stat[norm(w.word)] = { w, lvl: p && p.b ? 2 : 1, lvl0: p && p.b ? 2 : 1, ok: 0, miss: 0, isNew: !(p && p.b) }; });
     S.meet = set.filter(w => S.stat[norm(w.word)].isNew); S.mi = 0;
     S.queue = shuffle(set.slice()); S.cur = null; S.ans = null;
     S.phase = !set.length ? 'empty' : S.meet.length ? 'meet' : 'drill';
@@ -7536,11 +7543,14 @@ const SAT_WEB = {
     if (ok) { st.lvl++; st.ok++; if (st.lvl < 3) S.queue.splice(Math.min(S.queue.length, 2 + Math.floor(Math.random() * 3)), 0, w); }
     else { st.miss++; st.lvl = Math.max(0, st.lvl - 1); S.queue.splice(Math.min(S.queue.length, 2), 0, w); }
     render();
+    if (ok) { const cur = S.cur; setTimeout(() => { if (S.cur === cur && S.ans && S.phase === 'drill') { nextQ(); render(); } }, 650); }
   }
   function finish() {
     const P = prog(), now = Date.now();
     Object.values(S.stat).forEach(st => {
       const k = norm(st.w.word), p = P[k] || { b: 0, l: 0 };
+      if (!st.ok && !st.miss) return;
+      if (st.lvl < 3 && !st.miss) st.miss = 0.5;               // stopped half way: back tomorrow
       if (st.miss === 0) p.b = st.isNew ? 2 : Math.min(5, (p.b || 1) + 1);
       else { p.b = 1; if (!st.isNew) p.l = (p.l || 0) + 1; }
       p.d = now + GAP[p.b]; p.n = (p.n || 0) + 1; P[k] = p;
@@ -7582,39 +7592,36 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
     document.querySelectorAll('#view-vocab .vocab-filter, #view-vocab .vocab-table-wrap').forEach(el => { el.style.display = 'none'; });
     const k = counts();
     if (S.phase === 'empty' || S.phase === 'end') {
-      const done = Object.values(S.stat), perfect = done.filter(s => s.miss === 0).length;
+      const done = Object.values(S.stat).filter(s => s.ok || s.miss), perfect = done.filter(s => s.miss === 0).length;
       host.innerHTML = `<div class="vs-card vs-end">
         <div class="vs-big">${S.phase === 'end' ? '🎉 Set tamam' : 'Çalışılacak kelime yok'}</div>
-        ${S.phase === 'end' ? `<p class="vs-p">${done.length} kelimenin hepsini 3'er kez doğru hatırladın. <b>${perfect}</b> tanesini hiç hata yapmadan.</p>
+        ${S.phase === 'end' ? `<p class="vs-p">${done.filter(s => s.ok || s.miss).length} kelime çalıştın, <b>${perfect}</b> tanesini hiç hata yapmadan.</p>
           <div class="vs-endlist">${done.map(s => `<span class="${s.miss ? 'm' : ''}">${esc(cap(s.w.word))}${s.miss ? ` <small>${s.miss} hata · yarın tekrar</small>` : ` <small>${s.isNew ? '1 gün sonra' : 'aralık uzadı'}</small>`}</span>`).join('')}</div>` : '<p class="vs-p">Tablodaki kelimelerin Türkçesi ya da İngilizce anlamı dolu olmalı.</p>'}
         ${mastery(k)}
         <p class="vs-p">${k.due ? `<b>${k.due}</b> kelimenin tekrar zamanı geldi.` : 'Tekrar zamanı gelen kelime yok.'} ${k.nw ? `${k.nw} yeni kelime bekliyor.` : ''} Günde 2–3 set yeterli; araya zaman koymak hatırlamayı güçlendirir.</p>
         <div class="vs-row"><button class="vs-btn primary" data-vs="again">Yeni set</button><button class="vs-btn" data-vs="close">Tabloya dön</button></div>
         <details class="vs-why"><summary>Neden böyle çalışıyor?</summary><ul>
           <li><b>Hatırlamaya çalışmak</b> tekrar okumaktan çok daha kalıcı (test etkisi). O yüzden kart değil soru var.</li>
-          <li><b>Zorlaşan sorular:</b> önce anlamı tanı, sonra cümlede seç, en son kelimeyi kendin yaz. Kendin üretmek en güçlü iz bırakıyor.</li>
-          <li><b>Her kelime 3 kez doğru</b> olmadan set bitmiyor, sonra 1-2-4-7 gün aralıkla geri geliyor (ardışık yeniden öğrenme).</li>
+          <li><b>Zorlaşan sorular:</b> önce kelimeyi cümlede seç, sonra kendin yaz. Yanlış yaparsan bir basamak geri iner. Kendin üretmek en güçlü iz bırakıyor.</li>
+          <li><b>Her kelime doğru hatırlanmadan</b> set bitmiyor (yeni kelime 2 kez, tekrar kelimesi 1 kez), sonra 1-2-4-7 gün aralıkla geri geliyor (ardışık yeniden öğrenme).</li>
           <li><b>Ses benzerliğiyle sahne</b> (anahtar kelime yöntemi) yabancı dil kelimelerinde en etkili hafıza tekniklerinden.</li>
-          <li><b>Karışık sıra ve küçük set:</b> 8 kelime, aralarında karışık. Hata yapınca 2 kart sonra tekrar soruluyor.</li></ul></details>
+          <li><b>Karışık sıra ve küçük set:</b> 5 kelime, aralarında karışık. Hata yapınca 2 kart sonra tekrar soruluyor.</li></ul></details>
       </div>`;
       badge(); return;
     }
     if (S.phase === 'meet') {
-      const w = S.meet[S.mi], h = hook(w), busy = S.mnBusy[norm(w.word)];
       host.innerHTML = `<div class="vs-card">
-        <div class="vs-top"><span class="vs-step">1 · Tanış</span><span class="vs-left">${S.mi + 1} / ${S.meet.length} yeni kelime</span></div>
-        <div class="vs-word">${esc(cap(w.word))}</div>
-        <div class="vs-tr">${esc(tr(w))}</div>${w.meaning && w.def ? `<div class="vs-def">${esc(w.def)}</div>` : ''}
-        ${exampleHas(w) ? `<div class="vs-ex">${sentence(w)}</div>` : ''}
-        <div class="vs-hook">${h ? `<span>🧲 Hafıza kancası</span>${esc(h)}` : `<span>🧲 Hafıza kancası</span><em>Bu kelimenin ipucu yok.</em>`}
-          <button class="vs-mini" data-vs="hook" ${busy ? 'disabled' : ''}>${busy ? 'AI düşünüyor…' : h ? '✨ Başka kanca' : '✨ AI ile ses benzerliği kancası'}</button></div>
-        <div class="vs-think">Kancayı 3 saniye gözünde canlandır.</div>
-        <button class="vs-btn primary vs-reveal" data-vs="meetnext">${S.mi + 1 < S.meet.length ? 'Sonraki kelime' : 'Teste başla'} → <small>(Enter)</small></button>
+        <div class="vs-top"><span class="vs-step">1 · Tanış</span><span class="vs-left">${S.meet.length} yeni kelime · göz gezdir, kancayı canlandır</span></div>
+        <div class="vs-meetlist">${S.meet.map(w => { const h = hook(w), busy = S.mnBusy[norm(w.word)]; return `<div class="vs-mrow">
+          <div class="vs-mtop"><b>${esc(cap(w.word))}</b><span>${esc(tr(w))}</span></div>
+          ${exampleHas(w) ? `<div class="vs-mex">${sentence(w)}</div>` : ''}
+          <div class="vs-mhook">🧲 ${h ? esc(h) : '<em>kanca yok</em>'} <button class="vs-mini" data-vs-hook="${esc(w.word)}" ${busy ? 'disabled' : ''}>${busy ? '…' : h ? '✨ başka' : '✨ AI kanca'}</button></div></div>`; }).join('')}</div>
+        <button class="vs-btn primary vs-reveal" data-vs="meetnext">Teste başla → <small>(Enter)</small></button>
       </div>`;
       return;
     }
     const q = S.cur, w = q.w, st = S.stat[norm(w.word)], a = S.ans;
-    const pct = Math.round(Object.values(S.stat).reduce((t, x) => t + Math.min(3, x.lvl), 0) / (S.set.length * 3) * 100);
+    const pct = Math.round(Object.values(S.stat).reduce((t, x) => t + Math.max(0, Math.min(3, x.lvl) - x.lvl0), 0) / Math.max(1, Object.values(S.stat).reduce((t, x) => t + 3 - x.lvl0, 0)) * 100);
     let body = '';
     if (q.kind === 'mean') {
       body = `<div class="vs-label">Bu kelime ne demek?</div><div class="vs-word sm">${esc(cap(w.word))}</div>
@@ -7634,7 +7641,7 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
         ${!a.ok && hook(w) ? `<div class="vs-hook small"><span>🧲 Kanca</span>${esc(hook(w))}</div>` : ''}${!a.ok ? '<div class="vs-fbn">Bu kelime 2 kart sonra tekrar gelecek.</div>' : ''}</div>
         <button class="vs-btn primary vs-reveal" data-vs="next">Devam → <small>(Enter)</small></button>` : '';
     host.innerHTML = `<div class="vs-card">
-      <div class="vs-top"><span class="vs-step">2 · Hatırla</span><span class="vs-prog"><i style="width:${pct}%"></i></span>${dots()}</div>
+      <div class="vs-top"><span class="vs-step">2 · Hatırla</span><span class="vs-prog"><i style="width:${pct}%"></i></span>${dots()}<button class="vs-stop" data-vs="stop" title="Seti burada bitir; çalıştığın kelimeler kaydedilir">Bitir</button></div>
       ${body}${fb}</div>`;
     if (q.kind === 'type' && !a) { const inp = document.getElementById('vsType'); if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
   }
@@ -7649,14 +7656,16 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
   }
   document.addEventListener('input', e => { if (e.target.id === 'vsType') S.typed = e.target.value; });
   document.addEventListener('click', e => {
-    const t = e.target.closest && e.target.closest('#vsOpenBtn,[data-vs],[data-vs-pick],#vqOpenBtn,#trOpenBtn');
+    const t = e.target.closest && e.target.closest('#vsOpenBtn,[data-vs],[data-vs-pick],[data-vs-hook],#vqOpenBtn,#trOpenBtn');
     if (!t) return;
     if (t.id === 'vqOpenBtn' || t.id === 'trOpenBtn') { if (S.on) { S.on = false; const h = document.getElementById('vocabSrs'); if (h) h.hidden = true; const b = document.getElementById('vsOpenBtn'); if (b) b.firstChild.textContent = '🧠 Kelime kampı '; } return; }
     e.preventDefault(); e.stopPropagation();
     if (t.id === 'vsOpenBtn') return open(!S.on);
     if (t.dataset.vsPick) return answer(t.dataset.vsPick);
+    if (t.dataset.vsHook) { const w = S.meet.find(x => x.word === t.dataset.vsHook); if (w) makeHook(w); return; }
     const a = t.dataset.vs;
-    if (a === 'meetnext') { if (++S.mi >= S.meet.length) { S.phase = 'drill'; nextQ(); } render(); }
+    if (a === 'meetnext') { S.phase = 'drill'; nextQ(); render(); }
+    else if (a === 'stop') { finish(); render(); }
     else if (a === 'hook') makeHook(S.meet[S.mi]);
     else if (a === 'next') { nextQ(); render(); }
     else if (a === 'submit') answer(S.typed);
