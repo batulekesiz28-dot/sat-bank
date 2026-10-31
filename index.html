@@ -1727,7 +1727,7 @@ body.ink-lz .ink-palette{z-index:2600}
       <div><div class="section-h">Vocab</div><div class="section-sub">Sorudaki bir kelimeye hızlıca 3 kez tıkla, tabloya eklensin. Hücrelere tıklayıp düzenleyebilirsin.</div></div>
       <div class="vocab-actions">
         <button class="topbar-action-btn" id="trOpenBtn">↔ Transition words</button>
-        <button class="topbar-action-btn vs-open" id="vsOpenBtn" title="Bilimsel yöntemle kelime çalışması: küçük setler, hatırlama testleri, aralıklı tekrar">🧠 Kelime kampı <span class="vs-badge" id="vsBadge" hidden></span></button>
+        <button class="topbar-action-btn vs-open" id="vsOpenBtn" title="10 kelime, 1–2 dakika: her kelime tek soru; bilemediğin sonda tekrar gelir, sonraki günlerde aralıklı tekrar">⚡ Hızlı kelime <span class="vs-badge" id="vsBadge" hidden></span></button>
         <button class="topbar-action-btn vq-open" id="vqOpenBtn">🧩 Bilmece</button>
         <button class="topbar-action-btn" id="vocabAddBtn">Kelime ekle</button>
         <label class="topbar-action-btn" for="vocabImportFile" tabindex="0">Notion / CSV içe aktar</label>
@@ -7477,7 +7477,7 @@ const SAT_WEB = {
 //    then it returns on later days (1, 2, 4, 7 days) until it sticks.
 (function () {
   const VKEY = 'sat_bank_vocab_v1', KEY = 'sat_vocab_srs_v1', MKEY = 'sat_vocab_mn_v1', QKEY = 'sat_vocab_quiz_v1';
-  const DAY = 864e5, GAP = [0, DAY, DAY, 2 * DAY, 4 * DAY, 7 * DAY], SET = 5;
+  const DAY = 864e5, GAP = [0, DAY, DAY, 2 * DAY, 4 * DAY, 7 * DAY], SET = 10;
   const S = { on: false, phase: 'idle', set: [], meet: [], mi: 0, queue: [], cur: null, ans: null, typed: '', hint: 0, stat: {}, mnBusy: {} };
   const norm = w => String(w || '').replace(/İ/g, 'I').replace(/ı/g, 'i').trim().toLowerCase();
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -7504,20 +7504,20 @@ const SAT_WEB = {
     const fresh = shuffle(W.filter(w => { const p = P[norm(w.word)]; return !p || !p.b; })).sort((a, b) => ((Q[norm(b.word)] || {}).w || 0) - ((Q[norm(a.word)] || {}).w || 0));
     let set = due.slice(0, SET); if (set.length < SET) set = set.concat(fresh.slice(0, SET - set.length));
     S.set = set; S.stat = {};
-    set.forEach(w => { const p = P[norm(w.word)]; S.stat[norm(w.word)] = { w, lvl: p && p.b ? 2 : 1, lvl0: p && p.b ? 2 : 1, ok: 0, miss: 0, isNew: !(p && p.b) }; });
+    set.forEach(w => { const p = P[norm(w.word)]; S.stat[norm(w.word)] = { w, lvl: 1, lvl0: 1, ok: 0, miss: 0, isNew: !(p && p.b) }; });
     S.meet = set.filter(w => S.stat[norm(w.word)].isNew); S.mi = 0;
     S.queue = shuffle(set.slice()); S.cur = null; S.ans = null;
-    S.phase = !set.length ? 'empty' : S.meet.length ? 'meet' : 'drill';
+    S.phase = !set.length ? 'empty' : 'drill';
     if (S.phase === 'drill') nextQ();
   }
   // ── one retrieval question, harder as the word levels up ──
   function makeQ(w) {
     const st = S.stat[norm(w.word)], W = words(), others = shuffle(W.filter(x => norm(x.word) !== norm(w.word)));
-    if (st.lvl === 0) {                                     // meaning recognition
+    if (st.lvl <= 1 && (!exampleHas(w) || Math.random() < 0.3)) {                                     // meaning recognition
       const opts = shuffle([w, ...others.filter(x => tr(x) && tr(x) !== tr(w)).slice(0, 3)]);
       return { w, kind: 'mean', opts };
     }
-    if (st.lvl === 1) {                                     // pick the word that fits the sentence (or the definition)
+    if (st.lvl <= 1) {                                     // pick the word that fits the sentence (or the definition)
       const opts = shuffle([w, ...others.slice(0, 3)]);
       return { w, kind: 'cloze', opts, ctx: exampleHas(w) ? 'ex' : 'def' };
     }
@@ -7525,11 +7525,11 @@ const SAT_WEB = {
   }
   function nextQ() {
     S.ans = null; S.typed = ''; S.hint = 0;
-    const live = S.queue.filter(w => S.stat[norm(w.word)].lvl < 3);
+    const live = S.queue.filter(w => S.stat[norm(w.word)].lvl < 2);
     if (!live.length) { finish(); return; }
     let w = S.queue.shift();
-    while (S.stat[norm(w.word)].lvl >= 3) w = S.queue.shift();
-    if (S.cur && norm(S.cur.w.word) === norm(w.word) && S.queue.length) { S.queue.push(w); w = S.queue.shift(); while (S.stat[norm(w.word)].lvl >= 3) w = S.queue.shift(); }
+    while (S.stat[norm(w.word)].lvl >= 2) w = S.queue.shift();
+    if (S.cur && norm(S.cur.w.word) === norm(w.word) && S.queue.length) { S.queue.push(w); w = S.queue.shift(); while (S.stat[norm(w.word)].lvl >= 2) w = S.queue.shift(); }
     S.cur = makeQ(w);
   }
   function lev(a, b) { const m = a.length, n = b.length, d = Array.from({ length: m + 1 }, (_, i) => [i]); for (let j = 1; j <= n; j++) d[0][j] = j; for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[m][n]; }
@@ -7540,17 +7540,17 @@ const SAT_WEB = {
     if (S.cur.kind === 'type') { const a = norm(val), b = key; ok = a === b || (b.length >= 5 && lev(a, b) <= 1); }
     else ok = norm(val) === key;
     S.ans = { val, ok };
-    if (ok) { st.lvl++; st.ok++; if (st.lvl < 3) S.queue.splice(Math.min(S.queue.length, 2 + Math.floor(Math.random() * 3)), 0, w); }
-    else { st.miss++; st.lvl = Math.max(0, st.lvl - 1); S.queue.splice(Math.min(S.queue.length, 2), 0, w); }
+    if (ok) { st.lvl++; st.ok++; if (st.lvl < 2) S.queue.splice(Math.min(S.queue.length, 2 + Math.floor(Math.random() * 3)), 0, w); }
+    else { st.miss++; st.lvl = 1; S.queue.push(w); }
     render();
-    if (ok) { const cur = S.cur; setTimeout(() => { if (S.cur === cur && S.ans && S.phase === 'drill') { nextQ(); render(); } }, 650); }
+    { const cur = S.cur; setTimeout(() => { if (S.cur === cur && S.ans && S.phase === 'drill') { nextQ(); render(); } }, ok ? 550 : 2200); }
   }
   function finish() {
     const P = prog(), now = Date.now();
     Object.values(S.stat).forEach(st => {
       const k = norm(st.w.word), p = P[k] || { b: 0, l: 0 };
       if (!st.ok && !st.miss) return;
-      if (st.lvl < 3 && !st.miss) st.miss = 0.5;               // stopped half way: back tomorrow
+      if (st.lvl < 2 && !st.miss) st.miss = 0.5;               // stopped half way: back tomorrow
       if (st.miss === 0) p.b = st.isNew ? 2 : Math.min(5, (p.b || 1) + 1);
       else { p.b = 1; if (!st.isNew) p.l = (p.l || 0) + 1; }
       p.d = now + GAP[p.b]; p.n = (p.n || 0) + 1; P[k] = p;
@@ -7578,7 +7578,7 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
       <div class="vs-mleg"><span><i class="known"></i>Kalıcı <b>${k.known}</b></span><span><i class="learn"></i>Öğreniliyor <b>${k.learning}</b></span><span><i></i>Yeni <b>${k.nw}</b></span></div></div>`;
   }
   function dots() {
-    return `<div class="vs-dots">${S.set.map(w => { const st = S.stat[norm(w.word)]; return `<span class="vs-dot l${Math.min(3, st.lvl)}" title="${esc(cap(w.word))}: ${Math.min(3, st.lvl)}/3"></span>`; }).join('')}</div>`;
+    return `<div class="vs-dots">${S.set.map(w => { const st = S.stat[norm(w.word)]; return `<span class="vs-dot l${st.lvl >= 2 ? 3 : st.miss ? 1 : 0}" title="${esc(cap(w.word))}: ${Math.min(3, st.lvl)}/3"></span>`; }).join('')}</div>`;
   }
   function sentence(w, blank) {
     const ex = esc(String(w.example || '')), re = stemRe(w);
@@ -7587,7 +7587,7 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
   function render() {
     const host = document.getElementById('vocabSrs'); if (!host) return;
     host.hidden = !S.on;
-    const btn = document.getElementById('vsOpenBtn'); if (btn) btn.firstChild.textContent = S.on ? '← Tabloya dön ' : '🧠 Kelime kampı ';
+    const btn = document.getElementById('vsOpenBtn'); if (btn) btn.firstChild.textContent = S.on ? '← Tabloya dön ' : '⚡ Hızlı kelime ';
     if (!S.on) return;
     document.querySelectorAll('#view-vocab .vocab-filter, #view-vocab .vocab-table-wrap').forEach(el => { el.style.display = 'none'; });
     const k = counts();
@@ -7602,10 +7602,10 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
         <div class="vs-row"><button class="vs-btn primary" data-vs="again">Yeni set</button><button class="vs-btn" data-vs="close">Tabloya dön</button></div>
         <details class="vs-why"><summary>Neden böyle çalışıyor?</summary><ul>
           <li><b>Hatırlamaya çalışmak</b> tekrar okumaktan çok daha kalıcı (test etkisi). O yüzden kart değil soru var.</li>
-          <li><b>Zorlaşan sorular:</b> önce kelimeyi cümlede seç, sonra kendin yaz. Yanlış yaparsan bir basamak geri iner. Kendin üretmek en güçlü iz bırakıyor.</li>
-          <li><b>Her kelime doğru hatırlanmadan</b> set bitmiyor (yeni kelime 2 kez, tekrar kelimesi 1 kez), sonra 1-2-4-7 gün aralıkla geri geliyor (ardışık yeniden öğrenme).</li>
+          <li><b>Cümle içinde seçmek:</b> kelimeyi bildiğin bir sahnenin (anime, futbol, dizi) içinde bulmak, aklında kalmasını kolaylaştırır.</li>
+          <li><b>Her kelime bir kez doğru hatırlanmadan</b> set bitmiyor; bilemediğin kelime sonda tekrar sorulur, sonra 1-2-4-7 gün aralıkla geri geliyor (ardışık yeniden öğrenme).</li>
           <li><b>Ses benzerliğiyle sahne</b> (anahtar kelime yöntemi) yabancı dil kelimelerinde en etkili hafıza tekniklerinden.</li>
-          <li><b>Karışık sıra ve küçük set:</b> 5 kelime, aralarında karışık. Hata yapınca 2 kart sonra tekrar soruluyor.</li></ul></details>
+          <li><b>Hızlı tur:</b> 10 kelime, 1–2 dakika, aralarında karışık. Hata yapınca 2 kart sonra tekrar soruluyor.</li></ul></details>
       </div>`;
       badge(); return;
     }
@@ -7621,7 +7621,7 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
       return;
     }
     const q = S.cur, w = q.w, st = S.stat[norm(w.word)], a = S.ans;
-    const pct = Math.round(Object.values(S.stat).reduce((t, x) => t + Math.max(0, Math.min(3, x.lvl) - x.lvl0), 0) / Math.max(1, Object.values(S.stat).reduce((t, x) => t + 3 - x.lvl0, 0)) * 100);
+    const pct = Math.round(Object.values(S.stat).reduce((t, x) => t + Math.max(0, Math.min(2, x.lvl) - x.lvl0), 0) / Math.max(1, Object.values(S.stat).reduce((t, x) => t + 2 - x.lvl0, 0)) * 100);
     let body = '';
     if (q.kind === 'mean') {
       body = `<div class="vs-label">Bu kelime ne demek?</div><div class="vs-word sm">${esc(cap(w.word))}</div>
@@ -7638,10 +7638,10 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
         ${a ? '' : `<div class="vs-hrow"><button class="vs-mini" data-vs="letter" ${S.hint >= n.length - 1 ? 'disabled' : ''}>💡 Harf ver (${n.length} harf)</button><button class="vs-mini" data-vs="giveup">Bilmiyorum</button></div>`}`;
     }
     const fb = a ? `<div class="vs-fb ${a.ok ? 'ok' : 'bad'}"><b>${a.ok ? (q.kind === 'type' && norm(a.val) !== norm(w.word) ? 'Doğru sayıldı (küçük yazım hatası)' : 'Doğru!') : 'Olmadı.'}</b> ${esc(cap(w.word))} = ${esc(tr(w))}
-        ${!a.ok && hook(w) ? `<div class="vs-hook small"><span>🧲 Kanca</span>${esc(hook(w))}</div>` : ''}${!a.ok ? '<div class="vs-fbn">Bu kelime 2 kart sonra tekrar gelecek.</div>' : ''}</div>
+        ${!a.ok && hook(w) ? `<div class="vs-hook small"><span>🧲 Kanca</span>${esc(hook(w))}</div>` : ''}${!a.ok ? '<div class="vs-fbn">Setin sonunda tekrar sorulacak.</div>' : ''}</div>
         <button class="vs-btn primary vs-reveal" data-vs="next">Devam → <small>(Enter)</small></button>` : '';
     host.innerHTML = `<div class="vs-card">
-      <div class="vs-top"><span class="vs-step">2 · Hatırla</span><span class="vs-prog"><i style="width:${pct}%"></i></span>${dots()}<button class="vs-stop" data-vs="stop" title="Seti burada bitir; çalıştığın kelimeler kaydedilir">Bitir</button></div>
+      <div class="vs-top"><span class="vs-step">⚡ Hızlı tur</span><span class="vs-prog"><i style="width:${pct}%"></i></span>${dots()}<button class="vs-stop" data-vs="stop" title="Seti burada bitir; çalıştığın kelimeler kaydedilir">Bitir</button></div>
       ${body}${fb}</div>`;
     if (q.kind === 'type' && !a) { const inp = document.getElementById('vsType'); if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
   }
@@ -7658,7 +7658,7 @@ Sadece JSON: {"ipucu":"..."}` }], { temp: 0.8, timeout: 30000 });
   document.addEventListener('click', e => {
     const t = e.target.closest && e.target.closest('#vsOpenBtn,[data-vs],[data-vs-pick],[data-vs-hook],#vqOpenBtn,#trOpenBtn');
     if (!t) return;
-    if (t.id === 'vqOpenBtn' || t.id === 'trOpenBtn') { if (S.on) { S.on = false; const h = document.getElementById('vocabSrs'); if (h) h.hidden = true; const b = document.getElementById('vsOpenBtn'); if (b) b.firstChild.textContent = '🧠 Kelime kampı '; } return; }
+    if (t.id === 'vqOpenBtn' || t.id === 'trOpenBtn') { if (S.on) { S.on = false; const h = document.getElementById('vocabSrs'); if (h) h.hidden = true; const b = document.getElementById('vsOpenBtn'); if (b) b.firstChild.textContent = '⚡ Hızlı kelime '; } return; }
     e.preventDefault(); e.stopPropagation();
     if (t.id === 'vsOpenBtn') return open(!S.on);
     if (t.dataset.vsPick) return answer(t.dataset.vsPick);
