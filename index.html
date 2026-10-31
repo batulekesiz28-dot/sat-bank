@@ -1420,6 +1420,24 @@ body.ink-on.ink-er .ink-layer{cursor:none}
 .hw-row-sub{font-size:11.5px;color:var(--fg3);margin-top:4px}
 
 .q-text .q-intro{display:block;font-style:italic;color:var(--fg2);font-weight:600;font-size:.85em;line-height:1.55;margin:0 0 14px}
+
+.dash-segs{display:flex;gap:8px;flex-wrap:wrap}
+.dash-diffs{margin-top:14px}
+.dash-diff-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.dash-diff{all:unset;box-sizing:border-box;display:block;cursor:pointer;border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+.dash-diff:hover{border-color:var(--accent)}
+.dash-diff.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
+.dash-diff-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.dash-diff-l{font-size:14px;font-weight:800;color:var(--fg)}.dash-diff-l small{font-size:11px;font-weight:600;color:var(--fg3);margin-left:4px}
+.dash-diff-top b{font-size:22px;font-weight:800;color:var(--fg);letter-spacing:-.02em}
+.dash-sk-bar.big{height:10px}
+.dash-diff-doms{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+.dash-dd{display:grid;grid-template-columns:34px 1fr 38px;align-items:center;gap:8px;font-size:11.5px;color:var(--fg2)}
+.dash-dd em{font-style:normal;font-weight:700}
+.dash-dd i{height:6px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--p),var(--none) var(--p))}
+.dash-dd i.none{background:var(--none)}
+.dash-dd b{text-align:right;color:var(--fg);font-weight:700}
+@media (max-width:900px){.dash-diff-grid{grid-template-columns:1fr}}
 </style>
 
 <!-- TOPBAR -->
@@ -3558,8 +3576,9 @@ document.addEventListener('click', e => {
 
 
 // ══════════════ İSTATİSTİK: modern overview — per-domain correct / wrong / flagged, skills, activity ══════════════
-const DASH = { range: 'all' };
-try { DASH.range = localStorage.getItem('sat_dash_range') || 'all'; } catch {}
+const DASH = { range: 'all', diff: 'all' };
+try { DASH.range = localStorage.getItem('sat_dash_range') || 'all'; DASH.diff = localStorage.getItem('sat_dash_diff') || 'all'; } catch {}
+const DASH_DIFF = [['Easy', 'Kolay'], ['Medium', 'Orta'], ['Hard', 'Zor']];
 const DASH_DOM = [
   ['Information and Ideas', 'Information & Ideas', 'info'],
   ['Craft and Structure', 'Craft & Structure', 'craft'],
@@ -3570,8 +3589,13 @@ function dashData() {
   const A = state.answers || {}, F = state.flags || {}, T = state.ansAt || {};
   const since = DASH.range === '7' ? Date.now() - 7 * 864e5 : DASH.range === '30' ? Date.now() - 30 * 864e5 : 0;
   const inRange = id => !since || (T[id] && T[id][0] >= since);
-  const dom = {}, tot = { t: 0, a: 0, c: 0, w: 0, f: 0 };
+  const dom = {}, tot = { t: 0, a: 0, c: 0, w: 0, f: 0 }, DF = {}, QB = {};
   RAW_QUESTIONS.forEach(q => {
+    QB[q.id] = q;
+    const dk = DF[q.difficulty] = DF[q.difficulty] || { t: 0, a: 0, c: 0, w: 0, f: 0, dom: {} }, dd = dk.dom[q.domain] = dk.dom[q.domain] || { t: 0, a: 0, c: 0 };
+    dk.t++; dd.t++; if (F[q.id]) dk.f++;
+    if (A[q.id] !== undefined && inRange(q.id)) { dk.a++; dd.a++; if (A[q.id] === q.correct) { dk.c++; dd.c++; } else dk.w++; }
+    if (DASH.diff !== 'all' && q.difficulty !== DASH.diff) return;
     const d = dom[q.domain] = dom[q.domain] || { t: 0, a: 0, c: 0, w: 0, f: 0, sk: {} };
     const k = d.sk[q.skill] = d.sk[q.skill] || { t: 0, a: 0, c: 0, w: 0, f: 0 };
     d.t++; k.t++; tot.t++;
@@ -3582,8 +3606,8 @@ function dashData() {
   });
   const days = [];
   for (let i = 13; i >= 0; i--) { const d0 = new Date(Date.now() - i * 864e5); d0.setHours(0, 0, 0, 0); days.push({ from: +d0, to: +d0 + 864e5, c: 0, w: 0, label: d0.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }), wd: d0.toLocaleDateString('tr-TR', { weekday: 'short' }) }); }
-  Object.values(T).forEach(t => { const d = days.find(x => t[0] >= x.from && t[0] < x.to); if (d) t[2] ? d.c++ : d.w++; });
-  return { dom, tot, days, stamped: Object.keys(T).length };
+  Object.entries(T).forEach(([id, t]) => { if (DASH.diff !== 'all' && (!QB[id] || QB[id].difficulty !== DASH.diff)) return; const d = days.find(x => t[0] >= x.from && t[0] < x.to); if (d) t[2] ? d.c++ : d.w++; });
+  return { dom, tot, days, DF, stamped: Object.keys(T).length };
 }
 const pctTxt = (a, b) => b ? '%' + Math.round(a / b * 100) : '–';
 function dashDonut(c, w, t, size) {
@@ -3606,8 +3630,9 @@ function dashRender() {
   const mx = Math.max(1, ...D.days.map(d => d.c + d.w));
   const short = { 'Information and Ideas': 'I&I', 'Craft and Structure': 'C&S', 'Expression of Ideas': 'EoI', 'Standard English Conventions': 'SEC' };
   let h = `<section class="dash">
-    <div class="dash-top"><div><div class="dash-title">Genel bakış</div><div class="dash-sub">${rangeTxt} · ${T.a} cevap</div></div>
-      <div class="dash-seg" role="tablist">${[['all', 'Tümü'], ['30', '30 gün'], ['7', '7 gün']].map(([k, l]) => `<button type="button" class="${DASH.range === k ? 'on' : ''}" data-dash-range="${k}">${l}</button>`).join('')}</div></div>
+    <div class="dash-top"><div><div class="dash-title">Genel bakış</div><div class="dash-sub">${rangeTxt}${DASH.diff !== 'all' ? ' · sadece <b>' + (DASH_DIFF.find(x => x[0] === DASH.diff) || [, ''])[1] + '</b> sorular' : ''} · ${T.a} cevap</div></div>
+      <div class="dash-segs"><div class="dash-seg" role="tablist" title="Zorluk">${[['all', 'Tüm zorluklar'], ...DASH_DIFF].map(([k, l]) => `<button type="button" class="${DASH.diff === k ? 'on' : ''}" data-dash-diff="${k}">${l}</button>`).join('')}</div>
+      <div class="dash-seg" role="tablist">${[['all', 'Tümü'], ['30', '30 gün'], ['7', '7 gün']].map(([k, l]) => `<button type="button" class="${DASH.range === k ? 'on' : ''}" data-dash-range="${k}">${l}</button>`).join('')}</div></div></div>
     ${DASH.range !== 'all' && D.stamped < 5 ? '<div class="dash-note">Tarihli kayıt yeni başladı; dönem filtresi birkaç gün sonra anlamlı olur. Eski cevaplar sadece “Tümü”de sayılıyor.</div>' : ''}
     <div class="dash-kpis">
       <div class="kpi"><span class="kpi-l">Çözülen</span><b>${T.a}<small>/${T.t}</small></b><span class="kpi-bar"><i style="width:${T.t ? T.a / T.t * 100 : 0}%"></i></span></div>
@@ -3616,6 +3641,15 @@ function dashRender() {
       <div class="kpi"><span class="kpi-l">⚑ İşaretlenen</span><b>${T.f}</b><span class="kpi-s">tekrar bakılacak</span></div>
       <div class="kpi hero"><span class="kpi-l">Genel doğruluk</span><b>${pctTxt(T.c, T.a)}</b><span class="kpi-bar two"><i class="ok" style="width:${T.a ? T.c / T.a * 100 : 0}%"></i><i class="bad" style="width:${T.a ? T.w / T.a * 100 : 0}%"></i></span></div>
     </div>
+    <article class="dash-card dash-diffs"><header><span class="dash-h">Zorluğa göre</span><span class="dash-sub">bir sütuna tıkla: tüm sayfa sadece o zorluğu gösterir</span></header>
+      <div class="dash-diff-grid">${DASH_DIFF.map(([k, l]) => { const d = D.DF[k] || { t: 0, a: 0, c: 0, w: 0, f: 0, dom: {} };
+        return `<button type="button" class="dash-diff${DASH.diff === k ? ' on' : ''}" data-dash-diff="${DASH.diff === k ? 'all' : k}">
+          <div class="dash-diff-top"><span class="dash-diff-l">${l} <small>${k}</small></span><b>${pctTxt(d.c, d.a)}</b></div>
+          <div class="dash-sk-bar big" data-tip="${l}: ${d.c} doğru · ${d.w} yanlış · ${d.t - d.a} çözülmemiş"><i class="ok" style="width:${d.t ? d.c / d.t * 100 : 0}%"></i><i class="bad" style="width:${d.t ? d.w / d.t * 100 : 0}%"></i></div>
+          <div class="dash-sk-sub">${d.a}/${d.t} çözüldü · ${d.c} doğru · ${d.w} yanlış${d.f ? ' · ⚑ ' + d.f : ''}</div>
+          <div class="dash-diff-doms">${DASH_DOM.map(([dn, , ]) => { const x = d.dom[dn] || { t: 0, a: 0, c: 0 }; const sh = { 'Information and Ideas': 'I&I', 'Craft and Structure': 'C&S', 'Expression of Ideas': 'EoI', 'Standard English Conventions': 'SEC' }[dn];
+            return `<span class="dash-dd" data-tip="${sh} · ${l}: ${x.c}/${x.a} doğru, ${x.t} sorunun ${x.a}'i çözüldü"><em>${sh}</em><i style="--p:${x.a ? Math.round(x.c / x.a * 100) : 0}%" class="${x.a ? '' : 'none'}"></i><b>${pctTxt(x.c, x.a)}</b></span>`; }).join('')}</div>
+        </button>`; }).join('')}</div></article>
     <div class="dash-legend"><span><i class="sw ok"></i>Doğru</span><span><i class="sw bad"></i>Yanlış</span><span><i class="sw none"></i>Çözülmemiş</span><span>⚑ İşaretlenen</span></div>
     <div class="dash-doms">${DASH_DOM.map(([dn, label, view]) => { const d = D.dom[dn] || { t: 0, a: 0, c: 0, w: 0, f: 0, sk: {} };
       return `<article class="dash-dom">
@@ -3640,6 +3674,8 @@ function dashRender() {
 }
 (function () { const o = renderStats; renderStats = function () { o.apply(this, arguments); try { dashRender(); } catch (e) { console.error(e); } }; })();
 document.addEventListener('click', e => {
+  const df = e.target.closest && e.target.closest('[data-dash-diff]');
+  if (df) { DASH.diff = df.dataset.dashDiff; try { localStorage.setItem('sat_dash_diff', DASH.diff); } catch {} return dashRender(); }
   const r = e.target.closest && e.target.closest('[data-dash-range]');
   if (r) { DASH.range = r.dataset.dashRange; try { localStorage.setItem('sat_dash_range', DASH.range); } catch {} return dashRender(); }
   const v = e.target.closest && e.target.closest('[data-dash-view]'); if (v) switchView(v.dataset.dashView);
