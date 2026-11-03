@@ -8564,6 +8564,7 @@ function dsOpen(on) {
   }).catch(err => { const el = document.getElementById('dsCalc'); if (el) el.innerHTML = `<div class="ds-load">Desmos açılamadı (internet bağlantısı?). <a href="https://www.desmos.com/calculator" target="_blank" rel="noopener">desmos.com/calculator</a></div>`; });
 }
 function dsApply(calc, s) {
+  dsmFix(s);
   calc.setBlank();
   calc.updateSettings({ degreeMode: !!s.derece });
   (s.adimlar || []).forEach((st, i) => { if (st.yaz) calc.setExpression({ id: 'e' + i, latex: String(st.yaz) }); });
@@ -8606,6 +8607,31 @@ KURALLAR:
 - Gerekirse görünür alan için pencere ver (cevabın göründüğü aralık).
 Sadece JSON döndür:
 {"yontem":"kısa başlık (ör. Kesişim noktası)","bilmen":"bu soru için bilmen gereken en az şey, 1 cümle","adimlar":[{"yaz":"...","ne":"..."}],"oku":"cevabı nerede/nasıl okursun","cevap":"doğru cevap","derece":false,"pencere":{"xmin":-10,"xmax":10,"ymin":-10,"ymax":10}}`;
+// enforce x_1=random(10): any hand-typed run of consecutive integers ([1,2,3,4,5], \left[0,...,9\right]) becomes random(10)
+const DSM_RND = '\\operatorname{random}(10)';
+function dsmConsec(body) {
+  const n = body.split(',').map(x => x.trim()); if (n.length < 3 || !n.every(x => /^-?\d+$/.test(x))) return false;
+  return n.every((x, i) => i === 0 || +x === +n[i - 1] + 1);
+}
+function dsmFixExpr(t) {
+  return String(t || '').replace(/(\\left)?\[([^\[\]]*)(\\right)?\]/g, (m, a, body) => {
+    const b = body.replace(/\\right\s*$/, '').replace(/\\ldots|\\dots|\.\.\./g, '…');
+    if (/…/.test(b)) { const k = b.split(',').map(x => x.trim()).filter(x => x && x !== '…'); if (k.length >= 2 && k.every(x => /^-?\d+$/.test(x))) return DSM_RND; }
+    return dsmConsec(b) ? DSM_RND : m;
+  });
+}
+function dsmFix(s) {
+  if (!s || !Array.isArray(s.adimlar)) return s;
+  s.adimlar.forEach(st => {
+    st.yaz = dsmFixExpr(st.yaz);
+    st.ne = String(st.ne || '').replace(/\$([^$]+)\$/g, (m, t) => '$' + dsmFixExpr(t) + '$').replace(/\[\s*-?\d+(\s*,\s*-?\d+){2,}\s*\]/g, m => dsmConsec(m.slice(1, -1)) ? 'random(10)' : m);
+  });
+  // a regression that uses x_1 but never defines it → add x_1=random(10) in front
+  const uses = s.adimlar.some(st => /x_\{?1\}?/.test(st.yaz) && /\\sim/.test(st.yaz));
+  const defs = s.adimlar.some(st => /^\s*x_\{?1\}?\s*=/.test(st.yaz));
+  if (uses && !defs) s.adimlar.unshift({ yaz: 'x_{1}=' + DSM_RND, ne: 'Önce x₁ için rastgele 10 sayı oluştur (liste yazmana gerek yok).' });
+  return s;
+}
 async function imgPart(name) {
   const r = await fetch(MIMG + name + '.png'); if (!r.ok) throw new Error('Görsel yüklenemedi');
   const b = await r.blob(); const data = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.readAsDataURL(b); });
@@ -8623,6 +8649,7 @@ async function dsmGen(id) {
     const out = await aiCall(parts, { temp: 0.2, timeout: 60000, think: 'medium' });
     if (!out || !Array.isArray(out.adimlar) || !out.adimlar.length) throw new Error('AI beklenen biçimde cevap vermedi, tekrar dene.');
     out.adimlar = out.adimlar.slice(0, 7).map(s => ({ yaz: String(s.yaz || '').trim(), ne: String(s.ne || '').trim() }));
+    dsmFix(out);
     if (!state.dsm || typeof state.dsm !== 'object') state.dsm = {};
     state.dsm[id] = { at: Date.now(), m: AI.lastModel || aiModel(), s: out };
     delete DS.shots[id];
@@ -8647,7 +8674,7 @@ function kx(tex, inline) {
 }
 function kxText(t) { return String(t || '').split(/(\$[^$]+\$)/g).map(x => /^\$[^$]+\$$/.test(x) ? kx(x.slice(1, -1), true) : escHtml(x)).join(''); }
 function dsmInner(q) {
-  const id = q.id, rec = state.dsm && state.dsm[id], s = rec && rec.s, busy = DSA.busy[id], err = DSA.err[id];
+  const id = q.id, rec = state.dsm && state.dsm[id], s = rec && dsmFix(rec.s), busy = DSA.busy[id], err = DSA.err[id];
   const answered = state.answers[id] !== undefined || (state.revealed && state.revealed[id]);
   if (!s) return `<div class="dsm-empty"><div class="dsm-ic">📈</div><div><div class="dsm-title">Desmos ile çözüm</div><div class="dsm-sub">Bu soruyu Desmos’a ne yazarak çözeceğini adım adım gösterir.</div></div>
     ${busy ? '<div class="dsm-note"><span class="ai-spin"></span> Hazırlanıyor… (10–40 sn)</div>' : `<button type="button" class="dsm-gen" data-dsm-gen="${id}">✨ Hazırla</button>`}</div>
