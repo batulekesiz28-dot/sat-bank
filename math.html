@@ -1726,6 +1726,7 @@ body.math-mode .choice-text .katex{font-size:1.1em}
 .ref-f{font-size:14px}
 .ref-tri{max-width:170px}.ref-svg .mk{stroke:#7c3aed;stroke-width:1.5;fill:none}
 .ref-svg text.lab{font:600 8px system-ui,sans-serif;font-style:normal}
+.ref-no{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:6px;background:#dc2626;color:#fff;font-size:12px;font-weight:900;letter-spacing:.03em}
 </style>
 
 <!-- TOPBAR -->
@@ -8740,8 +8741,8 @@ const REF_SHEET = [
     ['ASA ✅', [], '2 açı + <b>arasındaki</b> kenar', () => triPair({ s: [1, 0, 0], a: [1, 2, 0] })],
     ['AAS ✅', [], '2 açı + arada <b>olmayan</b> kenar', () => triPair({ s: [0, 1, 0], a: [1, 2, 0] })],
     ['HL ✅ (dik üçgen)', [], 'hipotenüs + bir dik kenar', () => rtPair({ s: [1, 2, 0], r: 0 })],
-    ['SSA ❌', [], '2 kenar + arada olmayan açı: eşliği <b>ispatlamaz</b>', () => triPair({ s: [1, 2, 0], a: [1, 0, 0] })],
-    ['AAA ❌', [], 'sadece <b>benzer</b> yapar, eş değil (boyut farklı olabilir)', () => triPair({ a: [1, 2, 3] }, 1.25)],
+    ['SSA <span class="ref-no">HAYIR ✗</span>', [], '2 kenar + arada olmayan açı: eşliği <b>ispatlamaz</b>', () => triPair({ s: [1, 2, 0], a: [1, 0, 0] })],
+    ['AAA <span class="ref-no">HAYIR ✗</span>', [], 'sadece <b>benzer</b> yapar, eş değil (boyut farklı olabilir)', () => triPair({ a: [1, 2, 3] }, 1.25)],
   ], ['Kısa çizgi = eşit kenar (çizgi sayısı hangi kenarın hangisine eşit olduğunu gösterir). Yay = eşit açı. Köşedeki kare = 90°.', 'Eş üçgenlerde karşılık gelen <b>tüm</b> kenarlar ve açılar eşittir (CPCTC).', 'İsimdeki harf sırası eşleşmeyi söyler: △ABC ≅ △DEF ise A↔D, B↔E, C↔F ve AB = DE.']],
   ['Benzer üçgenler (similar ~)', [
     ['AA ~', [], '2 açı eşit → benzer (SAT’ta en çok bu)', () => triPair({ a: [1, 2, 0] }, 1.25)],
