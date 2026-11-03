@@ -1755,6 +1755,12 @@ body.zm-on{overflow:hidden}
 .mq-zw > .mq-zoom{right:-40px;top:0;opacity:.9}
 figure.mq-zw > .mq-zoom{right:6px;top:6px}
 @media (max-width:700px){.mq-zw > .mq-zoom{right:4px;top:4px;width:28px;height:28px;font-size:13px}}
+.dsm-tblx{align-items:flex-start;flex-wrap:wrap}
+.dsm-tbl{border-collapse:collapse;font-size:13px;margin:0 6px}
+.dsm-tbl th,.dsm-tbl td{border:1px solid var(--border,#d1d5db);padding:3px 12px;text-align:center}
+.dsm-tbl th{background:rgba(22,163,74,.08)}
+.dsm-tbl-h{font-size:11.5px;color:var(--fg2,#64748b);align-self:center}
+.dsm-old{font-size:12.5px;background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.4);border-radius:8px;padding:6px 10px;margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 </style>
 
 <!-- TOPBAR -->
@@ -8678,7 +8684,7 @@ function dsApply(calc, s) {
   dsmFix(s);
   calc.setBlank();
   calc.updateSettings({ degreeMode: !!s.derece });
-  (s.adimlar || []).forEach((st, i) => { if (st.yaz) calc.setExpression({ id: 'e' + i, latex: String(st.yaz) }); });
+  (s.adimlar || []).forEach((st, i) => { if (st.tablo) calc.setExpression({ id: 'e' + i, type: 'table', columns: st.tablo.map(([k, v]) => ({ latex: k, values: v })) }); else if (st.yaz) calc.setExpression({ id: 'e' + i, latex: String(st.yaz) }); });
   const p = s.pencere; if (p && [p.xmin, p.xmax, p.ymin, p.ymax].every(v => typeof v === 'number' && isFinite(v)) && p.xmax > p.xmin && p.ymax > p.ymin) calc.setMathBounds({ left: p.xmin, right: p.xmax, bottom: p.ymin, top: p.ymax });
 }
 function dsShowSolution(id) {
@@ -8700,29 +8706,49 @@ document.addEventListener('click', e => {
 
 // ── "Desmos ile nasıl çözerim?" — AI writes the keystrokes (once per question, shared with the teacher) ──
 const DSA = { busy: {}, err: {} };
-const DSM_PROMPT = `Sen Digital SAT matematiğini DESMOS ile çözdüren bir koçsun (Scott Robinson, James Lu ve SAT Penguin'in Desmos taktiklerini kullanan tarzda). Öğrenci Türk; konuyu çok az bilse bile Desmos'a doğru şeyleri yazarak cevaba ulaşmalı.
-Görselde soru, varsa A–D şıkları ve resmi çözüm var. Resmi çözüm ve doğru cevap kesinlikle doğrudur.
-DESMOS TAKTİKLERİ (uygun olanı seç, cebir yaptırma):
-- Denklem çözme: iki tarafı ayrı yaz (y=sol, y=sağ) ya da denklemi direkt yaz; kesişim/sıfır noktasına tıkla.
-- Sistemler: iki denklemi aynen yaz, kesişim noktasına tıkla. "Çözümsüz" = paralel (kesişmiyor), "sonsuz çözüm" = üst üste.
-- Bilinmeyen sabitler (a, b, k...): regresyon kullan. Liste için HER ZAMAN x_{1}=\\operatorname{random}(10) yaz (asla [1,2,3,4] gibi elle liste yazma), sonra sol taraf \\sim sağ taraf (x yerine x_{1}) yaz; Desmos sabitleri bulur.
-- "Hangisi eşdeğer?" : orijinali ve şıkları ayrı ayrı çiz, üst üste binen şık doğrudur.
-- Parabol/fonksiyon: tepe noktası, sıfırlar, y-kesişimi grafiğe tıklayarak okunur; f(3) gibi değerleri direkt yaz.
-- İstatistik: listeyi yaz (L=[...]), mean(L), median(L), stdev(L) ile hesapla.
-- Geometri/trigonometri: hesap makinesi gibi kullan (sqrt, \\pi, sin(); derece gerekiyorsa derece modunu belirt).
-- Yüzde, oran, birim: tek satır aritmetik.
+const DSM_PROMPT = `Sen Digital SAT matematiğini DESMOS ile çözdüren uzman bir koçsun (Scott Robinson, James Lu, SAT Penguin tarzı). Öğrenci Türk; konuyu az bilse bile Desmos'a doğru şeyleri yazarak, EN KISA ve EN GÜVENİLİR yoldan cevaba ulaşmalı. Cebir yaptırma; işi Desmos yapsın.
+Sana soru METNİ (varsa), görseller, şıklar ve resmi çözüm veriliyor. Resmi çözüm ve doğru cevap kesinlikle doğrudur. Sayıları METİNDEN aynen al.
+
+ÖNCE soruyu sınıflandır, sonra o türün yöntemini kullan:
+1) TABLO VAR (x–y değerleri, f(x) tablosu):
+   - Tabloyu Desmos tablosu olarak gir ("tablo" adımı, sütunlar x_{1} ve y_{1}, değerler tablodakiyle AYNEN).
+   - "Hangi denklem/fonksiyon?" → uygun regresyonu yaz: doğrusal y_{1}\\sim mx_{1}+b, üstel y_{1}\\sim ab^{x_{1}}, ikinci derece y_{1}\\sim ax_{1}^{2}+bx_{1}+c. Desmos m, b, a… değerlerini verir; şıkla karşılaştır.
+   - Tablo bir sabit içeriyorsa (ör. t, n, s) sabit için makul bir sayı seç ya da şıkları tek tek çiz ve tablodaki noktaların üstünden geçen şıkkı bul.
+   - "f(k)=? / y-kesişimi / x-kesişimi" → regresyondan sonra f(x)=… diye yaz ya da grafikte noktaya tıkla.
+   - Sorudaki her şık bir tablo ise: verilen denklemi/eşitsizliği çiz, her şıkkın noktalarını (x,y) listesi olarak yaz; hepsi doğrunun/bölgenin içinde kalan şık doğrudur.
+   - Tablo sorusunda random(10) KULLANMA; gerçek tablo değerlerini kullan.
+2) BİLİNMEYEN SABİT (a, b, c, k, p…) ve "her x için doğru / sonsuz çözüm / eşdeğer" → x_{1}=\\operatorname{random}(10) yaz, sonra "sol taraf \\sim sağ taraf" (x yerine x_{1}). Desmos sabitleri verir. Elle [1,2,3] listesi yazma.
+3) "Çözümü yok" (no solution): iki tarafı y= olarak çiz; paralel olacak sabiti bul (eğimleri eşitle: sabit için slider kullanabilirsin, ör. k=1 yazıp kaydır).
+4) DENKLEM / SİSTEM: iki tarafı ayrı çiz veya denklemleri aynen yaz; kesişime tıkla. Mutlak değer, kök, kesirli denklemlerde de böyle.
+5) "Hangisi eşdeğer?": orijinali ve şıkları çiz, üst üste binen şık doğrudur.
+6) PARABOL / FONKSİYON: tepe, sıfırlar, y-kesişimi grafiğe tıklayarak okunur; f(3) gibi değerleri direkt yaz. Maksimum/minimum için grafikteki gri noktaya tıkla.
+7) İSTATİSTİK: L=[…] listesi yaz, mean(L), median(L), stdev(L). Frekans tablosunda değerleri tekrarlarıyla yaz ya da sum(değer·frekans)/sum(frekans).
+8) GEOMETRİ / TRİGONOMETRİ: hesap makinesi gibi kullan (sqrt, \\pi, sin()). Açı derece ise "derece": true yap. Çember denklemi verilmişse denklemi çiz, merkezi/yarıçapı grafikte oku.
+9) YÜZDE / ORAN / BİRİM: tek satır aritmetik (Desmos sonucu yanına yazar).
+Desmos ile çözmek gerçekten anlamsızsa bile en azından hesabı Desmos'a yaptır; uzun cebir anlatma.
+
 KURALLAR:
-- En fazla 6 adım. Her adımda "yaz" = Desmos'a AYNEN yazılacak tek ifade (Desmos LaTeX: \\frac{a}{b}, \\sqrt{x}, x^{2}, \\le, \\pi, \\sim, x_{1}). Tıklama/okuma adımında "yaz" boş string olsun.
-- "ne", "oku", "bilmen": düz, kısa Türkçe cümle. İçinde matematik geçerse sadece $...$ arasına yaz (ör. $x=3$); ters bölü (\\) ve kod görünümü KULLANMA.
-- Sonunda cevabı grafikten/listeden nasıl okuyacağını ve şıkla nasıl eşleştireceğini anlat. Cevap resmi doğru cevapla aynı olmalı.
-- Gerekirse görünür alan için pencere ver (cevabın göründüğü aralık).
+- En fazla 6 adım. İki tür adım var:
+  a) {"yaz":"...","ne":"..."}: "yaz" Desmos'a AYNEN yazılacak tek ifade (Desmos LaTeX: \\frac{a}{b}, \\sqrt{x}, x^{2}, \\le, \\pi, \\sim, x_{1}, y_{1}). Tıklama/okuma adımında "yaz" boş string.
+  b) {"tablo":{"x_{1}":[sayılar],"y_{1}":[sayılar]},"ne":"..."}: Desmos tablosu. Sütun adları x_{1}, y_{1} (gerekirse x_{2}, y_{2}). Değerler sayı olmalı.
+- "ne", "oku", "bilmen": kısa, düz Türkçe. Matematik geçerse $...$ arasına yaz (ör. $x=3$); ters bölü ve kod görünümü kullanma.
+- Sonunda cevabı nereden okuyacağını ve şıkla nasıl eşleştireceğini söyle. Cevap resmi doğru cevapla aynı olmalı.
+- Görünür alan için "pencere" ver (cevabın göründüğü aralık; tablo sorusunda tablo değerlerini kapsasın).
+ÖRNEK (tablo + doğrusal): {"yontem":"Tablo + regresyon","bilmen":"Tablodaki noktalardan geçen doğruyu Desmos bulur.","adimlar":[{"tablo":{"x_{1}":[-11,-10,-9,-8],"y_{1}":[21,18,15,12]},"ne":"Tabloyu Desmos tablosu olarak gir."},{"yaz":"y_{1}\\sim mx_{1}+b","ne":"Doğrusal regresyon: Desmos $m=-3$, $b=-12$ verir."},{"yaz":"y=-3x-12","ne":"Doğruyu çiz, x eksenini kestiği noktaya tıkla."}],"oku":"Doğru x eksenini $(-4,0)$ noktasında keser.","cevap":"(-4,0)","derece":false,"pencere":{"xmin":-15,"xmax":5,"ymin":-10,"ymax":30}}
 Sadece JSON döndür:
-{"yontem":"kısa başlık (ör. Kesişim noktası)","bilmen":"bu soru için bilmen gereken en az şey, 1 cümle","adimlar":[{"yaz":"...","ne":"..."}],"oku":"cevabı nerede/nasıl okursun","cevap":"doğru cevap","derece":false,"pencere":{"xmin":-10,"xmax":10,"ymin":-10,"ymax":10}}`;
+{"yontem":"kısa başlık","bilmen":"bu soru için bilmen gereken en az şey, 1 cümle","adimlar":[...],"oku":"cevabı nerede/nasıl okursun","cevap":"doğru cevap","derece":false,"pencere":{"xmin":-10,"xmax":10,"ymin":-10,"ymax":10}}`;
 // enforce x_1=random(10): any hand-typed run of consecutive integers ([1,2,3,4,5], \left[0,...,9\right]) becomes random(10)
 const DSM_RND = '\\operatorname{random}(10)';
 function dsmConsec(body) {
   const n = body.split(',').map(x => x.trim()); if (n.length < 3 || !n.every(x => /^-?\d+$/.test(x))) return false;
   return n.every((x, i) => i === 0 || +x === +n[i - 1] + 1);
+}
+// a Desmos table step: {"x_{1}":[…],"y_{1}":[…]} → [[latex, [numbers]], …]
+function dsmTable(t) {
+  if (!t || typeof t !== 'object') return null;
+  const cols = Array.isArray(t) ? t.map(c => Array.isArray(c) ? c : [c.ad || c.latex, c.degerler || c.values]) : Object.entries(t);
+  const out = cols.filter(([k, v]) => k && Array.isArray(v) && v.length).map(([k, v]) => [String(k), v.map(x => String(x).trim())]);
+  return out.length ? out : null;
 }
 function dsmFixExpr(t) {
   return String(t || '').replace(/(\\left)?\[([^\[\]]*)(\\right)?\]/g, (m, a, body) => {
@@ -8733,6 +8759,7 @@ function dsmFixExpr(t) {
 }
 function dsmFix(s) {
   if (!s || !Array.isArray(s.adimlar)) return s;
+  if (s.adimlar.some(st => st.tablo || /^\s*y_\{?\d\}?\s*=\s*(\\left)?\[/.test(st.yaz || ''))) return s;   // table / data questions keep their real values
   s.adimlar.forEach(st => {
     st.yaz = dsmFixExpr(st.yaz);
     st.ne = String(st.ne || '').replace(/\$([^$]+)\$/g, (m, t) => '$' + dsmFixExpr(t) + '$').replace(/\[\s*-?\d+(\s*,\s*-?\d+){2,}\s*\]/g, m => dsmConsec(m.slice(1, -1)) ? 'random(10)' : m);
@@ -8756,13 +8783,16 @@ async function dsmGen(id) {
     const parts = [await imgPart(id + '_q')];
     if (q.mt === 'mcq') for (const k of 'ABCD') { parts.push({ text: 'Şık ' + k + ':' }); parts.push(await imgPart(id + '_' + k)); }
     parts.push({ text: 'Resmi çözüm:' }); parts.push(await imgPart(id + '_r'));
-    parts.push({ text: DSM_PROMPT + `\nKONU: ${q.domain} / ${q.skill}\nDOĞRU CEVAP: ${q.mt === 'mcq' ? 'Şık ' + q.correct : q.acc}` });
+    let txt = '';
+    if (q.tx) { txt = '\nSORU METNİ ($…$ LaTeX, [T: başlık|… ; satır|…] tablo demek):\n' + String(q.question || '').replace(/⟦IMG:[^⟧]+⟧/g, '[resim]').replace(/⟦BR⟧/g, '\n'); if (q.mt === 'mcq') txt += '\nŞIKLAR:\n' + 'ABCD'.split('').map(k => k + ') ' + String((q.choices || {})[k] || '').replace(/⟦IMG:[^⟧]+⟧/g, '[resim]')).join('\n'); }
+    parts.push({ text: DSM_PROMPT + txt + `\nKONU: ${q.domain} / ${q.skill}\nDOĞRU CEVAP: ${q.mt === 'mcq' ? 'Şık ' + q.correct : q.acc}` });
     const out = await aiCall(parts, { temp: 0.2, timeout: 60000, think: 'medium' });
     if (!out || !Array.isArray(out.adimlar) || !out.adimlar.length) throw new Error('AI beklenen biçimde cevap vermedi, tekrar dene.');
-    out.adimlar = out.adimlar.slice(0, 7).map(s => ({ yaz: String(s.yaz || '').trim(), ne: String(s.ne || '').trim() }));
+    out.adimlar = out.adimlar.slice(0, 7).map(s => { const o = { yaz: String(s.yaz || '').trim(), ne: String(s.ne || '').trim() }; const t = dsmTable(s.tablo); if (t) { o.tablo = t; o.yaz = ''; } return o; });
+    out.v = 2;
     dsmFix(out);
     if (!state.dsm || typeof state.dsm !== 'object') state.dsm = {};
-    state.dsm[id] = { at: Date.now(), m: AI.lastModel || aiModel(), s: out };
+    state.dsm[id] = { at: Date.now(), m: AI.lastModel || aiModel(), s: out, v: 2 };
     delete DS.shots[id];
     saveState();
   } catch (e) { DSA.err[id] = aiErrText(e); }
@@ -8792,13 +8822,15 @@ function dsmInner(q) {
     ${err ? `<div class="dsm-err">${escHtml(err)}</div>` : ''}`;
   let k = 0;
   const steps = s.adimlar.map(st => {
-    const typed = !!st.yaz; if (typed) k++;
+    const typed = !!st.yaz || !!st.tablo; if (typed) k++;
+    const tbl = st.tablo ? `<div class="dsm-expr dsm-tblx"><span class="dsm-expr-n">${k}</span><table class="dsm-tbl"><tr>${st.tablo.map(([c]) => `<th>${kx(c, true)}</th>`).join('')}</tr>${Array.from({ length: Math.max(...st.tablo.map(c => c[1].length)) }, (_, r) => `<tr>${st.tablo.map(c => `<td>${escHtml(c[1][r] ?? '')}</td>`).join('')}</tr>`).join('')}</table><span class="dsm-tbl-h">Desmos’ta <b>+</b> → <b>tablo</b></span></div>` : '';
     return `<li class="dsm-step${typed ? '' : ' look'}">
       <div class="dsm-badge">${typed ? k : '👆'}</div>
-      <div class="dsm-body">${typed ? `<div class="dsm-expr"><span class="dsm-expr-n">${k}</span><span class="dsm-math">${kx(st.yaz)}</span><button type="button" class="dsm-copy" data-dsm-copy="${escHtml(st.yaz)}" title="Kopyala, Desmos’a yapıştır">Kopyala</button></div>` : ''}
+      <div class="dsm-body">${tbl}${st.yaz ? `<div class="dsm-expr"><span class="dsm-expr-n">${k}</span><span class="dsm-math">${kx(st.yaz)}</span><button type="button" class="dsm-copy" data-dsm-copy="${escHtml(st.yaz)}" title="Kopyala, Desmos’a yapıştır">Kopyala</button></div>` : ''}
         <div class="dsm-ne">${kxText(st.ne)}</div></div></li>`;
   }).join('');
   return `<details class="dsm-det" ${answered ? 'open' : ''}><summary><span class="dsm-ic sm">📈</span><span class="dsm-title">Desmos ile çözüm</span>${s.yontem ? `<span class="dsm-m">${escHtml(s.yontem)}</span>` : ''}${answered ? '' : '<span class="dsm-warn">cevabı gösterir</span>'}<span class="dsm-chev">⌄</span></summary>
+    ${!(rec.v >= 2) ? `<div class="dsm-old">Bu çözüm eski yöntemle hazırlandı. Daha iyisi için <button type="button" class="dsm-regen" data-dsm-gen="${id}">↻ Yeniden hazırla</button></div>` : ''}
     ${s.bilmen ? `<div class="dsm-know">💡 ${kxText(s.bilmen)}</div>` : ''}
     <div class="dsm-grid"><ol class="dsm-steps">${steps}</ol>
       <figure class="dsm-pic mq-zw"><button type="button" class="mq-zoom" data-zoom title="Büyüteç: büyüt / küçült">🔍</button><img class="dsm-shot" data-dsm-shot="${id}" alt="Desmos görüntüsü" ${DS.shots[id] ? `src="${DS.shots[id]}"` : ''}><figcaption class="dsm-pic-note">${DS.shots[id] ? 'Desmos’ta böyle görünür' : 'Görüntü hazırlanıyor…'}</figcaption></figure></div>
