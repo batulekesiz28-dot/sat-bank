@@ -6664,7 +6664,7 @@ document.addEventListener('mouseup', e => {
   const redoStack = {};
   const hist = {};   // per question: what each undo step reverses ('ink' stroke or an eraser pass)
   const cleared = {};
-  const ui = { tool: null, penColor: PEN_COLORS[0], hlColor: HL_COLORS[0], thColor: '#fef08a', erMode: 'stroke', lzSec: 2, penSize: 3, hlSize: 4, open: true, x: null, y: null };
+  const ui = { tool: null, penColor: PEN_COLORS[0], hlColor: HL_COLORS[0], thColor: '#fef08a', erMode: 'stroke', lzSec: 2, penSize: 3, hlSize: 4, stab: 5, open: true, x: null, y: null };
   try { Object.assign(ui, JSON.parse(localStorage.getItem(UI_KEY) || '{}')); } catch {}
   ui.tool = null; // always start with ink off, so choices are clickable
   try {
@@ -6677,7 +6677,7 @@ document.addEventListener('mouseup', e => {
   } catch {}
   let lastQid = null;
 
-  const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify({ penColor: ui.penColor, hlColor: ui.hlColor, thColor: ui.thColor, erMode: ui.erMode, lzSec: ui.lzSec, penSize: ui.penSize, hlSize: ui.hlSize, open: ui.open, x: ui.x, y: ui.y })); } catch {} };
+  const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify({ penColor: ui.penColor, hlColor: ui.hlColor, thColor: ui.thColor, erMode: ui.erMode, lzSec: ui.lzSec, penSize: ui.penSize, hlSize: ui.hlSize, stab: ui.stab, open: ui.open, x: ui.x, y: ui.y })); } catch {} };
   let saveT = null;
   const saveInk = () => {
     clearTimeout(saveT);
@@ -6718,6 +6718,7 @@ document.addEventListener('mouseup', e => {
       <div class="ink-ermode" id="inkErMode"><button type="button" data-er-mode="stroke">Tüm çizgiyi sil</button><button type="button" data-er-mode="part">Parça parça sil</button></div>
       <div class="ink-erhint" id="inkErHint">Fosforlu metinlere değince o fosfor da silinir.</div>
       <label class="ink-size"><span>Kalınlık</span><input type="range" id="inkSize" min="1" max="12"><b id="inkSizeVal"></b></label>
+      <label class="ink-size ink-stab" id="inkStabRow" title="Çizgiyi yumuşatır: titreme gider, daireler ve eğriler daha pürüzsüz olur. 0 = kapalı"><span>Vuruş sabitleme</span><input type="range" id="inkStab" min="0" max="10"><b id="inkStabVal"></b></label>
     </div>
     <button class="ink-chip" data-ink-drag data-ink="expand" title="Kalem araçlarını aç">${ICON.pen}</button>`;
   document.body.appendChild(pal);
@@ -6743,6 +6744,7 @@ document.addEventListener('mouseup', e => {
     pal.querySelector('#inkSize').max = ui.tool === 'lz' ? 10 : 12;
     pal.querySelector('#inkSize').value = size;
     pal.querySelector('#inkSizeVal').textContent = size;
+    { const st = ui.stab == null ? 5 : ui.stab; pal.querySelector('#inkStab').value = st; pal.querySelector('#inkStabVal').textContent = st ? st : 'kapalı'; pal.querySelector('#inkStabRow').style.display = (ui.tool === 'pen' || ui.tool === 'hl') ? '' : 'none'; }
     pal.querySelector('.ink-dot').style.background = ui.tool === 'er' ? 'transparent' : ui.tool === 'lz' ? '#ef4444' : cur;
     pal.querySelector('.ink-color').classList.toggle('is-er', ui.tool === 'er');
     pal.querySelector('#inkErMode').style.display = pal.querySelector('#inkErHint').style.display = ui.tool === 'er' ? '' : 'none';
@@ -6841,6 +6843,7 @@ document.addEventListener('mouseup', e => {
       if (ui.tool === 'lz') ui.lzSec = v; else if (ui.tool === 'hl') ui.hlSize = v; else ui.penSize = v;
       pal.querySelector('#inkSizeVal').textContent = v; saveUi();
     }
+    if (e.target.id === 'inkStab') { ui.stab = +e.target.value; pal.querySelector('#inkStabVal').textContent = ui.stab ? ui.stab : 'kapalı'; saveUi(); }
     if (e.target.id === 'inkCustomColor') {
       if (ui.tool === 'hl') ui.hlColor = e.target.value; else ui.penColor = e.target.value;
       e.target.parentElement.style.setProperty('--sw', e.target.value);
@@ -6935,6 +6938,7 @@ document.addEventListener('mouseup', e => {
     const r = cv.getBoundingClientRect();
     const w = ui.tool === 'hl' ? ui.hlSize * 4 + 4 : ui.tool === 'er' ? ui.penSize * 4 + 10 : ui.penSize;
     active = { cv, qid: cv.dataset.qid, id: e.pointerId, s: { t: ui.tool, c: ui.tool === 'hl' ? ui.hlColor : ui.penColor, w, p: [Math.round(e.clientX - r.left), Math.round(e.clientY - r.top)] } };
+    if ((ui.tool === 'pen' || ui.tool === 'hl') && ui.stab > 0) active.sm = { x: e.clientX - r.left, y: e.clientY - r.top, a: Math.max(0.12, 1 - ui.stab * 0.088), rx: e.clientX - r.left, ry: e.clientY - r.top };
     try { cv.setPointerCapture(e.pointerId); } catch {}
     if (ui.tool === 'er') { active.er = { txt: null, del: [] }; erHit(e.clientX, e.clientY); }
     redraw(cv);
@@ -6947,13 +6951,17 @@ document.addEventListener('mouseup', e => {
     const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
     (evs.length ? evs : [e]).forEach(ev => {
       if (active.er) erHit(ev.clientX, ev.clientY);
-      const x = Math.round(ev.clientX - r.left), y = Math.round(ev.clientY - r.top);
-      if (Math.hypot(x - p[p.length - 2], y - p[p.length - 1]) >= 1.5) p.push(x, y);
+      let x = ev.clientX - r.left, y = ev.clientY - r.top;
+      const sm = active.sm;
+      if (sm) { sm.rx = x; sm.ry = y; sm.x += (x - sm.x) * sm.a; sm.y += (y - sm.y) * sm.a; x = sm.x; y = sm.y; }
+      x = Math.round(x * 2) / 2; y = Math.round(y * 2) / 2;
+      if (Math.hypot(x - p[p.length - 2], y - p[p.length - 1]) >= (sm ? 1 : 1.5)) p.push(x, y);
     });
     if (!rafPending) { rafPending = true; requestAnimationFrame(() => { rafPending = false; if (active) redraw(active.cv); }); }
   }, { passive: false });
   const finish = e => {
     if (!active || (e && e.pointerId !== active.id)) return;
+    if (active.sm && active.s.p.length > 2) { const sm = active.sm, p = active.s.p; for (let k = 0; k < 12 && Math.hypot(sm.rx - sm.x, sm.ry - sm.y) > 1; k++) { sm.x += (sm.rx - sm.x) * 0.5; sm.y += (sm.ry - sm.y) * 0.5; p.push(Math.round(sm.x * 2) / 2, Math.round(sm.y * 2) / 2); } p.push(Math.round(sm.rx * 2) / 2, Math.round(sm.ry * 2) / 2); }
     const { qid, s, er } = active;
     active = null;
     const H = (hist[qid] = hist[qid] || []);
