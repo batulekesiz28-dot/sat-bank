@@ -1624,14 +1624,22 @@ body.math-mode .q-tour-btn,body.math-mode .q-lv-btn,body.math-mode .q-pg-toggle,
 .spr-res,.spr-hint{font-size:13px;color:var(--fg2);margin-top:8px}.spr-res b{color:var(--fg)}
 .q-dsm-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:999px;border:1px solid #16a34a;background:rgba(22,163,74,.08);color:#15803d;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:6px}
 .q-dsm-btn.on{background:#16a34a;color:#fff}
-.ds-dock{position:fixed;top:0;right:0;bottom:0;width:min(460px,100vw);z-index:1300;background:var(--surface);border-left:1px solid var(--border);box-shadow:-12px 0 32px rgba(0,0,0,.14);display:flex;flex-direction:column}
+.ds-dock{position:fixed;z-index:1300;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
+.ds-dock.docked{top:0!important;right:0;bottom:0;left:auto!important;width:min(460px,100vw)!important;height:auto!important;border-radius:0;border-width:0 0 0 1px}
+.ds-dock.big{left:3vw!important;top:3vh!important;width:94vw!important;height:94vh!important}
+.ds-dock.moving{opacity:.92;user-select:none}
+.ds-dock.moving iframe,.ds-dock.moving .ds-calc{pointer-events:none}
 .ds-dock[hidden]{display:none}
-.ds-head{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);font-size:14px}
-.ds-acts{display:flex;gap:6px}.ds-acts button{border:1px solid var(--border2);background:var(--surface);color:var(--fg2);border-radius:8px;padding:4px 10px;cursor:pointer;font:inherit;font-size:12.5px}
+.ds-head{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);font-size:14px;background:#1f2937;color:#fff;cursor:move;touch-action:none;user-select:none}
+.ds-dock.docked .ds-head,.ds-dock.big .ds-head{cursor:default}
+.ds-grip{opacity:.6}.ds-head b{flex:1}
+.ds-acts{display:flex;gap:5px}.ds-acts button{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:7px;min-width:30px;padding:3px 8px;cursor:pointer;font:inherit;font-size:12.5px}.ds-acts button:hover,.ds-acts button.on{background:rgba(255,255,255,.22)}
+.ds-rz{position:absolute;right:0;bottom:0;width:22px;height:22px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,rgba(100,116,139,.55) 50%,rgba(100,116,139,.55) 58%,transparent 58%,transparent 68%,rgba(100,116,139,.55) 68%,rgba(100,116,139,.55) 76%,transparent 76%)}
+.ds-dock.docked .ds-rz,.ds-dock.big .ds-rz{display:none}
 .ds-calc{flex:1;min-height:0}
 .ds-load{padding:20px;color:var(--fg3);font-size:13px}
 .ds-helper{position:fixed;left:-10000px;top:0;width:460px;height:300px}
-@media (min-width:1100px){body.ds-on .app,body.ds-on .topbar{margin-right:460px}body.ds-on .ink-palette{right:472px!important}body.ds-on .qnav{right:460px;width:auto}body.ts-full.ds-on #view-tset{right:460px}}
+@media (min-width:1100px){body.ds-docked .app,body.ds-docked .topbar{margin-right:460px}body.ds-docked .ink-palette{right:472px!important}body.ds-docked .qnav{right:460px;width:auto}body.ts-full.ds-docked #view-tset{right:460px}}
 .dsm-box{margin:14px 0 10px;border:1.5px solid rgba(22,163,74,.35);border-radius:14px;background:rgba(22,163,74,.04);padding:12px 14px;font-family:Inter,system-ui,sans-serif}
 .dsm-h{font-weight:800;font-size:14px;color:var(--fg)}
 .dsm-box>.dsm-h{display:block;margin-bottom:8px}
@@ -8426,14 +8434,53 @@ function dsLoad() {
   DS.loading = new Promise((res, rej) => { const s = document.createElement('script'); s.src = DS_URL; s.onload = () => res(); s.onerror = () => { DS.loading = null; rej(new Error('Desmos yüklenemedi')); }; document.head.appendChild(s); });
   return DS.loading;
 }
+// Bluebook-style calculator window: drag by its title bar, resize from the corner, expand, or pin to the side
+const DSW = { x: null, y: null, w: 480, h: 600, mode: 'float' };
+try { Object.assign(DSW, JSON.parse(localStorage.getItem('satm_ds_win') || '{}')); } catch {}
+const dswSave = () => { try { localStorage.setItem('satm_ds_win', JSON.stringify(DSW)); } catch {} };
+function dsPlace() {
+  const d = document.getElementById('dsDock'); if (!d) return;
+  d.classList.toggle('docked', DSW.mode === 'dock'); d.classList.toggle('big', DSW.mode === 'big');
+  document.body.classList.toggle('ds-docked', !d.hidden && DSW.mode === 'dock');
+  if (DSW.mode === 'float') {
+    const W = Math.min(Math.max(320, DSW.w), innerWidth - 16), H = Math.min(Math.max(320, DSW.h), innerHeight - 16);
+    let x = DSW.x == null ? innerWidth - W - 24 : DSW.x, y = DSW.y == null ? 80 : DSW.y;
+    x = Math.min(Math.max(8, x), innerWidth - W - 8); y = Math.min(Math.max(8, y), innerHeight - 60);
+    Object.assign(d.style, { left: x + 'px', top: y + 'px', width: W + 'px', height: Math.min(H, innerHeight - y - 8) + 'px' });
+  } else Object.assign(d.style, { left: '', top: '', width: '', height: '' });
+  const mb = d.querySelector('[data-ds="big"]'); if (mb) { mb.textContent = DSW.mode === 'big' ? '⤡' : '⤢'; mb.title = DSW.mode === 'big' ? 'Küçült' : 'Büyüt'; }
+  const db = d.querySelector('[data-ds="dock"]'); if (db) { db.classList.toggle('on', DSW.mode === 'dock'); db.title = DSW.mode === 'dock' ? 'Serbest pencere yap' : 'Sağa sabitle'; }
+  try { DS.calc && DS.calc.resize(); } catch {}
+}
 function dsDock() {
   let d = document.getElementById('dsDock'); if (d) return d;
   d = document.createElement('aside'); d.id = 'dsDock'; d.className = 'ds-dock'; d.hidden = true;
-  d.innerHTML = `<div class="ds-head"><b>📈 Desmos</b><span class="ds-acts"><button type="button" data-ds="clear" title="Temizle">Temizle</button><button type="button" data-ds="close" title="Kapat">✕</button></span></div><div id="dsCalc" class="ds-calc"><div class="ds-load">Desmos yükleniyor…</div></div>`;
-  document.body.appendChild(d); return d;
+  d.innerHTML = `<div class="ds-head" title="Sürükleyerek taşı"><span class="ds-grip">⠿</span><b>Desmos</b><span class="ds-acts"><button type="button" data-ds="clear" title="Temizle">Temizle</button><button type="button" data-ds="dock" title="Sağa sabitle">▥</button><button type="button" data-ds="big" title="Büyüt">⤢</button><button type="button" data-ds="close" title="Kapat">✕</button></span></div><div id="dsCalc" class="ds-calc"><div class="ds-load">Desmos yükleniyor…</div></div><div class="ds-rz" title="Boyutlandır"></div>`;
+  document.body.appendChild(d);
+  let drag = null;
+  d.addEventListener('pointerdown', e => {
+    const head = e.target.closest('.ds-head'), rz = e.target.closest('.ds-rz');
+    if ((!head && !rz) || e.target.closest('button') || DSW.mode !== 'float') return;
+    const r = d.getBoundingClientRect();
+    drag = { rz: !!rz, sx: e.clientX, sy: e.clientY, x: r.left, y: r.top, w: r.width, h: r.height, id: e.pointerId };
+    d.classList.add('moving'); try { e.target.setPointerCapture(e.pointerId); } catch {} e.preventDefault();
+  });
+  d.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+    if (drag.rz) { DSW.w = Math.max(320, drag.w + dx); DSW.h = Math.max(320, drag.h + dy); DSW.x = drag.x; DSW.y = drag.y; }
+    else { DSW.x = drag.x + dx; DSW.y = drag.y + dy; }
+    dsPlace();
+  });
+  const end = e => { if (!drag || e.pointerId !== drag.id) return; drag = null; d.classList.remove('moving'); dswSave(); dsPlace(); };
+  d.addEventListener('pointerup', end); d.addEventListener('pointercancel', end);
+  // double-click the title bar: expand / back
+  d.addEventListener('dblclick', e => { if (e.target.closest('.ds-head') && !e.target.closest('button')) { DSW.mode = DSW.mode === 'big' ? 'float' : 'big'; dswSave(); dsPlace(); } });
+  window.addEventListener('resize', dsPlace);
+  return d;
 }
 function dsOpen(on) {
-  const d = dsDock(); d.hidden = !on; document.body.classList.toggle('ds-on', on);
+  const d = dsDock(); d.hidden = !on; dsPlace();
   document.querySelectorAll('[data-dsm-open]').forEach(b => b.classList.toggle('on', on));
   if (!on) return Promise.resolve();
   return dsLoad().then(() => {
@@ -8454,9 +8501,11 @@ function dsShowSolution(id) {
 document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('[data-dsm-open],[data-ds],[data-dsm-show],[data-dsm-gen],[data-dsm-copy]'); if (!t) return;
   e.preventDefault(); e.stopPropagation();
-  if (t.hasAttribute('data-dsm-open')) return dsOpen(!document.body.classList.contains('ds-on'));
+  if (t.hasAttribute('data-dsm-open')) { const d = document.getElementById('dsDock'); return dsOpen(!d || d.hidden); }
   if (t.dataset.ds === 'close') return dsOpen(false);
   if (t.dataset.ds === 'clear') { if (DS.calc) DS.calc.setBlank(); return; }
+  if (t.dataset.ds === 'big') { DSW.mode = DSW.mode === 'big' ? 'float' : 'big'; dswSave(); return dsPlace(); }
+  if (t.dataset.ds === 'dock') { DSW.mode = DSW.mode === 'dock' ? 'float' : 'dock'; dswSave(); return dsPlace(); }
   if (t.dataset.dsmShow) return dsShowSolution(t.dataset.dsmShow);
   if (t.dataset.dsmGen) return dsmGen(t.dataset.dsmGen);
   if (t.dataset.dsmCopy != null) { const v = t.dataset.dsmCopy; try { navigator.clipboard.writeText(v); showToast('Kopyalandı: Desmos’a yapıştır'); } catch {} }
@@ -8554,7 +8603,7 @@ function dsmShots() {
       if (!q || !MQ[q.id]) return h;
       h = mTok(h);
       if (q.mt === 'spr') h = h.replace(new RegExp('(<div class="choices" id="choices-' + q.id + '"[^>]*>)'), '$1' + sprHtml(q));
-      const btn = `<button type="button" class="q-dsm-btn${document.body.classList.contains('ds-on') ? ' on' : ''}" data-dsm-open title="Desmos hesap makinesini aç/kapat">📈 Desmos</button>`;
+      const btn = `<button type="button" class="q-dsm-btn${(document.getElementById('dsDock') && !document.getElementById('dsDock').hidden) ? ' on' : ''}" data-dsm-open title="Desmos hesap makinesini aç/kapat">📈 Desmos</button>`;
       h = h.includes('<span class="q-head-gap"></span>') ? h.replace('<span class="q-head-gap"></span>', btn + '<span class="q-head-gap"></span>') : h.replace('<span class="q-status-icon">', btn + '<span class="q-status-icon">');
       const box = `<div class="dsm-box" data-dsm-id="${q.id}">${dsmInner(q)}</div>`;
       const ri = h.indexOf('<div class="rationale');
