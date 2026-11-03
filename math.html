@@ -1727,6 +1727,7 @@ body.math-mode .choice-text .katex{font-size:1.1em}
 .ref-tri{max-width:170px}.ref-svg .mk{stroke:#7c3aed;stroke-width:1.5;fill:none}
 .ref-svg text.lab{font:600 8px system-ui,sans-serif;font-style:normal}
 .ref-no{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:6px;background:#dc2626;color:#fff;font-size:12px;font-weight:900;letter-spacing:.03em}
+.ref-card.wide{grid-column:1/-1}.ref-card.wide .ref-f{font-size:15px}.ref-svg .sec{fill:rgba(124,58,237,.18);stroke:currentColor}
 </style>
 
 <!-- TOPBAR -->
@@ -8735,6 +8736,11 @@ const REF_SHEET = [
     ['Kare tabanlı piramit', ['S=s^2+2s\\ell'], 'ℓ: yan yüzün eğik yüksekliği'],
     ['Herhangi bir prizma', ['S=2B+Ph'], 'B: taban alanı · P: taban çevresi'],
   ], ['Yanal alan = tabanlar hariç yüzey.', 'Benzer cisimlerde kenar oranı <b>k</b> ise alan oranı <b>k²</b>, hacim oranı <b>k³</b>.']],
+  ['Yay uzunluğu ve daire dilimi (sector)', [
+    ['Hepsi aynı oran', ['\\dfrac{\\text{merkez açı}}{360^\\circ}=\\dfrac{\\text{yay uzunluğu}}{2\\pi r}=\\dfrac{\\text{dilim alanı}}{\\pi r^2}'], 'central angle / 360° = arc length / circumference = sector area / circle area', () => SECTOR_SVG, 1],
+    ['Derece ile', ['\\text{yay}=\\dfrac{\\theta}{360}\\cdot 2\\pi r', '\\text{dilim}=\\dfrac{\\theta}{360}\\cdot \\pi r^2']],
+    ['Radyan ile', ['\\text{yay}=r\\theta', '\\text{dilim}=\\tfrac12 r^2\\theta'], 'θ radyan olmalı · 180° = π radyan'],
+  ], ['Çevre açı (inscribed angle) aynı yayı gören merkez açının <b>yarısıdır</b>.']],
   ['Eş üçgenler (congruent ≅): hangi işaretler yeter?', [
     ['SSS ✅', [], '3 kenar eşit', () => triPair({ s: [1, 2, 3] })],
     ['SAS ✅', [], '2 kenar + <b>arasındaki</b> açı', () => triPair({ s: [1, 2, 0], a: [0, 1, 0] })],
@@ -8808,9 +8814,10 @@ function rtPair(m) {
   const T2 = T.map(([x, y]) => [x + 60, y]);
   return `<svg class="ref-svg ref-tri" viewBox="0 0 120 62" aria-hidden="true">${triMarks(T, m)}${triMarks(T2, m)}</svg>`;
 }
+const SECTOR_SVG = `<svg class="ref-svg" viewBox="0 0 120 84" aria-hidden="true"><circle cx="60" cy="42" r="32"/><path d="M60 42 L92 42 A32 32 0 0 0 76 14.3 Z" class="sec"/><circle cx="60" cy="42" r="1.6" class="dot"/><path class="mk" d="M70 42 A10 10 0 0 0 65 33.3"/><text x="73" y="39" style="font-size:8px">θ</text><text x="76" y="50">r</text><text x="96" y="24" text-anchor="start">yay</text></svg>`;
 function refHtml() {
-  return REF_SHEET.map(([t, rows, facts]) => `<div class="ref-sec"><h4>${t}</h4><div class="ref-grid">${rows.map(([n, f, note, fig]) =>
-    `<div class="ref-card"><div class="ref-name">${n}</div>${fig ? fig() : (RF[RF_MAP[n]] || '')}${f.map(x => `<div class="ref-f">${mkx(x, false)}</div>`).join('')}${note ? `<div class="ref-note">${note}</div>` : ''}</div>`).join('')}</div>${facts ? `<ul class="ref-facts">${facts.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}</div>`).join('');
+  return REF_SHEET.map(([t, rows, facts]) => `<div class="ref-sec"><h4>${t}</h4><div class="ref-grid">${rows.map(([n, f, note, fig, wide]) =>
+    `<div class="ref-card${wide ? ' wide' : ''}"><div class="ref-name">${n}</div>${fig ? fig() : (RF[RF_MAP[n]] || '')}${f.map(x => `<div class="ref-f">${mkx(x, false)}</div>`).join('')}${note ? `<div class="ref-note">${note}</div>` : ''}</div>`).join('')}</div>${facts ? `<ul class="ref-facts">${facts.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}</div>`).join('');
 }
 function refPanel() {
   let d = document.getElementById('refPanel'); if (d) return d;
