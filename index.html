@@ -384,6 +384,9 @@ html,body{height:auto;min-height:100%}
 .ink-layer{position:absolute;inset:0;width:100%;height:100%;z-index:8;pointer-events:none;border-radius:inherit}
 html:not([data-theme="dark"]) .ink-layer{mix-blend-mode:multiply}
 body.ink-on .ink-layer{pointer-events:auto;touch-action:none;cursor:crosshair}
+body.ink-on.ink-palm .ink-layer{touch-action:pan-x pan-y pinch-zoom}
+.ink-tg{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--fg2);margin-top:8px;cursor:pointer;user-select:none}
+.ink-tg input{accent-color:var(--accent);width:16px;height:16px;margin:0}
 body.ink-on.ink-er .ink-layer{cursor:cell}
 body.ink-on .q-card{user-select:none;-webkit-user-select:none}
 .ink-palette{position:fixed;left:auto;right:12px;top:160px;z-index:950;width:200px;background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:16px;box-shadow:0 14px 36px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none;font-size:12px;touch-action:none}
@@ -6664,7 +6667,7 @@ document.addEventListener('mouseup', e => {
   const redoStack = {};
   const hist = {};   // per question: what each undo step reverses ('ink' stroke or an eraser pass)
   const cleared = {};
-  const ui = { tool: null, penColor: PEN_COLORS[0], hlColor: HL_COLORS[0], thColor: '#fef08a', erMode: 'stroke', lzSec: 2, penSize: 3, hlSize: 4, stab: 5, open: true, x: null, y: null };
+  const ui = { tool: null, penColor: PEN_COLORS[0], hlColor: HL_COLORS[0], thColor: '#fef08a', erMode: 'stroke', lzSec: 2, penSize: 3, hlSize: 4, stab: 6, snap: true, palm: 'auto', penSeen: false, open: true, x: null, y: null };
   try { Object.assign(ui, JSON.parse(localStorage.getItem(UI_KEY) || '{}')); } catch {}
   ui.tool = null; // always start with ink off, so choices are clickable
   try {
@@ -6676,8 +6679,69 @@ document.addEventListener('mouseup', e => {
     }
   } catch {}
   let lastQid = null;
+  // palm rejection: on by itself once a real pen (S Pen, Apple Pencil) has been used; can be switched on/off
+  const palmOn = () => ui.palm === 'on' || (ui.palm !== 'off' && ui.penSeen);
+  // ── stroke smoothing (after the pen is lifted): resample → gaussian passes → snap to line / circle / ellipse ──
+  function inkResample(p, step) {
+    const out = [p[0], p[1]]; let px = p[0], py = p[1], carry = 0;
+    for (let i = 2; i < p.length; i += 2) {
+      let x0 = px, y0 = py; const x1 = p[i], y1 = p[i + 1]; let d = Math.hypot(x1 - x0, y1 - y0);
+      while (carry + d >= step) { const t = (step - carry) / d; x0 += (x1 - x0) * t; y0 += (y1 - y0) * t; out.push(x0, y0); d = Math.hypot(x1 - x0, y1 - y0); carry = 0; }
+      carry += d; px = x1; py = y1;
+    }
+    const n = out.length; if (Math.hypot(out[n - 2] - p[p.length - 2], out[n - 1] - p[p.length - 1]) > 0.5) out.push(p[p.length - 2], p[p.length - 1]);
+    return out;
+  }
+  function inkGauss(p, passes, closed) {
+    const K = [1, 4, 6, 4, 1], n = p.length / 2; if (n < 5) return p;
+    for (let k = 0; k < passes; k++) {
+      const q = p.slice();
+      for (let i = closed ? 0 : 1; i < (closed ? n : n - 1); i++) {
+        let sx = 0, sy = 0, sw = 0;
+        for (let j = -2; j <= 2; j++) { let m = i + j; if (closed) m = (m + n) % n; else m = Math.min(n - 1, Math.max(0, m)); sx += p[m * 2] * K[j + 2]; sy += p[m * 2 + 1] * K[j + 2]; sw += K[j + 2]; }
+        q[i * 2] = sx / sw; q[i * 2 + 1] = sy / sw;
+      }
+      p = q;
+    }
+    return p;
+  }
+  function inkShape(p) {
+    const n = p.length / 2; if (n < 6) return null;
+    let len = 0; for (let i = 2; i < p.length; i += 2) len += Math.hypot(p[i] - p[i - 2], p[i + 1] - p[i - 1]);
+    const ax = p[0], ay = p[1], bx = p[p.length - 2], by = p[p.length - 1], chord = Math.hypot(bx - ax, by - ay);
+    // straight line
+    if (chord > 24 && len / chord < 1.08) {
+      let dev = 0; for (let i = 0; i < p.length; i += 2) dev = Math.max(dev, Math.abs((bx - ax) * (ay - p[i + 1]) - (ax - p[i]) * (by - ay)) / chord);
+      if (dev < Math.max(4, chord * 0.05)) return [ax, ay, (ax + bx) / 2, (ay + by) / 2, bx, by];
+    }
+    // closed loop → circle or ellipse
+    if (len > 70 && chord < Math.max(28, len * 0.14)) {
+      let cx = 0, cy = 0; for (let i = 0; i < p.length; i += 2) { cx += p[i]; cy += p[i + 1]; } cx /= n; cy /= n;
+      let sxx = 0, syy = 0, sxy = 0; for (let i = 0; i < p.length; i += 2) { const dx = p[i] - cx, dy = p[i + 1] - cy; sxx += dx * dx; syy += dy * dy; sxy += dx * dy; } sxx /= n; syy /= n; sxy /= n;
+      const th = 0.5 * Math.atan2(2 * sxy, sxx - syy), co = Math.cos(th), si = Math.sin(th);
+      let A = 0, B = 0; for (let i = 0; i < p.length; i += 2) { const dx = p[i] - cx, dy = p[i + 1] - cy, u = dx * co + dy * si, v = -dx * si + dy * co; A += u * u; B += v * v; }
+      A = Math.sqrt(2 * A / n); B = Math.sqrt(2 * B / n);
+      if (A < 8 || B < 8) return null;
+      let m = 0, m2 = 0; for (let i = 0; i < p.length; i += 2) { const dx = p[i] - cx, dy = p[i + 1] - cy, u = dx * co + dy * si, v = -dx * si + dy * co, r = Math.hypot(u / A, v / B); m += r; m2 += r * r; } m /= n; const sd = Math.sqrt(Math.max(0, m2 / n - m * m));
+      if (sd > 0.13) return null;
+      if (Math.max(A, B) / Math.min(A, B) < 1.15) { A = B = (A + B) / 2; }
+      A *= m; B *= m;
+      const out = [], N = 72, t0 = Math.atan2(-(ax - cx) * si + (ay - cy) * co, (ax - cx) * co + (ay - cy) * si), dir = (() => { let s = 0; for (let i = 2; i < p.length; i += 2) s += (p[i - 2] - cx) * (p[i + 1] - cy) - (p[i] - cx) * (p[i - 1] - cy); return s < 0 ? 1 : -1; })();
+      for (let k = 0; k <= N; k++) { const t = t0 + dir * k / N * Math.PI * 2, u = A * Math.cos(t), v = B * Math.sin(t); out.push(Math.round((cx + u * co - v * si) * 2) / 2, Math.round((cy + u * si + v * co) * 2) / 2); }
+      return out;
+    }
+    return null;
+  }
+  function inkPolish(s, lvl, snap) {
+    if (!s.p || s.p.length < 8) return;
+    let p = inkResample(s.p, 2.5);
+    const closed = p.length > 12 && Math.hypot(p[0] - p[p.length - 2], p[1] - p[p.length - 1]) < 14;
+    p = inkGauss(p, Math.round(lvl * 1.6), false);
+    const sh = snap ? inkShape(p) : null;
+    s.p = (sh || p).map(v => Math.round(v * 2) / 2);
+  }
 
-  const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify({ penColor: ui.penColor, hlColor: ui.hlColor, thColor: ui.thColor, erMode: ui.erMode, lzSec: ui.lzSec, penSize: ui.penSize, hlSize: ui.hlSize, stab: ui.stab, open: ui.open, x: ui.x, y: ui.y })); } catch {} };
+  const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify({ penColor: ui.penColor, hlColor: ui.hlColor, thColor: ui.thColor, erMode: ui.erMode, lzSec: ui.lzSec, penSize: ui.penSize, hlSize: ui.hlSize, stab: ui.stab, snap: ui.snap, palm: ui.palm, penSeen: ui.penSeen, open: ui.open, x: ui.x, y: ui.y })); } catch {} };
   let saveT = null;
   const saveInk = () => {
     clearTimeout(saveT);
@@ -6719,6 +6783,8 @@ document.addEventListener('mouseup', e => {
       <div class="ink-erhint" id="inkErHint">Fosforlu metinlere değince o fosfor da silinir.</div>
       <label class="ink-size"><span>Kalınlık</span><input type="range" id="inkSize" min="1" max="12"><b id="inkSizeVal"></b></label>
       <label class="ink-size ink-stab" id="inkStabRow" title="Çizgiyi yumuşatır: titreme gider, daireler ve eğriler daha pürüzsüz olur. 0 = kapalı"><span>Vuruş sabitleme</span><input type="range" id="inkStab" min="0" max="10"><b id="inkStabVal"></b></label>
+      <label class="ink-tg" id="inkSnapRow" title="Kalemi kaldırınca: neredeyse düz çizgi → cetvelle çizilmiş gibi düz; kapalı yuvarlak → kusursuz daire / elips"><input type="checkbox" id="inkSnap"> <span>📐 Düz çizgi / daire düzelt</span></label>
+      <label class="ink-tg" title="Tablette kalemle (S Pen / Apple Pencil) yazarken avucun veya parmağın çizmesin; parmakla kaydır ve iki parmakla yakınlaştır"><input type="checkbox" id="inkPalm"> <span>✋ El algılama engeli</span></label>
     </div>
     <button class="ink-chip" data-ink-drag data-ink="expand" title="Kalem araçlarını aç">${ICON.pen}</button>`;
   document.body.appendChild(pal);
@@ -6744,7 +6810,8 @@ document.addEventListener('mouseup', e => {
     pal.querySelector('#inkSize').max = ui.tool === 'lz' ? 10 : 12;
     pal.querySelector('#inkSize').value = size;
     pal.querySelector('#inkSizeVal').textContent = size;
-    { const st = ui.stab == null ? 5 : ui.stab; pal.querySelector('#inkStab').value = st; pal.querySelector('#inkStabVal').textContent = st ? st : 'kapalı'; pal.querySelector('#inkStabRow').style.display = (ui.tool === 'pen' || ui.tool === 'hl') ? '' : 'none'; }
+    { const sn = pal.querySelector('#inkSnap'); sn.checked = ui.snap !== false; pal.querySelector('#inkSnapRow').style.display = (ui.tool === 'pen' || ui.tool === 'hl') ? '' : 'none'; pal.querySelector('#inkPalm').checked = palmOn(); document.body.classList.toggle('ink-palm', palmOn()); }
+    { const st = ui.stab == null ? 6 : ui.stab; pal.querySelector('#inkStab').value = st; pal.querySelector('#inkStabVal').textContent = st ? st : 'kapalı'; pal.querySelector('#inkStabRow').style.display = (ui.tool === 'pen' || ui.tool === 'hl') ? '' : 'none'; }
     pal.querySelector('.ink-dot').style.background = ui.tool === 'er' ? 'transparent' : ui.tool === 'lz' ? '#ef4444' : cur;
     pal.querySelector('.ink-color').classList.toggle('is-er', ui.tool === 'er');
     pal.querySelector('#inkErMode').style.display = pal.querySelector('#inkErHint').style.display = ui.tool === 'er' ? '' : 'none';
@@ -6843,6 +6910,8 @@ document.addEventListener('mouseup', e => {
       if (ui.tool === 'lz') ui.lzSec = v; else if (ui.tool === 'hl') ui.hlSize = v; else ui.penSize = v;
       pal.querySelector('#inkSizeVal').textContent = v; saveUi();
     }
+    if (e.target.id === 'inkSnap') { ui.snap = e.target.checked; saveUi(); }
+    if (e.target.id === 'inkPalm') { ui.palm = e.target.checked ? 'on' : 'off'; saveUi(); document.body.classList.toggle('ink-palm', palmOn()); showToast(palmOn() ? 'El algılama engeli açık: sadece kalem çizer, parmakla kaydır / iki parmakla yakınlaştır.' : 'El algılama engeli kapalı: parmakla da çizebilirsin.'); }
     if (e.target.id === 'inkStab') { ui.stab = +e.target.value; pal.querySelector('#inkStabVal').textContent = ui.stab ? ui.stab : 'kapalı'; saveUi(); }
     if (e.target.id === 'inkCustomColor') {
       if (ui.tool === 'hl') ui.hlColor = e.target.value; else ui.penColor = e.target.value;
@@ -6934,15 +7003,23 @@ document.addEventListener('mouseup', e => {
     const cv = e.target.closest && e.target.closest('canvas.ink-layer');
     if (!cv) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.pointerType === 'pen') { window.__inkPenDown = Date.now(); if (!ui.penSeen) { ui.penSeen = true; saveUi(); document.body.classList.toggle('ink-palm', palmOn()); if (ui.palm !== 'off') showToast('✋ Kalem algılandı: avucun ve parmağın artık çizmeyecek (kalem menüsünden kapatabilirsin).'); } }
+    if (e.pointerType === 'touch' && palmOn()) return;   // a finger / palm: let the page scroll and pinch-zoom
+    if (active) return;                                   // already drawing with another pointer
     e.preventDefault();
     const r = cv.getBoundingClientRect();
     const w = ui.tool === 'hl' ? ui.hlSize * 4 + 4 : ui.tool === 'er' ? ui.penSize * 4 + 10 : ui.penSize;
     active = { cv, qid: cv.dataset.qid, id: e.pointerId, s: { t: ui.tool, c: ui.tool === 'hl' ? ui.hlColor : ui.penColor, w, p: [Math.round(e.clientX - r.left), Math.round(e.clientY - r.top)] } };
-    if ((ui.tool === 'pen' || ui.tool === 'hl') && ui.stab > 0) active.sm = { x: e.clientX - r.left, y: e.clientY - r.top, a: Math.max(0.12, 1 - ui.stab * 0.088), rx: e.clientX - r.left, ry: e.clientY - r.top };
+    if ((ui.tool === 'pen' || ui.tool === 'hl') && ui.stab > 0) { const x0 = e.clientX - r.left, y0 = e.clientY - r.top; active.sm = { x: x0, y: y0, ax: x0, ay: y0, L: ui.stab * 1.4, a: Math.max(0.35, 1 - ui.stab * 0.065), rx: x0, ry: y0, lvl: ui.stab }; }
     try { cv.setPointerCapture(e.pointerId); } catch {}
     if (ui.tool === 'er') { active.er = { txt: null, del: [] }; erHit(e.clientX, e.clientY); }
     redraw(cv);
   });
+  document.addEventListener('touchstart', e => {
+    if (!ui.tool || !e.target.closest || !e.target.closest('canvas.ink-layer')) return;
+    const t = e.changedTouches && e.changedTouches[0];
+    if ((t && t.touchType === 'stylus') || (window.__inkPenDown && Date.now() - window.__inkPenDown < 400) || !palmOn()) e.preventDefault();
+  }, { passive: false, capture: true });
   let rafPending = false;
   document.addEventListener('pointermove', e => {
     if (!active || e.pointerId !== active.id) return;
@@ -6953,7 +7030,7 @@ document.addEventListener('mouseup', e => {
       if (active.er) erHit(ev.clientX, ev.clientY);
       let x = ev.clientX - r.left, y = ev.clientY - r.top;
       const sm = active.sm;
-      if (sm) { sm.rx = x; sm.ry = y; sm.x += (x - sm.x) * sm.a; sm.y += (y - sm.y) * sm.a; x = sm.x; y = sm.y; }
+      if (sm) { sm.rx = x; sm.ry = y; const dx = x - sm.ax, dy = y - sm.ay, d = Math.hypot(dx, dy); if (d > sm.L) { sm.ax += dx * (1 - sm.L / d); sm.ay += dy * (1 - sm.L / d); } sm.x += (sm.ax - sm.x) * sm.a; sm.y += (sm.ay - sm.y) * sm.a; x = sm.x; y = sm.y; }
       x = Math.round(x * 2) / 2; y = Math.round(y * 2) / 2;
       if (Math.hypot(x - p[p.length - 2], y - p[p.length - 1]) >= (sm ? 1 : 1.5)) p.push(x, y);
     });
@@ -6962,6 +7039,7 @@ document.addEventListener('mouseup', e => {
   const finish = e => {
     if (!active || (e && e.pointerId !== active.id)) return;
     if (active.sm && active.s.p.length > 2) { const sm = active.sm, p = active.s.p; for (let k = 0; k < 12 && Math.hypot(sm.rx - sm.x, sm.ry - sm.y) > 1; k++) { sm.x += (sm.rx - sm.x) * 0.5; sm.y += (sm.ry - sm.y) * 0.5; p.push(Math.round(sm.x * 2) / 2, Math.round(sm.y * 2) / 2); } p.push(Math.round(sm.rx * 2) / 2, Math.round(sm.ry * 2) / 2); }
+    if ((active.s.t === 'pen' || active.s.t === 'hl') && (active.sm || ui.snap !== false)) inkPolish(active.s, active.sm ? active.sm.lvl : 0, ui.snap !== false);
     const { qid, s, er } = active;
     active = null;
     const H = (hist[qid] = hist[qid] || []);
