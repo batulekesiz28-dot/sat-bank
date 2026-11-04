@@ -9394,6 +9394,10 @@ document.addEventListener('click', e => {
 // ══ 🎨 ŞEKİLLE ANLAT (geometry): the AI explains the question in a few simple drawings ══
 // The AI never sends SVG: it sends a tiny drawing list that we turn into SVG ourselves (safe + always valid).
 const GSA = { busy: {}, err: {}, st: {}, open: {} };
+// a second copy on this device, so a drawing never vanishes even if something (sync, another tab) rewrites the state
+const GSM_CACHE = 'satm_gsm_cache_v1';
+function gsmCache() { try { return JSON.parse(localStorage.getItem(GSM_CACHE) || '{}') || {}; } catch { return {}; } }
+function gsmRec(id) { const r = state.gsm && state.gsm[id]; if (r) return r; const c = gsmCache()[id]; if (c) { if (!state.gsm || typeof state.gsm !== 'object') state.gsm = {}; state.gsm[id] = c; } return c || null; }
 // the AI sometimes writes Turkish keys (adımlar, çiz) or English ones (steps, draw): accept them all
 function gsmNorm(o) {
   if (Array.isArray(o)) o = { adimlar: o };
@@ -9469,6 +9473,7 @@ async function gsmGen(id) {
     if (!state.gsm || typeof state.gsm !== 'object') state.gsm = {};
     state.gsm[id] = { at: Date.now(), m: AI.lastModel || aiModel(), s: out };
     GSA.open[id] = true;
+    try { const c = gsmCache(); c[id] = state.gsm[id]; localStorage.setItem(GSM_CACHE, JSON.stringify(c)); } catch {}
     saveState();
   } catch (e) { GSA.err[id] = e && e.message === 'NOKEY' ? 'Bu cihazda Gemini anahtarı yok. Üstten 📖 İngilizce’ye geç → Çalış → AI Koç’tan anahtarını gir (ya da PC’den “📱 Tablete aktar” QR kodunu okut).' : aiErrText(e); console.error('Şekille anlat', e); }
   GSA.busy[id] = false; GSA.st[id] = ''; gsmRefresh(id);
@@ -9476,7 +9481,7 @@ async function gsmGen(id) {
 }
 function gsmRefresh(id) { document.querySelectorAll('.gsm-box[data-gsm-id="' + id + '"]').forEach(b => { b.innerHTML = gsmInner(MQ[id]); }); }
 function gsmInner(q) {
-  const id = q.id, rec = state.gsm && state.gsm[id], s = rec && rec.s, busy = GSA.busy[id], err = GSA.err[id];
+  const id = q.id, rec = gsmRec(id), s = rec && rec.s, busy = GSA.busy[id], err = GSA.err[id];
   const answered = state.answers[id] !== undefined || (state.revealed && state.revealed[id]);
   if (!s) return `<div class="dsm-empty"><div class="dsm-ic gsm-ic">🎨</div><div><div class="dsm-title">Şekille anlat</div><div class="dsm-sub">Soruyu adım adım, basit çizimlerle anlatır.</div></div>
     ${busy ? `<div class="dsm-note"><span class="ai-spin"></span> <span class="gsm-st">${escHtml(GSA.st[id] || 'Çiziliyor… (20–60 sn)')}</span></div>` : `<button type="button" class="dsm-gen gsm-gen" data-gsm-gen="${id}">✨ Çiz ve anlat</button>`}</div>
