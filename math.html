@@ -1637,6 +1637,9 @@ body.ts-full #view-tset .focus-wrap .q-card{min-height:calc(100vh - 170px)}
 .scr-grip:hover i{background:var(--accent)}
 @media print{.scr-wrap.closed,.scr-head,.scr-grip{display:none}}
 
+/* tablets (700–1250px): the top buttons wrap instead of pushing the page wider than the screen */
+@media (min-width:701px) and (max-width:1250px){.topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:6px;padding-top:6px;padding-bottom:6px}.topbar-right{flex-wrap:wrap;flex-shrink:1;min-width:0;justify-content:flex-end;row-gap:6px}}
+
 /* ══ math mode ══ */
 body.math-mode .q-tour-btn,body.math-mode .q-lv-btn,body.math-mode .q-pg-toggle,body.math-mode .ttab[data-view="vocab"],body.math-mode .ttab[data-view="study"],body.math-mode .ink-tool.ink-th{display:none!important}
 .mq-img{display:block;max-width:100%;height:auto;image-rendering:auto}
