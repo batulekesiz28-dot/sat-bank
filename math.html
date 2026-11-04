@@ -2822,10 +2822,31 @@ function aiErrText(e) {
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Bağlantı kurulamadı. İnternetini kontrol et.';
   return 'AI hatası: ' + m.slice(0, 200);
 }
+// the AI often writes LaTeX (\angle, \frac, \sqrt) inside JSON strings without doubling the backslash: repair before parsing
+function aiJsonFix(t) {
+  let o = '', ins = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (!ins) { if (ch === '"') ins = true; o += ch; continue; }
+    if (ch === '"') { ins = false; o += ch; continue; }
+    if (ch === '\n') { o += '\\n'; continue; }
+    if (ch === '\r' || ch === '\t') { o += ch === '\t' ? '\\t' : ''; continue; }
+    if (ch === '\\') {
+      const n = t[i + 1] || '', n2 = t[i + 2] || '';
+      if (n === '"' || n === '\\' || n === '/') { o += ch + n; i++; continue; }
+      if (n === 'u' && /^[0-9a-fA-F]{4}$/.test(t.slice(i + 2, i + 6))) { o += t.slice(i, i + 6); i += 5; continue; }
+      if ('bfnrt'.includes(n) && !/[A-Za-z]/.test(n2)) { o += ch + n; i++; continue; }
+      o += '\\\\'; continue;   // a lone backslash (LaTeX command): keep it as a literal backslash
+    }
+    o += ch;
+  }
+  return o;
+}
 function aiParse(t) {
   try { return JSON.parse(t); } catch {}
-  const m = String(t).replace(/```json|```/g, '').match(/\{[\s\S]*\}/);
-  if (m) return JSON.parse(m[0]);
+  const s = String(t).replace(/```json|```/g, '');
+  const m = s.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if (m) { try { return JSON.parse(m[0]); } catch {} try { return JSON.parse(aiJsonFix(m[0])); } catch {} }
   throw new Error('AI beklenen biçimde cevap vermedi, tekrar dene.');
 }
 async function aiCall(parts, opt) {
@@ -9464,7 +9485,7 @@ function gsmInner(q) {
   return `<details class="dsm-det gsm-det" ${answered || GSA.open[id] ? 'open' : ''} ontoggle="GSA.open['${id}']=this.open"><summary><span class="dsm-ic sm gsm-ic">🎨</span><span class="dsm-title">Şekille anlatım</span><span class="gsm-ready">${s.adimlar.length} adım hazır</span>${answered ? '' : '<span class="dsm-warn">cevabı gösterir</span>'}<span class="gsm-show">Göster / gizle</span><span class="dsm-chev">⌄</span></summary>
     ${s.fikir ? `<div class="dsm-know gsm-know">💡 ${kxText(s.fikir)}</div>` : ''}
     <ol class="gsm-steps">${steps}</ol>
-    ${s.cevap ? `<div class="dsm-read"><span>🎯</span><div><b>Cevap:</b> <span class="dsm-ans">${kxText(s.cevap)}</span></div></div>` : ''}
+    ${s.cevap ? `<div class="dsm-read"><span>🎯</span><div><b>Cevap:</b> <span class="dsm-ans">${kxText(/\\/.test(s.cevap) && !/\$/.test(s.cevap) ? '$' + s.cevap + '$' : s.cevap)}</span></div></div>` : ''}
     <div class="dsm-acts"><button type="button" class="dsm-regen" data-gsm-gen="${id}">${busy ? 'Çiziliyor…' : '↻ Yeniden çiz'}</button></div>
     ${err ? `<div class="dsm-err">${escHtml(err)}</div>` : ''}</details>`;
 }
