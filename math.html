@@ -6929,7 +6929,7 @@ document.addEventListener('mouseup', e => {
   let lastQid = null;
   let sel = null, selBar = null;   // lasso selection {qid, idx:[stroke indexes]}
   // palm rejection: on by itself once a real pen (S Pen, Apple Pencil) has been used; can be switched on/off
-  const palmOn = () => ui.palm === 'on' || (ui.palm !== 'off' && ui.penSeen);
+  const palmOn = () => true;
   // ── stroke smoothing (after the pen is lifted): resample → gaussian passes → snap to line / circle / ellipse ──
   function inkResample(p, step) {
     const out = [p[0], p[1]]; let px = p[0], py = p[1], carry = 0;
@@ -7112,7 +7112,7 @@ document.addEventListener('mouseup', e => {
       <div id="inkPenType"><div class="ink-sub">Kalem türü</div><div class="ink-seg"><button type="button" data-pen-type="ball" title="Tükenmez: her yerde aynı kalınlık">🖊️ Tükenmez</button><button type="button" data-pen-type="fountain" title="Dolma kalem: bastırınca / yavaş çizince kalınlaşır, uçlar incelir">✒️ Dolma</button><button type="button" data-pen-type="brush" title="Fırça: kalın-ince farkı çok belirgin">🖌️ Fırça</button></div></div>
       <div id="inkShapeWrap"><div class="ink-sub">📐 Şekil düzeltme</div><div class="ink-seg"><button type="button" data-shape-mode="hold" title="Çizip kalemi kaldırmadan yarım saniye beklet: düz çizgi, daire, elips, üçgen veya dörtgene dönüşür">Bekletince</button><button type="button" data-shape-mode="auto" title="Kalemi kaldırınca kendiliğinden düzeltir">Otomatik</button><button type="button" data-shape-mode="off">Kapalı</button></div></div>
       <div class="ink-erhint" id="inkLsHint">Çizimlerin etrafını çevir. Seçimi sürükleyerek taşı, köşedeki noktadan büyüt/küçült; üstteki menüden renk, kopyala, sil.</div>
-      <label class="ink-tg" title="Tablette kalemle (S Pen / Apple Pencil) yazarken avucun veya parmağın çizmesin; parmakla kaydır ve iki parmakla yakınlaştır"><input type="checkbox" id="inkPalm"> <span>✋ El algılama engeli</span></label>
+      <label class="ink-tg" style="display:none" title="Tablette kalemle (S Pen / Apple Pencil) yazarken avucun veya parmağın çizmesin; parmakla kaydır ve iki parmakla yakınlaştır"><input type="checkbox" id="inkPalm"> <span>✋ El algılama engeli</span></label>
     </div>
     <button class="ink-chip" data-ink-drag data-ink="expand" title="Kalem araçlarını aç">${ICON.pen}</button>`;
   document.body.appendChild(pal);
@@ -7355,7 +7355,7 @@ document.addEventListener('mouseup', e => {
     const cv = e.target.closest && e.target.closest('canvas.ink-layer');
     if (!cv) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (e.pointerType === 'pen') { window.__inkPenDown = Date.now(); if (!ui.penSeen) { ui.penSeen = true; saveUi(); document.body.classList.toggle('ink-palm', palmOn()); if (ui.palm !== 'off') showToast('✋ Kalem algılandı: avucun ve parmağın artık çizmeyecek (kalem menüsünden kapatabilirsin).'); } }
+    if (e.pointerType === 'pen') { window.__inkPenDown = Date.now(); if (!ui.penSeen) { ui.penSeen = true; saveUi(); document.body.classList.toggle('ink-palm', palmOn());  } }
     if (e.pointerType === 'touch' && palmOn()) return;   // a finger / palm: let the page scroll and pinch-zoom
     if (active) return;                                   // already drawing with another pointer
     let tmpTool = null;
