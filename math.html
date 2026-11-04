@@ -1773,6 +1773,19 @@ figure.mq-zw > .mq-zoom{right:6px;top:6px}
 .dsm-tbl th{background:rgba(22,163,74,.08)}
 .dsm-tbl-h{font-size:11.5px;color:var(--fg2,#64748b);align-self:center}
 .dsm-old{font-size:12.5px;background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.4);border-radius:8px;padding:6px 10px;margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.q-gsm-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:999px;border:1px solid #ea580c;background:rgba(234,88,12,.08);color:#c2410c;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:6px}
+.q-gsm-btn:hover{background:#ea580c;color:#fff}
+.gsm-ic{background:linear-gradient(135deg,#fb923c,#ea580c)!important}
+.gsm-gen{background:#ea580c!important;box-shadow:0 4px 12px rgba(234,88,12,.3)!important}
+.gsm-steps{list-style:none;margin:0;padding:10px 16px;display:flex;flex-direction:column;gap:12px}
+.gsm-step{display:grid;grid-template-columns:28px minmax(0,300px) minmax(0,1fr);gap:12px;align-items:center;border:1px solid var(--border);border-radius:14px;padding:10px}
+.gsm-n{width:26px;height:26px;border-radius:50%;background:#ea580c;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;align-self:start}
+.gsm-pic{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#fff}
+.gsm-pic img{display:block;width:100%;height:auto}
+.gsm-pic > .mq-zoom{right:6px!important;top:6px!important}
+.gsm-txt{font-size:15px;line-height:1.6;color:var(--fg)}
+.gsm-know{margin:10px 16px 0}
+@media (max-width:760px){.gsm-step{grid-template-columns:28px minmax(0,1fr)}.gsm-txt{grid-column:2}}
 </style>
 
 <!-- TOPBAR -->
@@ -4938,7 +4951,7 @@ function cardEl(prefix, qid) {
   return visible || document.getElementById(prefix + qid);
 }
 function normalizeState() {
-  ['answers', 'flags', 'notes', 'revealed', 'timers', 'highlights', 'sessionAnswers', 'lastSeenByDomain', 'domainPages', 'eliminated', 'focusIdx', 'ratHidden', 'frontier', 'review', 'reflect', 'aiNote', 'bluebook', 'choiceHl', 'ansAt', 'gotit', 'dsm'].forEach(k => {
+  ['answers', 'flags', 'notes', 'revealed', 'timers', 'highlights', 'sessionAnswers', 'lastSeenByDomain', 'domainPages', 'eliminated', 'focusIdx', 'ratHidden', 'frontier', 'review', 'reflect', 'aiNote', 'bluebook', 'choiceHl', 'ansAt', 'gotit', 'dsm', 'gsm'].forEach(k => {
     if (!state[k] || typeof state[k] !== 'object' || Array.isArray(state[k])) state[k] = {};
   });
   // a stored highlight must never contain buttons/inputs (broken selection)
@@ -8043,7 +8056,7 @@ const SAT_WEB = {
 (function initSync(){
   const SB = 'satm_bank_v2', INK = 'satm_bank_ink_v1', VC = 'satm_bank_vocab_v1', NB = 'satm_bank_notebook_v1';
   const KV = ['satm_custom_set_v1', 'satm_custom_set_progress_v1', 'satm_saved_sets', 'satm_schema_v1', 'satm_ai_report_v1', 'satm_hw_v1', 'satm_vocab_srs_v1', 'satm_vocab_mn_v1', 'satm_left_v1', 'satm_tset_v1'];
-  const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4, aiNote: 16, bluebook: 1, choiceHl: 8, ansAt: 8, gotit: 4, dsm: 24 };
+  const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4, aiNote: 16, bluebook: 1, choiceHl: 8, ansAt: 8, gotit: 4, dsm: 24, gsm: 24 };
   // progress belongs to the page owner (the student): the teacher sees it but never changes it
   const OWNER_ONLY = new Set(['review', 'reflect', 'aiNote', 'bluebook', 'ansAt', 'gotit', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'satm_custom_set_progress_v1', 'satm_saved_sets', 'satm_schema_v1', 'satm_vocab_srs_v1', 'satm_tset_v1']);
   const BACKUP_KEYS = [SB, INK, VC, NB, ...KV, 'satm_bank_vocab_seed', 'satm_bank_vocab_unsuggest_v1'];
@@ -9282,6 +9295,113 @@ document.addEventListener('click', e => {
     const im = b.closest('.mq-zw') && b.closest('.mq-zw').querySelector('img'); if (!im || !im.getAttribute('src')) return showToast('Görüntü henüz hazır değil');
     open(im.currentSrc || im.src);
   }, true);
+})();
+// ══ 🎨 ŞEKİLLE ANLAT (geometry): the AI explains the question in a few simple drawings ══
+// The AI never sends SVG: it sends a tiny drawing list that we turn into SVG ourselves (safe + always valid).
+const GSA = { busy: {}, err: {} };
+const GSM_PROMPT = `Sen Digital SAT geometri/trigonometri sorularını ÇOK BASİT ÇİZİMLERLE anlatan bir öğretmensin. Öğrenci Türk, konuyu az biliyor. Her adım tek bir fikir: kısa bir çizim + 1-2 kısa cümle. Resmi çözüm ve doğru cevap kesin doğrudur.
+ÇİZİM DİLİ: tuval 100 genişlik × 70 yükseklik, (0,0) sol üst, y aşağı doğru artar. Şekli tuvalin ortasına, kenarlardan en az 8 birim içeride çiz. Her adımın "ciz" listesi baştan çizilir (önceki adımı tekrar etmen gerekir).
+Öğeler (renk "r": "k" siyah (varsayılan), "a" mavi = şu an konuştuğumuz şey, "b" turuncu = ikinci vurgu, "g" yeşil = cevap):
+{"t":"poly","pts":[[x,y],[x,y],[x,y]],"r":"k","dolgu":true}  kapalı çokgen (üçgen, dikdörtgen…); dolgu açık renkli boyar
+{"t":"line","a":[x,y],"b":[x,y],"r":"k","kesik":false}  doğru parçası (kesik=true kesikli: yükseklik, yardımcı çizgi)
+{"t":"circle","c":[x,y],"rad":20,"r":"k","dolgu":false}
+{"t":"dot","at":[x,y],"r":"k"}
+{"t":"angle","p":[[x,y],[x,y],[x,y]],"yaz":"45°","r":"a","dik":false}  ortadaki nokta köşe; yay + etiket. dik=true ise küçük kare (90°)
+{"t":"tick","a":[x,y],"b":[x,y],"n":1}  kenar üstünde eşitlik çizgisi (1, 2 veya 3 çizgi)
+{"t":"label","at":[x,y],"yaz":"A","r":"k"}  harf veya sayı; kısa tut ("12", "x", "AC = 8")
+{"t":"len","a":[x,y],"b":[x,y],"yaz":"12","r":"a"}  kenar uzunluğu etiketi (kenarın ortasına, dışına yazılır)
+KURALLAR:
+- 3-5 adım. 1. adım: sorudaki şekli/durumu basitçe çiz ve verilenleri yaz. Ortadaki adımlar: hangi kuralı kullandığını göster (eşit kenarlar, benzer üçgen, Pisagor, açı toplamı…), kullandığın parçayı mavi ("a") yap. Son adım: cevabı yeşil ("g") göster.
+- Şekil yoksa (sadece metin) bile durumu çiz (ör. çember + yarıçap, prizma yerine ön yüz dikdörtgeni, koordinat noktaları).
+- Yazılar: kısa, düz Türkçe. Matematik $...$ içinde (ör. $x=83$). Ters bölü ve kod kullanma (sadece $ içinde LaTeX serbest).
+Sadece JSON döndür: {"fikir":"bu sorunun tek cümlelik ana fikri","adimlar":[{"ciz":[...],"yaz":"..."}],"cevap":"doğru cevap"}`;
+function gsmNum(v, d) { v = +v; return isFinite(v) ? Math.max(-20, Math.min(120, v)) : d; }
+function gsmPt(a) { return Array.isArray(a) && a.length >= 2 ? [gsmNum(a[0], 50), gsmNum(a[1], 35)] : null; }
+const GSM_COL = { k: '#1f2937', a: '#2563eb', b: '#ea580c', g: '#16a34a' };
+const GSM_FILL = { k: 'rgba(31,41,55,.06)', a: 'rgba(37,99,235,.14)', b: 'rgba(234,88,12,.14)', g: 'rgba(22,163,74,.16)' };
+function gsmSvg(items) {
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m])).slice(0, 24);
+  const col = r => GSM_COL[r] || GSM_COL.k, fil = r => GSM_FILL[r] || GSM_FILL.k;
+  const out = [], txt = [];
+  const T = (x, y, t, r, sz) => txt.push(`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="${col(r)}" font-size="${sz || 4.6}" text-anchor="middle" dominant-baseline="middle" paint-order="stroke" stroke="#fff" stroke-width="1.6" stroke-linejoin="round">${esc(t)}</text>`);
+  (Array.isArray(items) ? items : []).slice(0, 40).forEach(it => {
+    if (!it || typeof it !== 'object') return;
+    const r = it.r, sw = r && r !== 'k' ? 0.95 : 0.7, dash = it.kesik ? ' stroke-dasharray="2 1.6"' : '';
+    if (it.t === 'poly') { const P = (it.pts || []).map(gsmPt).filter(Boolean); if (P.length < 2) return; out.push(`<polygon points="${P.map(p => p.join(',')).join(' ')}" fill="${it.dolgu ? fil(r) : 'none'}" stroke="${col(r)}" stroke-width="${sw}" stroke-linejoin="round"${dash}/>`); }
+    else if (it.t === 'line') { const a = gsmPt(it.a), b = gsmPt(it.b); if (!a || !b) return; out.push(`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col(r)}" stroke-width="${sw}" stroke-linecap="round"${dash}/>`); }
+    else if (it.t === 'circle') { const c = gsmPt(it.c); if (!c) return; const rad = Math.max(1, Math.min(60, +it.rad || 10)); out.push(`<circle cx="${c[0]}" cy="${c[1]}" r="${rad}" fill="${it.dolgu ? fil(r) : 'none'}" stroke="${col(r)}" stroke-width="${sw}"${dash}/>`); }
+    else if (it.t === 'dot') { const c = gsmPt(it.at); if (c) out.push(`<circle cx="${c[0]}" cy="${c[1]}" r="1.2" fill="${col(r)}"/>`); }
+    else if (it.t === 'label') { const c = gsmPt(it.at); if (c) T(c[0], c[1], it.yaz, r, it.yaz && String(it.yaz).length > 6 ? 4.4 : 5.4); }
+    else if (it.t === 'len') { const a = gsmPt(it.a), b = gsmPt(it.b); if (!a || !b) return; const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1; let nx = -dy / L, ny = dx / L; if (ny > 0 || (Math.abs(ny) < 0.2 && nx < 0)) { nx = -nx; ny = -ny; } T(mx + nx * 5, my + ny * 5, it.yaz, r || 'a', 5); }
+    else if (it.t === 'tick') { const a = gsmPt(it.a), b = gsmPt(it.b); if (!a || !b) return; const n = Math.max(1, Math.min(3, +it.n || 1)), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L; for (let k = 0; k < n; k++) { const o = (k - (n - 1) / 2) * 1.6, cx = mx + ux * o, cy = my + uy * o; out.push(`<line x1="${cx - uy * 2}" y1="${cy + ux * 2}" x2="${cx + uy * 2}" y2="${cy - ux * 2}" stroke="${col(r || 'b')}" stroke-width="0.8"/>`); } }
+    else if (it.t === 'angle') {
+      const P = (it.p || []).map(gsmPt); if (P.length < 3 || P.some(x => !x)) return; const [A, V, B] = P;
+      const t1 = Math.atan2(A[1] - V[1], A[0] - V[0]), t2 = Math.atan2(B[1] - V[1], B[0] - V[0]); let d = t2 - t1; while (d <= -Math.PI) d += 2 * Math.PI; while (d > Math.PI) d -= 2 * Math.PI;
+      const c = col(r || 'a');
+      if (it.dik) { const u = [Math.cos(t1) * 3.5, Math.sin(t1) * 3.5], w = [Math.cos(t2) * 3.5, Math.sin(t2) * 3.5]; out.push(`<polyline points="${V[0] + u[0]},${V[1] + u[1]} ${V[0] + u[0] + w[0]},${V[1] + u[1] + w[1]} ${V[0] + w[0]},${V[1] + w[1]}" fill="none" stroke="${c}" stroke-width="0.7"/>`); }
+      else { const R = 5.5; out.push(`<path d="M${(V[0] + R * Math.cos(t1)).toFixed(2)} ${(V[1] + R * Math.sin(t1)).toFixed(2)} A${R} ${R} 0 0 ${d > 0 ? 1 : 0} ${(V[0] + R * Math.cos(t1 + d)).toFixed(2)} ${(V[1] + R * Math.sin(t1 + d)).toFixed(2)}" fill="${fil(r || 'a')}" stroke="${c}" stroke-width="0.7"/>`); }
+      if (it.yaz) { const m = t1 + d / 2; T(V[0] + Math.cos(m) * 11, V[1] + Math.sin(m) * 11, it.yaz, r || 'a', 5); }
+    }
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70" width="600" height="420"><rect width="100" height="70" fill="#fff"/><g font-family="Times New Roman,serif" font-style="italic">${out.join('')}${txt.join('')}</g></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+function gsmIsGeo(q) { return q && /Geometry/.test(q.domain || ''); }
+async function gsmGen(id) {
+  const q = MQ[id]; if (!q || GSA.busy[id]) return;
+  if (!aiKey()) { GSA.err[id] = aiErrText(new Error('NOKEY')); return gsmRefresh(id); }
+  GSA.busy[id] = true; GSA.err[id] = ''; gsmRefresh(id);
+  try {
+    const parts = [{ text: 'Soru görseli:' }, await imgPart(id + '_q')];
+    for (const k of Object.keys(q.sz || {})) if (/^f\d$/.test(k)) { parts.push({ text: 'Sorudaki şekil:' }); parts.push(await imgPart(id + '_' + k)); }
+    if (q.mt === 'mcq') for (const k of 'ABCD') { parts.push({ text: 'Şık ' + k + ':' }); parts.push(await imgPart(id + '_' + k)); }
+    parts.push({ text: 'Resmi çözüm:' }); parts.push(await imgPart(id + '_r'));
+    let txt = ''; if (q.tx) txt = '\nSORU METNİ:\n' + String(q.question || '').replace(/⟦IMG:[^⟧]+⟧/g, '[resim]').replace(/⟦BR⟧/g, '\n');
+    parts.push({ text: GSM_PROMPT + txt + `\nKONU: ${q.skill}\nDOĞRU CEVAP: ${q.mt === 'mcq' ? 'Şık ' + q.correct : q.acc}` });
+    const out = await aiCall(parts, { temp: 0.2, timeout: 70000, think: 'medium' });
+    if (!out || !Array.isArray(out.adimlar) || !out.adimlar.length) throw new Error('AI beklenen biçimde cevap vermedi, tekrar dene.');
+    out.adimlar = out.adimlar.slice(0, 6).map(s => ({ ciz: Array.isArray(s.ciz) ? s.ciz.slice(0, 40) : [], yaz: String(s.yaz || '').slice(0, 600) }));
+    if (!state.gsm || typeof state.gsm !== 'object') state.gsm = {};
+    state.gsm[id] = { at: Date.now(), m: AI.lastModel || aiModel(), s: { fikir: String(out.fikir || '').slice(0, 300), adimlar: out.adimlar, cevap: String(out.cevap || '').slice(0, 60) } };
+    saveState();
+  } catch (e) { GSA.err[id] = aiErrText(e); }
+  GSA.busy[id] = false; gsmRefresh(id);
+}
+function gsmRefresh(id) { document.querySelectorAll('.gsm-box[data-gsm-id="' + id + '"]').forEach(b => { b.innerHTML = gsmInner(MQ[id]); }); }
+function gsmInner(q) {
+  const id = q.id, rec = state.gsm && state.gsm[id], s = rec && rec.s, busy = GSA.busy[id], err = GSA.err[id];
+  const answered = state.answers[id] !== undefined || (state.revealed && state.revealed[id]);
+  if (!s) return `<div class="dsm-empty"><div class="dsm-ic gsm-ic">🎨</div><div><div class="dsm-title">Şekille anlat</div><div class="dsm-sub">Soruyu adım adım, basit çizimlerle anlatır.</div></div>
+    ${busy ? '<div class="dsm-note"><span class="ai-spin"></span> Çiziliyor… (15–50 sn)</div>' : `<button type="button" class="dsm-gen gsm-gen" data-gsm-gen="${id}">✨ Çiz ve anlat</button>`}</div>
+    ${err ? `<div class="dsm-err">${escHtml(err)}</div>` : ''}`;
+  const steps = s.adimlar.map((st, i) => `<li class="gsm-step"><div class="gsm-n">${i + 1}</div><span class="mq-zw gsm-pic"><img src="${gsmSvg(st.ciz)}" alt="Adım ${i + 1} çizimi" draggable="false"><button type="button" class="mq-zoom" data-zoom title="Büyüt">🔍</button></span><div class="gsm-txt">${kxText(st.yaz)}</div></li>`).join('');
+  return `<details class="dsm-det gsm-det" ${answered ? 'open' : ''}><summary><span class="dsm-ic sm gsm-ic">🎨</span><span class="dsm-title">Şekille anlatım</span>${answered ? '' : '<span class="dsm-warn">cevabı gösterir</span>'}<span class="dsm-chev">⌄</span></summary>
+    ${s.fikir ? `<div class="dsm-know gsm-know">💡 ${kxText(s.fikir)}</div>` : ''}
+    <ol class="gsm-steps">${steps}</ol>
+    ${s.cevap ? `<div class="dsm-read"><span>🎯</span><div><b>Cevap:</b> <span class="dsm-ans">${kxText(s.cevap)}</span></div></div>` : ''}
+    <div class="dsm-acts"><button type="button" class="dsm-regen" data-gsm-gen="${id}">${busy ? 'Çiziliyor…' : '↻ Yeniden çiz'}</button></div>
+    ${err ? `<div class="dsm-err">${escHtml(err)}</div>` : ''}</details>`;
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('[data-gsm-gen],[data-gsm-open]'); if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  if (t.dataset.gsmGen) return gsmGen(t.dataset.gsmGen);
+  const card = t.closest('.q-card'), box = card && card.querySelector('.gsm-box'); if (!box) return;
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const det = box.querySelector('details'); if (det) det.open = true;
+  else if (!GSA.busy[t.dataset.gsmOpen]) gsmGen(t.dataset.gsmOpen);
+}, true);
+(function () {
+  const orig = renderQuestion;
+  renderQuestion = function (q) {
+    let h = orig.apply(this, arguments);
+    try {
+      if (!q || !MQ[q.id] || !gsmIsGeo(MQ[q.id])) return h;
+      h = h.replace(/(<button type="button" class="q-dsm-btn[^>]*>[^<]*<\/button>)/, `$1<button type="button" class="q-gsm-btn" data-gsm-open="${q.id}" title="Soruyu basit çizimlerle anlat">🎨 Şekille anlat</button>`);
+      h = h.replace(`<div class="dsm-box" data-dsm-id="${q.id}">`, `<div class="dsm-box gsm-box" data-gsm-id="${q.id}">${gsmInner(MQ[q.id])}</div><div class="dsm-box" data-dsm-id="${q.id}">`);
+    } catch (e) { console.error(e); }
+    return h;
+  };
 })();
 </script>
 </body></html>
