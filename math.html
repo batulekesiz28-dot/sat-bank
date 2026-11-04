@@ -1658,7 +1658,7 @@ body.math-mode .q-tour-btn,body.math-mode .q-lv-btn,body.math-mode .q-pg-toggle,
 .q-dsm-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:999px;border:1px solid #16a34a;background:rgba(22,163,74,.08);color:#15803d;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:6px}
 .q-dsm-btn.on{background:#16a34a;color:#fff}
 .ds-dock{position:fixed;z-index:1300;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
-.ds-dock.docked{top:0!important;right:0;bottom:0;left:auto!important;width:min(460px,100vw)!important;height:auto!important;border-radius:0;border-width:0 0 0 1px}
+.ds-dock.docked{top:0!important;right:0;bottom:0;left:auto!important;width:min(var(--dsw),100vw)!important;height:auto!important;border-radius:0;border-width:0 0 0 1px}
 .ds-dock.big{left:3vw!important;top:3vh!important;width:94vw!important;height:94vh!important}
 .ds-dock.moving{opacity:.92;user-select:none}
 .ds-dock.moving iframe,.ds-dock.moving .ds-calc{pointer-events:none}
@@ -1672,7 +1672,12 @@ body.math-mode .q-tour-btn,body.math-mode .q-lv-btn,body.math-mode .q-pg-toggle,
 .ds-calc{flex:1;min-height:0}
 .ds-load{padding:20px;color:var(--fg3);font-size:13px}
 .ds-helper{position:fixed;left:-10000px;top:0;width:460px;height:300px}
-@media (min-width:1100px){body.ds-docked .app,body.ds-docked .topbar{margin-right:460px}body.ds-docked .ink-palette{right:472px!important}body.ds-docked .qnav{right:460px;width:auto}body.ts-full.ds-docked #view-tset{right:460px}}
+:root{--dsw:clamp(360px,44vw,640px)}
+@media (min-width:700px){body.ds-docked .app,body.ds-docked .topbar{margin-right:var(--dsw)}body.ds-docked .ink-palette{right:calc(var(--dsw) + 12px)!important}body.ds-docked .qnav{right:var(--dsw);width:auto}body.ts-full.ds-docked #view-tset{right:var(--dsw)}}
+/* Desmos open → the question gets a bit smaller so both fit */
+@media (min-width:700px){body.ds-docked .q-text,body.ds-docked .q-prompt,body.ds-docked .choice-text{font-size:15px!important;line-height:1.55!important}
+body.ds-docked .mq-img{max-width:78%!important;height:auto!important}body.ds-docked .mq-fig .mq-img{max-width:70%!important}
+body.ds-docked .q-card{padding-left:0;padding-right:0}body.ds-docked .choice{padding-top:8px;padding-bottom:8px}}
 .dsm-box{margin:16px 0 12px;border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:0;font-family:Inter,system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.04);overflow:hidden}
 .dsm-empty{display:flex;align-items:center;gap:14px;padding:14px 16px}
 .dsm-ic{width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:linear-gradient(135deg,#22c55e,#15803d);display:flex;align-items:center;justify-content:center;font-size:20px;filter:saturate(1.1)}
@@ -1806,6 +1811,7 @@ figure.mq-zw > .mq-zoom{right:6px;top:6px}
 .gsm-ready{font-size:12px;font-weight:700;color:#c2410c;background:rgba(234,88,12,.1);padding:3px 10px;border-radius:999px}
 .gsm-show{margin-left:auto;font-size:12px;font-weight:700;color:var(--fg2)}
 .gsm-det .dsm-chev{margin-left:4px}
+body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:6px;padding-top:6px;padding-bottom:6px}body.ds-docked .topbar-right{flex-wrap:wrap;flex-shrink:1;min-width:0;justify-content:flex-end;row-gap:6px}
 </style>
 
 <!-- TOPBAR -->
@@ -4898,9 +4904,11 @@ document.addEventListener('keydown', e => {
 
 // ══════════════ ✏️ ÇALIŞMA ALANI: an empty drawing space under every question, as tall as you want ══════════════
 const SCR_KEY = 'satm_scratch_v1';
-const SCR_DEF = /math/.test(location.pathname) ? 260 : 0;
+// open by itself only for geometry questions (math site); everywhere else it starts closed
+const SCR_GEO = {};
+function scrDef(id) { if (!/math/.test(location.pathname)) return 0; if (!(id in SCR_GEO)) { const q = RAW_QUESTIONS.find(x => x.id === id); SCR_GEO[id] = !!(q && /Geometry/.test(q.domain || '')); } return SCR_GEO[id] ? 260 : 0; }
 function scrAll() { try { return JSON.parse(localStorage.getItem(SCR_KEY) || '{}') || {}; } catch { return {}; } }
-function scrH(id) { const v = scrAll()[id]; return v == null ? SCR_DEF : v; }
+function scrH(id) { const v = scrAll()[id]; return v == null ? scrDef(id) : v; }
 function scrSet(id, h) { const a = scrAll(); a[id] = Math.max(0, Math.min(4000, Math.round(h))); try { localStorage.setItem(SCR_KEY, JSON.stringify(a)); } catch {} }
 function scrHtml(id) {
   const h = scrH(id);
@@ -9019,7 +9027,7 @@ function dsShowSolution(id) {
 document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('[data-dsm-open],[data-ds],[data-dsm-show],[data-dsm-gen],[data-dsm-copy]'); if (!t) return;
   e.preventDefault(); e.stopPropagation();
-  if (t.hasAttribute('data-dsm-open')) { const d = document.getElementById('dsDock'); return dsOpen(!d || d.hidden); }
+  if (t.hasAttribute('data-dsm-open')) { const d = document.getElementById('dsDock'), opening = !d || d.hidden; if (opening && DSW.mode === 'float' && innerWidth >= 700) { DSW.mode = 'dock'; dswSave(); } return dsOpen(opening); }
   if (t.dataset.ds === 'close') return dsOpen(false);
   if (t.dataset.ds === 'clear') { if (DS.calc) DS.calc.setBlank(); return; }
   if (t.dataset.ds === 'big') { DSW.mode = DSW.mode === 'big' ? 'float' : 'big'; dswSave(); return dsPlace(); }

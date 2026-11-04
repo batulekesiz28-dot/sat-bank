@@ -4730,9 +4730,11 @@ document.addEventListener('keydown', e => {
 
 // ══════════════ ✏️ ÇALIŞMA ALANI: an empty drawing space under every question, as tall as you want ══════════════
 const SCR_KEY = 'sat_scratch_v1';
-const SCR_DEF = /math/.test(location.pathname) ? 260 : 0;
+// open by itself only for geometry questions (math site); everywhere else it starts closed
+const SCR_GEO = {};
+function scrDef(id) { if (!/math/.test(location.pathname)) return 0; if (!(id in SCR_GEO)) { const q = RAW_QUESTIONS.find(x => x.id === id); SCR_GEO[id] = !!(q && /Geometry/.test(q.domain || '')); } return SCR_GEO[id] ? 260 : 0; }
 function scrAll() { try { return JSON.parse(localStorage.getItem(SCR_KEY) || '{}') || {}; } catch { return {}; } }
-function scrH(id) { const v = scrAll()[id]; return v == null ? SCR_DEF : v; }
+function scrH(id) { const v = scrAll()[id]; return v == null ? scrDef(id) : v; }
 function scrSet(id, h) { const a = scrAll(); a[id] = Math.max(0, Math.min(4000, Math.round(h))); try { localStorage.setItem(SCR_KEY, JSON.stringify(a)); } catch {} }
 function scrHtml(id) {
   const h = scrH(id);
