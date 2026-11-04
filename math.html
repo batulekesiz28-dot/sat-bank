@@ -1800,6 +1800,9 @@ figure.mq-zw > .mq-zoom{right:6px;top:6px}
 .gsm-txt{font-size:15px;line-height:1.6;color:var(--fg)}
 .gsm-know{margin:10px 16px 0}
 @media (max-width:760px){.gsm-step{grid-template-columns:28px minmax(0,1fr)}.gsm-txt{grid-column:2}}
+.gsm-ready{font-size:12px;font-weight:700;color:#c2410c;background:rgba(234,88,12,.1);padding:3px 10px;border-radius:999px}
+.gsm-show{margin-left:auto;font-size:12px;font-weight:700;color:var(--fg2)}
+.gsm-det .dsm-chev{margin-left:4px}
 </style>
 
 <!-- TOPBAR -->
@@ -9369,7 +9372,7 @@ document.addEventListener('click', e => {
 })();
 // ══ 🎨 ŞEKİLLE ANLAT (geometry): the AI explains the question in a few simple drawings ══
 // The AI never sends SVG: it sends a tiny drawing list that we turn into SVG ourselves (safe + always valid).
-const GSA = { busy: {}, err: {}, st: {} };
+const GSA = { busy: {}, err: {}, st: {}, open: {} };
 // the AI sometimes writes Turkish keys (adımlar, çiz) or English ones (steps, draw): accept them all
 function gsmNorm(o) {
   if (Array.isArray(o)) o = { adimlar: o };
@@ -9444,9 +9447,11 @@ async function gsmGen(id) {
     if (!out || !out.adimlar.length) throw new Error('AI beklenen biçimde cevap vermedi, ↻ ile tekrar dene.');
     if (!state.gsm || typeof state.gsm !== 'object') state.gsm = {};
     state.gsm[id] = { at: Date.now(), m: AI.lastModel || aiModel(), s: out };
+    GSA.open[id] = true;
     saveState();
   } catch (e) { GSA.err[id] = e && e.message === 'NOKEY' ? 'Bu cihazda Gemini anahtarı yok. Üstten 📖 İngilizce’ye geç → Çalış → AI Koç’tan anahtarını gir (ya da PC’den “📱 Tablete aktar” QR kodunu okut).' : aiErrText(e); console.error('Şekille anlat', e); }
   GSA.busy[id] = false; GSA.st[id] = ''; gsmRefresh(id);
+  if (GSA.open[id]) { const bx = [...document.querySelectorAll('.gsm-box[data-gsm-id="' + id + '"]')].find(x => x.offsetParent); if (bx) bx.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 }
 function gsmRefresh(id) { document.querySelectorAll('.gsm-box[data-gsm-id="' + id + '"]').forEach(b => { b.innerHTML = gsmInner(MQ[id]); }); }
 function gsmInner(q) {
@@ -9456,7 +9461,7 @@ function gsmInner(q) {
     ${busy ? `<div class="dsm-note"><span class="ai-spin"></span> <span class="gsm-st">${escHtml(GSA.st[id] || 'Çiziliyor… (20–60 sn)')}</span></div>` : `<button type="button" class="dsm-gen gsm-gen" data-gsm-gen="${id}">✨ Çiz ve anlat</button>`}</div>
     ${err ? `<div class="dsm-err">${escHtml(err)}</div>` : ''}`;
   const steps = s.adimlar.map((st, i) => `<li class="gsm-step"><div class="gsm-n">${i + 1}</div><span class="mq-zw gsm-pic"><img src="${gsmSvg(st.ciz)}" alt="Adım ${i + 1} çizimi" draggable="false"><button type="button" class="mq-zoom" data-zoom title="Büyüt">🔍</button></span><div class="gsm-txt">${kxText(st.yaz)}</div></li>`).join('');
-  return `<details class="dsm-det gsm-det" ${answered ? 'open' : ''}><summary><span class="dsm-ic sm gsm-ic">🎨</span><span class="dsm-title">Şekille anlatım</span>${answered ? '' : '<span class="dsm-warn">cevabı gösterir</span>'}<span class="dsm-chev">⌄</span></summary>
+  return `<details class="dsm-det gsm-det" ${answered || GSA.open[id] ? 'open' : ''} ontoggle="GSA.open['${id}']=this.open"><summary><span class="dsm-ic sm gsm-ic">🎨</span><span class="dsm-title">Şekille anlatım</span><span class="gsm-ready">${s.adimlar.length} adım hazır</span>${answered ? '' : '<span class="dsm-warn">cevabı gösterir</span>'}<span class="gsm-show">Göster / gizle</span><span class="dsm-chev">⌄</span></summary>
     ${s.fikir ? `<div class="dsm-know gsm-know">💡 ${kxText(s.fikir)}</div>` : ''}
     <ol class="gsm-steps">${steps}</ol>
     ${s.cevap ? `<div class="dsm-read"><span>🎯</span><div><b>Cevap:</b> <span class="dsm-ans">${kxText(s.cevap)}</span></div></div>` : ''}
@@ -9469,7 +9474,7 @@ document.addEventListener('click', e => {
   if (t.dataset.gsmGen) return gsmGen(t.dataset.gsmGen);
   const card = t.closest('.q-card'), box = card && card.querySelector('.gsm-box'); if (!box) return;
   box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  const det = box.querySelector('details'); if (det) det.open = true;
+  const det = box.querySelector('details'); if (det) { det.open = true; GSA.open[t.dataset.gsmOpen] = true; }
   else if (!GSA.busy[t.dataset.gsmOpen]) gsmGen(t.dataset.gsmOpen);
 }, true);
 (function () {
