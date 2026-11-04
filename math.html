@@ -1623,7 +1623,7 @@ body.ts-full #view-tset .focus-wrap .q-card{min-height:calc(100vh - 170px)}
 .mode-p{font-size:12.5px;color:var(--fg3);margin:14px 0 0}
 .mode-sw .ib-ic{font-size:15px;line-height:1}
 
-.scr-wrap{margin:14px 0 0;position:relative;z-index:9}
+.scr-wrap{margin:14px 0 4px;position:relative;z-index:9}
 .scr-wrap.closed{display:flex;justify-content:center}
 .scr-open{border:1.5px dashed var(--border2);background:none;color:var(--fg2);font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;cursor:pointer}
 .scr-open:hover{border-color:var(--accent);color:var(--accent)}
@@ -4885,7 +4885,7 @@ function scrHtml(id) {
   const orig = renderQuestion;
   renderQuestion = function (q) {
     let h = orig.apply(this, arguments);
-    try { if (q && q.id) { const i = h.lastIndexOf('</article>'); if (i > 0) h = h.slice(0, i) + scrHtml(q.id) + h.slice(i); } } catch {}
+    try { if (q && q.id) { let i = h.indexOf('<div class="rationale'); if (i < 0) i = h.lastIndexOf('</article>'); if (i > 0) h = h.slice(0, i) + scrHtml(q.id) + h.slice(i); } } catch {}
     return h;
   };
 })();
