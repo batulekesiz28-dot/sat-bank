@@ -9369,7 +9369,17 @@ document.addEventListener('click', e => {
 })();
 // ══ 🎨 ŞEKİLLE ANLAT (geometry): the AI explains the question in a few simple drawings ══
 // The AI never sends SVG: it sends a tiny drawing list that we turn into SVG ourselves (safe + always valid).
-const GSA = { busy: {}, err: {} };
+const GSA = { busy: {}, err: {}, st: {} };
+// the AI sometimes writes Turkish keys (adımlar, çiz) or English ones (steps, draw): accept them all
+function gsmNorm(o) {
+  if (Array.isArray(o)) o = { adimlar: o };
+  if (!o || typeof o !== 'object') return null;
+  const pick = (x, ks) => { for (const k of ks) if (x && x[k] != null) return x[k]; return undefined; };
+  let st = pick(o, ['adimlar', 'adımlar', 'steps', 'adim', 'adım']); if (!Array.isArray(st)) st = [];
+  const fixItem = it => { if (!it || typeof it !== 'object') return null; const t = pick(it, ['t', 'type', 'tür', 'tur']); const o2 = Object.assign({}, it, { t: String(t || '').toLowerCase() }); ['yaz', 'text', 'label', 'etiket'].some(k => it[k] != null && (o2.yaz = it[k], true)); if (it.renk && !it.r) o2.r = it.renk; return o2; };
+  return { fikir: String(pick(o, ['fikir', 'ana_fikir', 'idea']) || '').slice(0, 300), cevap: String(pick(o, ['cevap', 'answer']) || '').slice(0, 60),
+    adimlar: st.slice(0, 6).map(x => { const c = pick(x, ['ciz', 'çiz', 'cizim', 'çizim', 'draw', 'items']); return { ciz: Array.isArray(c) ? c.slice(0, 40).map(fixItem).filter(Boolean) : [], yaz: String(pick(x, ['yaz', 'text', 'açıklama', 'aciklama']) || '').slice(0, 600) }; }).filter(x => x.ciz.length || x.yaz) };
+}
 const GSM_PROMPT = `Sen Digital SAT geometri/trigonometri sorularını ÇOK BASİT ÇİZİMLERLE anlatan bir öğretmensin. Öğrenci Türk, konuyu az biliyor. Her adım tek bir fikir: kısa bir çizim + 1-2 kısa cümle. Resmi çözüm ve doğru cevap kesin doğrudur.
 ÇİZİM DİLİ: tuval 100 genişlik × 70 yükseklik, (0,0) sol üst, y aşağı doğru artar. Şekli tuvalin ortasına, kenarlardan en az 8 birim içeride çiz. Her adımın "ciz" listesi baştan çizilir (önceki adımı tekrar etmen gerekir).
 Öğeler (renk "r": "k" siyah (varsayılan), "a" mavi = şu an konuştuğumuz şey, "b" turuncu = ikinci vurgu, "g" yeşil = cevap):
@@ -9420,7 +9430,7 @@ function gsmSvg(items) {
 function gsmIsGeo(q) { return q && /Geometry/.test(q.domain || ''); }
 async function gsmGen(id) {
   const q = MQ[id]; if (!q || GSA.busy[id]) return;
-  if (!aiKey()) { GSA.err[id] = aiErrText(new Error('NOKEY')); return gsmRefresh(id); }
+  if (!aiKey()) { GSA.err[id] = 'Bu cihazda Gemini anahtarı yok. Üstten 📖 İngilizce’ye geç → Çalış → AI Koç’tan anahtarını gir (ya da PC’den “📱 Tablete aktar” QR kodunu okut).'; return gsmRefresh(id); }
   GSA.busy[id] = true; GSA.err[id] = ''; gsmRefresh(id);
   try {
     const parts = [{ text: 'Soru görseli:' }, await imgPart(id + '_q')];
@@ -9429,21 +9439,21 @@ async function gsmGen(id) {
     parts.push({ text: 'Resmi çözüm:' }); parts.push(await imgPart(id + '_r'));
     let txt = ''; if (q.tx) txt = '\nSORU METNİ:\n' + String(q.question || '').replace(/⟦IMG:[^⟧]+⟧/g, '[resim]').replace(/⟦BR⟧/g, '\n');
     parts.push({ text: GSM_PROMPT + txt + `\nKONU: ${q.skill}\nDOĞRU CEVAP: ${q.mt === 'mcq' ? 'Şık ' + q.correct : q.acc}` });
-    const out = await aiCall(parts, { temp: 0.2, timeout: 70000, think: 'medium' });
-    if (!out || !Array.isArray(out.adimlar) || !out.adimlar.length) throw new Error('AI beklenen biçimde cevap vermedi, tekrar dene.');
-    out.adimlar = out.adimlar.slice(0, 6).map(s => ({ ciz: Array.isArray(s.ciz) ? s.ciz.slice(0, 40) : [], yaz: String(s.yaz || '').slice(0, 600) }));
+    let out = await aiCall(parts, { temp: 0.2, timeout: 120000, think: 'medium', onStatus: m => { GSA.st[id] = m; const el = document.querySelector('.gsm-box[data-gsm-id="' + id + '"] .gsm-st'); if (el) el.textContent = m; } });
+    out = gsmNorm(out);
+    if (!out || !out.adimlar.length) throw new Error('AI beklenen biçimde cevap vermedi, ↻ ile tekrar dene.');
     if (!state.gsm || typeof state.gsm !== 'object') state.gsm = {};
-    state.gsm[id] = { at: Date.now(), m: AI.lastModel || aiModel(), s: { fikir: String(out.fikir || '').slice(0, 300), adimlar: out.adimlar, cevap: String(out.cevap || '').slice(0, 60) } };
+    state.gsm[id] = { at: Date.now(), m: AI.lastModel || aiModel(), s: out };
     saveState();
-  } catch (e) { GSA.err[id] = aiErrText(e); }
-  GSA.busy[id] = false; gsmRefresh(id);
+  } catch (e) { GSA.err[id] = e && e.message === 'NOKEY' ? 'Bu cihazda Gemini anahtarı yok. Üstten 📖 İngilizce’ye geç → Çalış → AI Koç’tan anahtarını gir (ya da PC’den “📱 Tablete aktar” QR kodunu okut).' : aiErrText(e); console.error('Şekille anlat', e); }
+  GSA.busy[id] = false; GSA.st[id] = ''; gsmRefresh(id);
 }
 function gsmRefresh(id) { document.querySelectorAll('.gsm-box[data-gsm-id="' + id + '"]').forEach(b => { b.innerHTML = gsmInner(MQ[id]); }); }
 function gsmInner(q) {
   const id = q.id, rec = state.gsm && state.gsm[id], s = rec && rec.s, busy = GSA.busy[id], err = GSA.err[id];
   const answered = state.answers[id] !== undefined || (state.revealed && state.revealed[id]);
   if (!s) return `<div class="dsm-empty"><div class="dsm-ic gsm-ic">🎨</div><div><div class="dsm-title">Şekille anlat</div><div class="dsm-sub">Soruyu adım adım, basit çizimlerle anlatır.</div></div>
-    ${busy ? '<div class="dsm-note"><span class="ai-spin"></span> Çiziliyor… (15–50 sn)</div>' : `<button type="button" class="dsm-gen gsm-gen" data-gsm-gen="${id}">✨ Çiz ve anlat</button>`}</div>
+    ${busy ? `<div class="dsm-note"><span class="ai-spin"></span> <span class="gsm-st">${escHtml(GSA.st[id] || 'Çiziliyor… (20–60 sn)')}</span></div>` : `<button type="button" class="dsm-gen gsm-gen" data-gsm-gen="${id}">✨ Çiz ve anlat</button>`}</div>
     ${err ? `<div class="dsm-err">${escHtml(err)}</div>` : ''}`;
   const steps = s.adimlar.map((st, i) => `<li class="gsm-step"><div class="gsm-n">${i + 1}</div><span class="mq-zw gsm-pic"><img src="${gsmSvg(st.ciz)}" alt="Adım ${i + 1} çizimi" draggable="false"><button type="button" class="mq-zoom" data-zoom title="Büyüt">🔍</button></span><div class="gsm-txt">${kxText(st.yaz)}</div></li>`).join('');
   return `<details class="dsm-det gsm-det" ${answered ? 'open' : ''}><summary><span class="dsm-ic sm gsm-ic">🎨</span><span class="dsm-title">Şekille anlatım</span>${answered ? '' : '<span class="dsm-warn">cevabı gösterir</span>'}<span class="dsm-chev">⌄</span></summary>
