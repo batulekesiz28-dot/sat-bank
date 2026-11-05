@@ -1640,6 +1640,32 @@ body.ts-full #view-tset .focus-wrap .q-card{min-height:calc(100vh - 170px)}
 /* tablets (700–1250px): the top buttons wrap instead of pushing the page wider than the screen */
 @media (min-width:701px) and (max-width:1250px){.topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:6px;padding-top:6px;padding-bottom:6px}.topbar-right{flex-wrap:wrap;flex-shrink:1;min-width:0;justify-content:flex-end;row-gap:6px}}
 
+.eks-badge{margin-left:5px;font-size:10.5px;font-weight:800;background:#ea580c;color:#fff;border-radius:999px;padding:1px 6px;vertical-align:1px}
+.eks-new{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:12px;margin:12px 0 18px}
+.eks-ta{width:100%;min-height:76px;resize:vertical;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:inherit;font-size:14.5px;line-height:1.5;background:var(--bg);color:var(--fg);box-sizing:border-box}
+.eks-ta:focus{outline:none;border-color:var(--accent)}
+.eks-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.eks-hint{font-size:11.5px;color:var(--fg3)}
+.eks-b{border:1px solid var(--border);background:var(--surface);color:var(--fg2);font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer}
+.eks-b:hover{color:var(--fg);border-color:var(--fg3)}
+.eks-b.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.eks-b.ok{color:#15803d;border-color:rgba(22,163,74,.45)}
+.eks-b.del{color:#dc2626}
+.eks-h{display:block;font-size:13px;font-weight:700;color:var(--fg2);margin:6px 0 8px;background:none;border:0;padding:0;font-family:inherit;cursor:default}
+.eks-toggle{cursor:pointer;margin-top:18px}
+.eks-h b{background:var(--surface2);border-radius:999px;padding:1px 8px;margin-left:4px}
+.eks-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.eks-card{border:1px solid var(--border);border-left:4px solid #ea580c;border-radius:12px;background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.eks-card.done{border-left-color:#16a34a;opacity:.7}
+.eks-card.done .eks-t{text-decoration:line-through;text-decoration-color:rgba(22,163,74,.6)}
+.eks-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--fg3)}
+.eks-k{font-weight:700;color:#c2410c;background:rgba(234,88,12,.1);border-radius:999px;padding:2px 8px}
+.eks-by{font-weight:700;color:#7c3aed}
+.eks-d{margin-left:auto}
+.eks-t{font-size:14.5px;line-height:1.5;color:var(--fg);white-space:normal;word-break:break-word}
+.eks-acts{display:flex;gap:6px;flex-wrap:wrap}
+.eks-empty{color:var(--fg3);font-size:13.5px;padding:14px;border:1px dashed var(--border2);border-radius:12px}
+
 /* ══ math mode ══ */
 body.math-mode .q-tour-btn,body.math-mode .q-lv-btn,body.math-mode .q-pg-toggle,body.math-mode .ttab[data-view="vocab"],body.math-mode .ttab[data-view="study"],body.math-mode .ink-tool.ink-th{display:none!important}
 .mq-img{display:block;max-width:100%;height:auto;image-rendering:auto}
@@ -1828,6 +1854,7 @@ body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:
       <button class="ttab" data-view="wrong">Yanlışlarım</button>
       <button class="ttab" data-view="study">Çalış</button>
       <button class="ttab" data-view="notes">Notlarım</button>
+      <button class="ttab ttab-eks" data-view="eksik">Eksiklerim</button>
       <button class="ttab" data-view="vocab">Vocab</button>
       <button class="ttab" data-view="stats">İstatistik</button>
     </nav>
@@ -8156,7 +8183,7 @@ const SAT_WEB = {
 // ══════════════════════════════════════════════
 (function initSync(){
   const SB = 'satm_bank_v2', INK = 'satm_bank_ink_v1', VC = 'satm_bank_vocab_v1', NB = 'satm_bank_notebook_v1';
-  const KV = ['satm_custom_set_v1', 'satm_custom_set_progress_v1', 'satm_saved_sets', 'satm_schema_v1', 'satm_ai_report_v1', 'satm_hw_v1', 'satm_vocab_srs_v1', 'satm_vocab_mn_v1', 'satm_left_v1', 'satm_tset_v1'];
+  const KV = ['satm_custom_set_v1', 'satm_custom_set_progress_v1', 'satm_saved_sets', 'satm_schema_v1', 'satm_ai_report_v1', 'satm_hw_v1', 'satm_vocab_srs_v1', 'satm_vocab_mn_v1', 'satm_left_v1', 'satm_tset_v1', 'satm_eksik_v1'];
   const ST = { answers: 4, flags: 2, notes: 8, revealed: 2, timers: 4, highlights: 64, eliminated: 4, sessionAnswers: 2, review: 4, reflect: 4, aiNote: 16, bluebook: 1, choiceHl: 8, ansAt: 8, gotit: 4, dsm: 24, gsm: 24 };
   // progress belongs to the page owner (the student): the teacher sees it but never changes it
   const OWNER_ONLY = new Set(['review', 'reflect', 'aiNote', 'bluebook', 'ansAt', 'gotit', 'answers', 'revealed', 'timers', 'eliminated', 'sessionAnswers', 'satm_custom_set_progress_v1', 'satm_saved_sets', 'satm_schema_v1', 'satm_vocab_srs_v1', 'satm_tset_v1']);
@@ -8870,6 +8897,65 @@ Sadece JSON: {"items":[{"w":"kelime","ex":"cümle"}]}` }], { temp: 0.7, timeout:
     try { sessionStorage.setItem('sat_mode_chosen', '1'); } catch {}
     if (b.dataset.mode === 'math') location.href = 'math.html' + location.search; else ov.remove();
   });
+})();
+
+// ══════════════ 🎯 EKSİKLERİM: write down where you are weak (shared with the teacher) ══════════════
+(function () {
+  const KEY = 'satm_eksik_v1';
+  const load = () => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
+  const save = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch {} };
+  const domains = () => { const s = []; RAW_QUESTIONS.forEach(q => { if (q.domain && !s.includes(q.domain)) s.push(q.domain); }); return s; };
+  const who = () => (window.__webUser && window.__webUser.role === 'teacher') ? 'teacher' : 'owner';
+  const fmt = t => new Date(t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+  const E = { edit: null, del: null, showDone: false };
+  const view = document.createElement('div'); view.className = 'view'; view.id = 'view-eksik';
+  const notes = document.getElementById('view-notes'); (notes ? notes.parentElement : document.querySelector('.app')).insertBefore(view, notes ? notes.nextSibling : null);
+  function badge() {
+    const n = load().filter(x => !x.done).length;
+    document.querySelectorAll('.ttab[data-view="eksik"]').forEach(b => { let s = b.querySelector('.eks-badge'); if (!s) { s = document.createElement('span'); s.className = 'eks-badge'; b.appendChild(s); } s.textContent = n || ''; s.hidden = !n; });
+  }
+  function card(x) {
+    const by = x.by === 'teacher' ? '<span class="eks-by">hocan yazdı</span>' : '';
+    if (E.edit === x.id) return `<div class="eks-card editing" data-eks="${x.id}"><textarea class="eks-ta" data-eks-ta>${escHtml(x.t)}</textarea><div class="eks-acts"><button type="button" class="eks-b pri" data-eks-act="save">Kaydet</button><button type="button" class="eks-b" data-eks-act="cancel">Vazgeç</button></div></div>`;
+    return `<div class="eks-card${x.done ? ' done' : ''}" data-eks="${x.id}">
+      <div class="eks-top">${x.k ? `<span class="eks-k">${escHtml(x.k)}</span>` : ''}<span class="eks-d">${fmt(x.at)}${x.done ? ' · ✓ ' + fmt(x.done) : ''}</span>${by}</div>
+      <div class="eks-t">${escHtml(x.t).replace(/\n/g, '<br>')}</div>
+      <div class="eks-acts">${x.done ? '<button type="button" class="eks-b" data-eks-act="undo">↺ Geri al</button>' : '<button type="button" class="eks-b ok" data-eks-act="done">✓ Hallettim</button>'}<button type="button" class="eks-b" data-eks-act="edit">Düzenle</button><button type="button" class="eks-b del" data-eks-act="del">${E.del === x.id ? 'Emin misin? Sil' : 'Sil'}</button></div></div>`;
+  }
+  function render() {
+    const a = load(), open = a.filter(x => !x.done).sort((x, y) => y.at - x.at), done = a.filter(x => x.done).sort((x, y) => y.done - x.done);
+    const opts = ['<option value="">Konu (isteğe bağlı)</option>', ...domains().map(d => `<option>${escHtml(d)}</option>`), '<option>Genel / strateji</option>', '<option>Zaman yönetimi</option>'].join('');
+    const prevText = (view.querySelector('#eksNew') || {}).value || '', prevK = (view.querySelector('#eksKonu') || {}).value || '';
+    view.innerHTML = `<div class="section-title-row"><div><div class="section-h">Eksiklerim</div><div class="section-sub">Nerede eksiğin olduğunu yaz. Hocan da görür, o da ekleyebilir. Hallettiğinde ✓ işaretle.</div></div></div>
+      <div class="eks-new"><textarea id="eksNew" class="eks-ta" placeholder="Örn: Çember denkleminde kareye tamamlamayı karıştırıyorum. / Uzun paragraflarda ana fikri kaçırıyorum."></textarea>
+        <div class="eks-row"><select id="eksKonu" class="filter-select">${opts}</select><button type="button" class="eks-b pri" data-eks-act="add">+ Ekle</button><span class="eks-hint">Ctrl+Enter ile de eklenir</span></div></div>
+      <div class="eks-h">Açık eksikler <b>${open.length}</b></div>
+      <div class="eks-list">${open.length ? open.map(card).join('') : '<div class="eks-empty">Henüz eksik yazılmadı. Yukarıdan ekleyebilirsin.</div>'}</div>
+      ${done.length ? `<button type="button" class="eks-h eks-toggle" data-eks-act="toggle">${E.showDone ? '▾' : '▸'} Halledilenler <b>${done.length}</b></button>${E.showDone ? `<div class="eks-list">${done.map(card).join('')}</div>` : ''}` : ''}`;
+    view.querySelector('#eksNew').value = prevText; if (prevK) view.querySelector('#eksKonu').value = prevK;
+    const ta = view.querySelector('[data-eks-ta]'); if (ta) { ta.focus(); ta.selectionStart = ta.value.length; }
+    badge();
+  }
+  function act(a, id) {
+    const L = load(), x = L.find(y => y.id === id);
+    if (a === 'add') { const t = view.querySelector('#eksNew').value.trim(); if (!t) return showToast('Önce eksiğini yaz'); L.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: t.slice(0, 2000), k: view.querySelector('#eksKonu').value, at: Date.now(), by: who(), done: null }); save(L); view.querySelector('#eksNew').value = ''; render(); return showToast('Eklendi'); }
+    if (a === 'toggle') { E.showDone = !E.showDone; return render(); }
+    if (!x) return;
+    if (a === 'done') { x.done = Date.now(); save(L); showToast('Süper, halledildi ✓'); }
+    else if (a === 'undo') x.done = null, save(L);
+    else if (a === 'edit') E.edit = id;
+    else if (a === 'cancel') E.edit = null;
+    else if (a === 'save') { const t = view.querySelector('[data-eks-ta]').value.trim(); if (t) { x.t = t.slice(0, 2000); save(L); } E.edit = null; }
+    else if (a === 'del') { if (E.del !== id) { E.del = id; render(); setTimeout(() => { if (E.del === id) { E.del = null; render(); } }, 3000); return; } save(L.filter(y => y.id !== id)); E.del = null; }
+    render();
+  }
+  view.addEventListener('click', e => { const b = e.target.closest('[data-eks-act]'); if (!b) return; e.preventDefault(); const c = b.closest('[data-eks]'); act(b.dataset.eksAct, c ? c.dataset.eks : null); });
+  view.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (e.target.id === 'eksNew') act('add'); else if (e.target.closest('[data-eks]')) act('save', e.target.closest('[data-eks]').dataset.eks); } });
+  const orig = switchView;
+  switchView = function (v) { orig.apply(this, arguments); if (v === 'eksik') { document.querySelectorAll('.ttab').forEach(b => b.classList.toggle('active', b.dataset.view === 'eksik')); render(); } };
+  // the teacher's additions arrive through sync: refresh
+  let sig = localStorage.getItem(KEY) || ''; setInterval(() => { const s = localStorage.getItem(KEY) || ''; if (s === sig) return; sig = s; badge(); if (view.classList.contains('active') && !E.edit && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#view-eksik'))) render(); }, 1500);
+  badge();
 })();
 
 // ══════════════════════════════════════════════════════════════════════
