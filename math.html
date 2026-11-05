@@ -1838,6 +1838,7 @@ figure.mq-zw > .mq-zoom{right:6px;top:6px}
 .gsm-show{margin-left:auto;font-size:12px;font-weight:700;color:var(--fg2)}
 .gsm-det .dsm-chev{margin-left:4px}
 body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:6px;padding-top:6px;padding-bottom:6px}body.ds-docked .topbar-right{flex-wrap:wrap;flex-shrink:1;min-width:0;justify-content:flex-end;row-gap:6px}
+.ref-f{margin:3px 0}
 </style>
 
 <!-- TOPBAR -->
@@ -9331,6 +9332,16 @@ const REF_SHEET = [
     ['Derece ile', ['\\text{yay}=\\dfrac{\\theta}{360}\\cdot 2\\pi r', '\\text{dilim}=\\dfrac{\\theta}{360}\\cdot \\pi r^2']],
     ['Radyan ile', ['\\text{yay}=r\\theta', '\\text{dilim}=\\tfrac12 r^2\\theta'], 'θ radyan olmalı · 180° = π radyan'],
   ], ['Çevre açı (inscribed angle) aynı yayı gören merkez açının <b>yarısıdır</b>.']],
+  ['Trigonometri: sin, cos, tan ve “cos A = sin B” kuralı', [
+    ['SOH-CAH-TOA', ['\\sin A=\\frac{\\text{karşı}}{\\text{hipotenüs}}', '\\cos A=\\frac{\\text{komşu}}{\\text{hipotenüs}}', '\\tan A=\\frac{\\text{karşı}}{\\text{komşu}}'], 'Karşı/komşu, A açısına göre seçilir.', () => COFN_SVG],
+    ['⭐ cos A = sin B görürsen', ['A+B=90^\\circ'], 'Dar açılarda sin ve cos birbirinin tümleri (co-function). Soru “cos A = sin B” ya da “sin A = cos B” derse hemen <b>A + B = 90</b> yaz, açıların ifadelerini topla, 90’a eşitle.', null, 1],
+    ['Örnek', ['(3x+20)+(2x+40)=90', '5x+60=90 \\Rightarrow x=6'], 'cos A = sin B, A = 3x+20, B = 2x+40'],
+    ['Tümler açı kuralı', ['\\sin x^\\circ=\\cos(90-x)^\\circ', '\\cos x^\\circ=\\sin(90-x)^\\circ'], 'Örn: sin 24° = cos 66°'],
+    ['tan ilişkisi', ['\\tan A=\\dfrac{1}{\\tan B}', '\\tan A\\cdot\\tan B=1'], 'A + B = 90 ise'],
+    ['Temel özdeşlik', ['\\sin^2 x+\\cos^2 x=1']],
+    ['Radyan', ['180^\\circ=\\pi \\text{ radyan}', '\\text{derece}\\cdot\\dfrac{\\pi}{180}'], 'Radyandan dereceye: × 180/π'],
+    ['Özel değerler', ['\\sin 30^\\circ=\\cos 60^\\circ=\\tfrac12', '\\sin 45^\\circ=\\cos 45^\\circ=\\tfrac{\\sqrt2}{2}', '\\sin 60^\\circ=\\cos 30^\\circ=\\tfrac{\\sqrt3}{2}']],
+  ], ['Dik üçgende iki dar açının toplamı her zaman <b>90°</b>; bu yüzden birinin sinüsü diğerinin kosinüsüne eşittir.', 'Desmos’ta açı soruları için ayarlardan <b>derece</b> moduna geç.']],
   ['Eş üçgenler (congruent ≅): hangi işaretler yeter?', [
     ['SSS ✅', [], '3 kenar eşit', () => triPair({ s: [1, 2, 3] })],
     ['SAS ✅', [], '2 kenar + <b>arasındaki</b> açı', () => triPair({ s: [1, 2, 0], a: [0, 1, 0] })],
@@ -9405,6 +9416,7 @@ function rtPair(m) {
   return `<svg class="ref-svg ref-tri" viewBox="0 0 120 62" aria-hidden="true">${triMarks(T, m)}${triMarks(T2, m)}</svg>`;
 }
 const SECTOR_SVG = `<svg class="ref-svg" viewBox="0 0 120 84" aria-hidden="true"><circle cx="60" cy="42" r="32"/><path d="M60 42 L92 42 A32 32 0 0 0 76 14.3 Z" class="sec"/><circle cx="60" cy="42" r="1.6" class="dot"/><path class="mk" d="M70 42 A10 10 0 0 0 65 33.3"/><text x="73" y="39" style="font-size:8px">θ</text><text x="76" y="50">r</text><text x="96" y="24" text-anchor="start">yay</text></svg>`;
+const COFN_SVG = `<svg class="ref-svg" viewBox="0 0 120 84" aria-hidden="true"><polygon points="18,70 104,70 18,16"/><polyline points="18,62 26,62 26,70"/><path class="mk" d="M92 70 A12 12 0 0 1 93.8 64"/><path class="mk" d="M18 26 A10 10 0 0 0 26.5 21.3"/><text x="84" y="66">A</text><text x="24" y="34" text-anchor="start">B</text><text x="61" y="80">b</text><text x="11" y="45">a</text><text x="66" y="38" text-anchor="start">c</text><text x="60" y="8" style="font-size:7.5px;font-style:normal">sin A = a/c = cos B</text></svg>`;
 function refHtml() {
   return REF_SHEET.map(([t, rows, facts]) => `<div class="ref-sec"><h4>${t}</h4><div class="ref-grid">${rows.map(([n, f, note, fig, wide]) =>
     `<div class="ref-card${wide ? ' wide' : ''}"><div class="ref-name">${n}</div>${fig ? fig() : (RF[RF_MAP[n]] || '')}${f.map(x => `<div class="ref-f">${mkx(x, false)}</div>`).join('')}${note ? `<div class="ref-note">${note}</div>` : ''}</div>`).join('')}</div>${facts ? `<ul class="ref-facts">${facts.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}</div>`).join('');
@@ -9606,6 +9618,16 @@ document.addEventListener('click', e => {
     } catch (e) { console.error(e); }
     return h;
   };
+})();
+
+// the student said trig co-function questions are a weak spot: put it in Eksiklerim once (deleting it is respected)
+(function () {
+  try {
+    if (localStorage.getItem('satm_eksik_seed_cofn')) return;
+    const K = 'satm_eksik_v1'; let a = []; try { a = JSON.parse(localStorage.getItem(K) || '[]') || []; } catch {}
+    if (!a.some(x => x.id === 'seed-cofn')) { a.push({ id: 'seed-cofn', t: 'Trigonometri: “cos A = sin B” gibi sorularda ne yapacağımı bilemiyorum.\nKural: dar açılarda cos A = sin B ise A + B = 90°. Açıların ifadelerini topla, 90’a eşitle. (📐 Formüller → Trigonometri)', k: 'Geometry and Trigonometry', at: Date.now(), by: 'owner', done: null }); localStorage.setItem(K, JSON.stringify(a)); }
+    localStorage.setItem('satm_eksik_seed_cofn', '1');
+  } catch {}
 })();
 </script>
 </body></html>
