@@ -1839,6 +1839,33 @@ figure.mq-zw > .mq-zoom{right:6px;top:6px}
 .gsm-det .dsm-chev{margin-left:4px}
 body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:6px;padding-top:6px;padding-bottom:6px}body.ds-docked .topbar-right{flex-wrap:wrap;flex-shrink:1;min-width:0;justify-content:flex-end;row-gap:6px}
 .ref-f{margin:3px 0}
+.kn-crumb{font-size:14px;color:var(--fg2);margin:4px 0 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.kn-crumb button{border:0;background:none;font:inherit;color:var(--accent);cursor:pointer;padding:2px 0}
+.kn-crumb b{color:var(--fg);font-size:18px}
+.kn-sub{margin-bottom:14px}
+.kn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.kn-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:18px;font:inherit;color:var(--fg);cursor:pointer;transition:border-color .15s,transform .15s}
+.kn-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.kn-card b{font-size:17px}.kn-card small{color:var(--fg2);font-size:13px}.kn-card em{font-style:normal;font-size:12px;color:var(--accent);font-weight:700;margin-top:4px}
+.kn-ic{font-size:26px}
+.kn-soon{cursor:default;opacity:.65;border-style:dashed}.kn-soon:hover{transform:none;border-color:var(--border)}
+.kn-notes{display:flex;flex-direction:column;gap:12px}
+.kn-note{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px;align-items:center;border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:16px 18px}
+.kn-note h3{margin:0 0 6px;font-size:16px}
+.kn-note p{margin:0 0 8px;font-size:15px;line-height:1.6;color:var(--fg)}
+.kn-fs{display:flex;flex-wrap:wrap;gap:6px 22px;margin:6px 0 8px}
+.kn-f{font-size:16px}.kn-f .katex-display{margin:0}
+.kn-ex{font-size:14px;line-height:1.55;background:rgba(22,163,74,.08);border-radius:10px;padding:8px 10px;margin-top:6px}
+.kn-trap{font-size:14px;line-height:1.55;background:rgba(234,88,12,.09);border-radius:10px;padding:8px 10px;margin-top:6px}
+.kn-pic{display:flex;justify-content:center}
+.kn-svg{width:100%;max-width:210px;height:auto;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linejoin:round;color:var(--fg)}
+.kn-svg text{fill:currentColor;stroke:none;font:italic 11px "Times New Roman",serif}
+.kn-svg text.sm{font-size:10px}.kn-svg text.fa2{font-size:9px}.kn-svg .dot{fill:currentColor}
+.kn-svg .fa{fill:rgba(234,88,12,.22);stroke:currentColor}.kn-svg text.fa2{fill:#c2410c}
+.kn-svg .hb{stroke:#2563eb;stroke-width:2.2}.kn-svg text.hb2{fill:#2563eb;font-style:normal;font-size:10px}
+.kn-svg .hc{stroke:#ea580c;stroke-width:1.8}.kn-svg text.hc2{fill:#ea580c}
+.kn-svg .mk{stroke:#7c3aed;stroke-width:1.4;fill:none}
+@media (max-width:700px){.kn-note{grid-template-columns:1fr}.kn-pic{order:-1}}
 </style>
 
 <!-- TOPBAR -->
@@ -9646,6 +9673,81 @@ document.addEventListener('click', e => {
     if (!a.some(x => x.id === 'seed-bd')) { a.push({ id: 'seed-bd', t: 'Geometry Soru 156’ya geri dön: dik üçgende hipotenüse inen yükseklik (BD). Neden BD “4” tarafı oluyor, tam oturmadı.\nKural: küçük üçgen ABD büyüğe benzer; A’nın karşısındaki kenar / hipotenüs oranı aynı → BD/15 = 20/25 → BD = 12.', k: 'Geometry and Trigonometry', at: Date.now(), by: 'owner', done: null }); localStorage.setItem(K, JSON.stringify(a)); }
     localStorage.setItem('satm_eksik_seed_bd', '1');
   } catch {}
+})();
+// ══ 📚 KONU NOTLARI: Konular → Geometri → Çemberler / Üçgenler / … (only what the SAT asks) ══
+const KN_SVG = (() => {
+  const w = (b, vb = '0 0 160 110') => `<svg class="kn-svg" viewBox="${vb}" aria-hidden="true">${b}</svg>`;
+  const T = (x, y, t, a = 'middle', c = '') => `<text x="${x}" y="${y}" text-anchor="${a}"${c ? ` class="${c}"` : ''}>${t}</text>`;
+  return {
+    pizza: w(`<circle cx="80" cy="56" r="42"/><path d="M80 56 L122 56 A42 42 0 0 0 101 19.6 Z" class="fa"/><path d="M122 56 A42 42 0 0 0 101 19.6" class="hb" fill="none"/><circle cx="80" cy="56" r="1.8" class="dot"/><path class="mk" d="M92 56 A12 12 0 0 0 86 45.6"/>${T(92, 54, 'θ', 'start', 'sm')}${T(100, 66, 'r', 'middle', 'sm')}${T(124, 28, 'yay', 'start', 'hb2')}${T(124, 39, '(kenar)', 'start', 'hb2')}${T(106, 44, 'dilim', 'middle', 'sm fa2')}`, '0 0 170 110'),
+    basic: w(`<circle cx="70" cy="56" r="40"/><line x1="30" y1="56" x2="110" y2="56" stroke-dasharray="3 2"/><line x1="70" y1="56" x2="98" y2="27.7"/><circle cx="70" cy="56" r="1.8" class="dot"/>${T(90, 38, 'r', 'start', 'sm')}${T(70, 68, 'd = 2r', 'middle', 'sm')}${T(118, 92, 'C = 2πr', 'start', 'sm')}`),
+    inscribed: w(`<circle cx="80" cy="56" r="42"/><polyline points="47,82 80,56 113,82" class="hb" fill="none"/><polyline points="47,82 80,14 113,82" class="hc" fill="none"/><circle cx="80" cy="56" r="1.8" class="dot"/>${T(80, 72, '2x', 'middle', 'hb2')}${T(80, 32, 'x', 'middle', 'hc2')}${T(80, 8, 'çevre açı', 'middle', 'sm')}${T(126, 62, 'merkez açı', 'start', 'sm')}`, '0 0 185 110'),
+    tangent: w(`<circle cx="62" cy="58" r="36"/><line x1="62" y1="58" x2="62" y2="22"/><line x1="10" y1="22" x2="150" y2="22" class="hb"/><polyline points="62,30 70,30 70,22" fill="none"/><circle cx="62" cy="58" r="1.8" class="dot"/>${T(54, 44, 'r', 'middle', 'sm')}${T(120, 16, 'teğet', 'middle', 'hb2')}`),
+    eq: w(`<line x1="10" y1="96" x2="150" y2="96"/><line x1="22" y1="104" x2="22" y2="6"/><circle cx="92" cy="48" r="32" class="hb"/><circle cx="92" cy="48" r="2" class="dot"/><line x1="92" y1="48" x2="124" y2="48" stroke-dasharray="3 2"/>${T(92, 40, '(h, k)', 'middle', 'sm')}${T(108, 60, 'r', 'middle', 'sm')}`),
+    tri180: w(`<polygon points="20,92 120,92 64,18"/><line x1="120" y1="92" x2="152" y2="92" stroke-dasharray="3 2"/><path class="mk" d="M30 92 A10 10 0 0 0 26 84"/><path class="mk" d="M60 26 A9 9 0 0 0 70 26"/><path class="mk hb" d="M130 92 A10 10 0 0 0 115 84"/>${T(36, 86, 'a', 'start', 'sm')}${T(64, 36, 'b', 'middle', 'sm')}${T(108, 86, 'c', 'end', 'sm')}${T(140, 82, 'a + b', 'middle', 'hb2')}`),
+    iso: w(`<polygon points="30,96 130,96 80,14"/><line x1="80" y1="14" x2="80" y2="96" stroke-dasharray="3 2"/>${T(48, 52, 's', 'middle', 'sm')}${T(112, 52, 's', 'middle', 'sm')}${T(86, 70, 'h', 'start', 'sm')}${T(80, 106, 's', 'middle', 'sm')}`),
+    similar: w(`<polygon points="14,96 146,96 14,10"/><line x1="78" y1="96" x2="78" y2="54.3" class="hb"/><polyline points="14,88 22,88 22,96" fill="none"/><polyline points="78,88 86,88 86,96" fill="none"/>${T(8, 8, 'A')}${T(10, 106, 'B')}${T(78, 106, 'D')}${T(150, 106, 'C')}${T(84, 52, 'E')}`),
+    altitude: w(`<polygon points="12,94 150,94 104,20"/><line x1="104" y1="20" x2="104" y2="94" class="hb" stroke-dasharray="4 3"/><polyline points="104,86 112,86 112,94" fill="none"/>${T(104, 12, 'B')}${T(6, 98, 'C')}${T(154, 98, 'A')}${T(104, 106, 'D')}${T(96, 60, 'h', 'end', 'hb2')}`),
+    parallel: w(`<line x1="8" y1="34" x2="152" y2="34"/><line x1="8" y1="80" x2="152" y2="80"/><line x1="50" y1="104" x2="112" y2="8" class="hb"/>${T(96, 28, '1', 'middle', 'sm')}${T(108, 46, '2', 'middle', 'sm')}${T(70, 74, '3', 'middle', 'sm')}${T(80, 92, '4', 'middle', 'sm')}${T(150, 28, 'ℓ', 'end', 'sm')}${T(150, 74, 'm', 'end', 'sm')}`),
+  };
+})();
+// a note: [title, text (HTML, $math$), formulas [latex], svg key, example, trap]
+const KONU = {
+  geo: { ad: 'Geometri', ic: '📐', alt: 'Çemberler, üçgenler, açılar, alan ve hacim', konular: {
+    circle: { ad: 'Çemberler', ic: '⭕', alt: 'Yay, dilim, çember denklemi, teğet', notlar: [
+      ['Temel', 'Çap yarıçapın 2 katı. Çevre etrafındaki çizgi, alan içi.', ['d=2r', 'C=2\\pi r=\\pi d', 'A=\\pi r^2'], 'basic', 'Alanı $49\\pi$ olan dairenin yarıçapı: $\\pi r^2=49\\pi \\Rightarrow r=7$, çevresi $14\\pi$.', 'Soru çap veriyorsa önce 2’ye böl; alan formülüne çapı koyma.'],
+      ['Yay uzunluğu (arc) = pizzanın kenarı', 'Merkez açı $\\theta$ ise yay, çevrenin $\\frac{\\theta}{360}$ kadarıdır.', ['\\text{yay}=2\\pi r\\cdot\\dfrac{\\theta}{360}', '\\text{radyanla: yay}=r\\theta'], 'pizza', '$r=9$, $\\theta=40^\\circ$: yay $=18\\pi\\cdot\\frac{40}{360}=2\\pi$.', 'Açı radyan verilmişse 360 değil $2\\pi$ kullan (ya da direkt $r\\theta$).'],
+      ['Daire dilimi (sector) = pizza dilimi', 'Dilimin alanı, dairenin alanının $\\frac{\\theta}{360}$ kadarıdır.', ['\\text{dilim}=\\pi r^2\\cdot\\dfrac{\\theta}{360}', '\\text{radyanla: dilim}=\\tfrac12 r^2\\theta'], 'pizza', '$r=6$, $\\theta=120^\\circ$: dilim $=36\\pi\\cdot\\frac13=12\\pi$.', 'Yay mı (uzunluk) dilim mi (alan) soruluyor, dikkat: yay $\\pi r$’li, dilim $\\pi r^2$’li.'],
+      ['⭐ Hepsi aynı oran', 'Yay, dilim ve açı sorularının hepsi bu tek eşitlikle çözülür. Bilinen ikisini koy, üçüncüyü bul.', ['\\dfrac{\\text{merkez açı}}{360}=\\dfrac{\\text{yay}}{2\\pi r}=\\dfrac{\\text{dilim}}{\\pi r^2}'], null, 'Yay $5\\pi$, açı $45^\\circ$ ise: $\\frac{45}{360}=\\frac{5\\pi}{2\\pi r} \\Rightarrow r=20$.', null],
+      ['Merkez açı ve çevre açı', 'Aynı yayı gören çevre açı, merkez açının yarısıdır. Çapı gören çevre açı her zaman $90^\\circ$.', ['\\text{çevre açı}=\\tfrac12\\,\\text{merkez açı}', '\\text{yayın derecesi}=\\text{merkez açı}'], 'inscribed', 'Merkez açı $100^\\circ$ ise aynı yayı gören çevre açı $50^\\circ$.', null],
+      ['Teğet', 'Teğet, değdiği noktada yarıçapa diktir ($90^\\circ$) → dik üçgen çıkar, Pisagor kullan. Dışarıdaki bir noktadan çizilen iki teğet eşit uzunluktadır.', ['r\\perp \\text{teğet}'], 'tangent', 'Merkezden 13 uzaktaki noktadan çizilen teğet, $r=5$ ise: $\\sqrt{13^2-5^2}=12$.', null],
+      ['Çember denklemi', 'Merkez $(h,k)$, yarıçap $r$. İçerideki işaretler merkezin tersidir.', ['(x-h)^2+(y-k)^2=r^2'], 'eq', '$(x+3)^2+(y-1)^2=25$: merkez $(-3,1)$, $r=5$.', 'Sağ taraf $r^2$; yarıçap için kökünü al. Merkezin işaretini ters çevirmeyi unutma.'],
+      ['Açık denklem → kareye tamamla', 'Denklem $x^2+y^2+ax+by+c=0$ gibi gelirse: $x$’lerin ve $y$’lerin katsayısının yarısının karesini iki tarafa ekle.', ['\\text{merkez}=\\left(-\\tfrac a2,\\,-\\tfrac b2\\right)', 'r^2=\\left(\\tfrac a2\\right)^2+\\left(\\tfrac b2\\right)^2-c'], null, '$x^2+20x+y^2+16y=-20$ → $(x+10)^2+(y+8)^2=-20+100+64=144$ → merkez $(-10,-8)$, $r=12$.', 'Desmos’a denklemi aynen yaz: çember çizilir, merkezi ve yarıçapı grafikten okursun.'],
+      ['Derece ↔ radyan', 'Tam tur $360^\\circ=2\\pi$ radyan.', ['180^\\circ=\\pi', '\\text{derece}\\cdot\\dfrac{\\pi}{180}=\\text{radyan}'], null, '$60^\\circ=\\frac{\\pi}{3}$, $\\frac{3\\pi}{4}=135^\\circ$.', null],
+      ['Çemberin içinde / dışında şekiller', 'Çemberin içine çizilmiş karede köşegen = çap. Eşkenar üçgenin köşelerinden geçen çemberin yarıçapı $\\frac{s}{\\sqrt3}$. Çemberin içinde dik üçgen varsa hipotenüs = çap.', ['\\text{kare: köşegen}=s\\sqrt2=2r', '\\text{eşkenar üçgen: } R=\\dfrac{s}{\\sqrt3}'], null, 'Çevresi 600 olan eşkenar üçgen: $s=200$, $R=\\frac{200}{\\sqrt3}=\\frac{200}{3}\\sqrt3$.', null],
+    ] },
+    tri: { ad: 'Üçgenler', ic: '🔺', alt: 'Açılar, Pisagor, özel üçgenler, benzerlik', notlar: [
+      ['Açılar', 'İç açıların toplamı $180^\\circ$. Dış açı, kendisine komşu olmayan iki iç açının toplamına eşittir.', ['a+b+c=180^\\circ', '\\text{dış açı}=a+b'], 'tri180', '$a=50$, $b=60$ ise $c=70$ ve $c$’nin yanındaki dış açı $110$.', null],
+      ['İkizkenar ve eşkenar', 'Eşit kenarların karşısındaki açılar eşittir. Eşkenar üçgende her açı $60^\\circ$.', ['h=\\dfrac{s\\sqrt3}{2}', 'A=\\dfrac{s^2\\sqrt3}{4}'], 'iso', 'Tepe açısı $104^\\circ$ olan ikizkenarın taban açıları: $\\frac{180-104}{2}=38^\\circ$.', null],
+      ['Pisagor ve hazır üçlüler', 'Sadece dik üçgende. Hipotenüs en uzun kenar, dik açının karşısında.', ['a^2+b^2=c^2', '3\\text{-}4\\text{-}5,\\ 5\\text{-}12\\text{-}13,\\ 8\\text{-}15\\text{-}17,\\ 7\\text{-}24\\text{-}25'], null, '15-20-25 = 3-4-5’in 5 katı; hesap yapmadan tanı.', 'Katları da geçerli: 6-8-10, 9-12-15, 10-24-26…'],
+      ['Özel dik üçgenler', 'Açılar 30-60-90 ya da 45-45-90 ise kenarlar hazır.', ['30\\text{-}60\\text{-}90:\\ x,\\ x\\sqrt3,\\ 2x', '45\\text{-}45\\text{-}90:\\ s,\\ s,\\ s\\sqrt2'], null, 'Hipotenüsü 58 olan ikizkenar dik üçgen: kenar $\\frac{58}{\\sqrt2}=29\\sqrt2$, çevre $58+58\\sqrt2$.', '30°’nin karşısı en kısa kenar ($x$), hipotenüs onun 2 katı.'],
+      ['⭐ Benzer üçgenler', 'İki açı eşitse benzerdir (AA). Kenarlar aynı oranda büyür, AÇILAR AYNI KALIR. İçinden kenara paralel çizgi geçen üçgende küçük üçgen büyüğe benzer.', ['\\text{kenar oranı } k \\Rightarrow \\text{çevre}\\times k,\\ \\text{alan}\\times k^2', '\\text{açılar aynı}'], 'similar', '$DE\\parallel AB$, $BC=48$, $DC=6$ → oran 8; $DE=11$ ise $AB=88$.', 'Harf sırası eşleşmeyi verir: △ADE ∼ △ABC ise A↔A, D↔B, E↔C. "4 katı" bilgisi açıyı değiştirmez.'],
+      ['Hipotenüse inen yükseklik', 'Dik açıdan hipotenüse inen $h$, üçgeni birbirine ve büyüğe benzer iki küçük üçgene böler.', ['h=\\dfrac{\\text{dik kenar}\\cdot\\text{dik kenar}}{\\text{hipotenüs}}', 'h^2=AD\\cdot DC'], 'altitude', '15-20-25 üçgende: $h=\\frac{15\\cdot20}{25}=12$, $AD=9$, $DC=16$.', null],
+      ['Eşlik (≅)', 'SSS, SAS, ASA, AAS, HL eşliği ispatlar. SSA ve AAA ispatlamaz (AAA sadece benzerlik).', [], null, null, 'Detaylı çizimler 📐 Formüller panelinde.'],
+      ['Üçgen eşitsizliği', 'Üçüncü kenar, diğer ikisinin farkından büyük, toplamından küçük olmalı.', ['|a-b|<c<a+b'], null, 'Kenarlar 6 ve 12: $6<x<18$.', null],
+      ['Alan', 'Taban ile ona dik yüksekliğin çarpımının yarısı. Dik üçgende iki dik kenar = taban ve yükseklik.', ['A=\\tfrac12 bh'], null, 'Dik kenarları 48 ve 88 olan üçgen: $\\frac12\\cdot48\\cdot88=2112$.', 'Yükseklik tabana dik olmalı; eğik kenarı yükseklik sanma.'],
+    ] },
+    lines: { ad: 'Açılar ve doğrular', ic: '📏', alt: 'Paralel doğrular, kesen, çokgenler', notlar: [
+      ['Temel açılar', 'Bir doğru üzerindeki açılar toplamı $180^\\circ$. Ters (dikey) açılar eşit. Bir nokta etrafı $360^\\circ$.', ['\\text{doğru: }180^\\circ', '\\text{ters açılar eşit}'], null, null, null],
+      ['Paralel doğrular + kesen', 'Kesen 8 açı oluşturur: 4 dar açı birbirine eşit, 4 geniş açı birbirine eşit; bir dar + bir geniş = $180^\\circ$. Yöndeş ve iç ters açılar eşit.', ['\\text{dar}+\\text{geniş}=180^\\circ'], 'parallel', 'Bir açı $(9x-200)$ ise dördünün toplamı yalnızca $4a$, $2a+180$, $360$, $540-2a$, $720-4a$ olabilir.', null],
+      ['Çokgenler', 'İç açılar toplamı $(n-2)\\cdot180$. Düzgün çokgende bir iç açı bunun $n$’de biri. Dış açılar toplamı her zaman 360.', ['(n-2)\\cdot180^\\circ', '\\text{bir dış açı}=\\dfrac{360}{n}'], null, 'Beşgen: $540^\\circ$; düzgün beşgende bir açı $108^\\circ$.', null],
+    ] },
+    solid: { ad: 'Alan ve hacim', ic: '🧊', alt: 'Prizma, silindir, koni, küre', notlar: [
+      ['Hacimler (sınav sayfasında var)', 'Prizma ve silindir: taban × yükseklik. Koni ve piramit bunun üçte biri.', ['V_{\\text{prizma}}=\\ell wh', 'V_{\\text{silindir}}=\\pi r^2h', 'V_{\\text{koni}}=\\tfrac13\\pi r^2h', 'V_{\\text{küre}}=\\tfrac43\\pi r^3'], null, null, null],
+      ['Yüzey alanları (sayfada YOK)', 'Bütün yüzlerin alanlarının toplamı.', ['S_{\\text{küp}}=6s^2', 'S_{\\text{prizma}}=2(\\ell w+\\ell h+wh)', 'S_{\\text{silindir}}=2\\pi r^2+2\\pi rh', 'S_{\\text{küre}}=4\\pi r^2'], null, null, 'Hepsi çizimleriyle 📐 Formüller panelinde.'],
+      ['Benzer cisimler', 'Kenar oranı $k$ ise alan $k^2$, hacim $k^3$ katı.', ['\\text{alan}\\times k^2,\\ \\text{hacim}\\times k^3'], null, 'Hacimler 972 ve 36 → oran $27=3^3$ → kenar oranı 3; 12’lik kenar 4 olur.', null],
+    ] },
+  } },
+};
+const KNS = { path: [] };
+try { KNS.path = JSON.parse(sessionStorage.getItem('kn_path') || '[]'); } catch {}
+function knHtml() {
+  const [c, t] = KNS.path, cat = c && KONU[c], top = cat && t && cat.konular[t];
+  const crumb = `<div class="kn-crumb"><button type="button" data-kn="">Konu notları</button>${cat ? ` › <button type="button" data-kn="${c}">${cat.ad}</button>` : ''}${top ? ` › <b>${top.ad}</b>` : ''}</div>`;
+  if (!cat) return `${crumb}<div class="section-sub kn-sub">SAT’ta çıkan genel matematik: konu seç, içine gir.</div><div class="kn-grid">${Object.entries(KONU).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small></button>`).join('')}<div class="kn-card kn-soon"><span class="kn-ic">➕</span><b>Cebir, ileri matematik, veri</b><small>Yakında; istediğin konuyu söyle, eklenir.</small></div></div>`;
+  if (!top) return `${crumb}<div class="kn-grid">${Object.entries(cat.konular).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${c}/${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small><em>${v.notlar.length} not</em></button>`).join('')}</div>`;
+  return `${crumb}<div class="kn-notes">${top.notlar.map(([ad, txt, fs, svg, ex, trap]) => `<section class="kn-note"><div class="kn-body"><h3>${ad}</h3><p>${kxText(txt)}</p>${fs.length ? `<div class="kn-fs">${fs.map(f => `<div class="kn-f">${mkx(f, true)}</div>`).join('')}</div>` : ''}${ex ? `<div class="kn-ex"><b>Örnek:</b> ${kxText(ex)}</div>` : ''}${trap ? `<div class="kn-trap"><b>Dikkat:</b> ${kxText(trap)}</div>` : ''}</div>${svg && KN_SVG[svg] ? `<div class="kn-pic">${KN_SVG[svg]}</div>` : ''}</section>`).join('')}</div>`;
+}
+(function () {
+  const tab = document.createElement('button'); tab.className = 'ttab'; tab.dataset.view = 'konu'; tab.textContent = 'Konu notları';
+  const after = document.querySelector('.ttab[data-view="eksik"]') || document.querySelector('.ttab[data-view="notes"]');
+  if (after) after.after(tab);
+  const view = document.createElement('div'); view.className = 'view'; view.id = 'view-konu';
+  const notes = document.getElementById('view-notes'); (notes ? notes.parentElement : document.querySelector('.app')).appendChild(view);
+  const render = () => { view.innerHTML = knHtml(); };
+  view.addEventListener('click', e => { const b = e.target.closest('[data-kn]'); if (!b) return; KNS.path = b.dataset.kn ? b.dataset.kn.split('/') : []; try { sessionStorage.setItem('kn_path', JSON.stringify(KNS.path)); } catch {} render(); window.scrollTo({ top: 0 }); });
+  const orig = switchView;
+  switchView = function (v) { orig.apply(this, arguments); if (v === 'konu') { document.querySelectorAll('.ttab').forEach(b => b.classList.toggle('active', b.dataset.view === 'konu')); view.classList.add('active'); render(); } };
 })();
 </script>
 </body></html>
