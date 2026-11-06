@@ -9795,11 +9795,16 @@ const KONU = {
       ['Benzer cisimler', 'Kenar oranı $k$ ise alan $k^2$, hacim $k^3$ katı.', ['\\text{alan}\\times k^2,\\ \\text{hacim}\\times k^3'], null, 'Hacimler 972 ve 36 → oran $27=3^3$ → kenar oranı 3; 12’lik kenar 4 olur.', null],
     ] },
   } },
-  alg: { ad: 'Cebir', ic: '🧮', alt: 'Doğrusal modeller, x/y seçimi, eğimin anlamı', konular: {
+  alg: { ad: 'Cebir', ic: '🧮', alt: 'Doğrusal modeller, x/y seçimi, Desmos regresyon taktikleri', konular: {
     model: { ad: 'Doğrusal modeller ve yorum', ic: '📈', alt: 'x mi y mi, eğim ve kesişimin anlamı', notlar: [
       ['⭐ x mi, y mi?', '<b>x</b> = kontrol ettiğin ya da verilen şey (girdi). <b>y</b> = sonucunda ortaya çıkan şey (çıktı).', [], null, ['Reklam harcaması arttıkça satış artar → $x$ = reklam, $y$ = satış.', 'Çalışma saati arttıkça not yükselir → $x$ = çalışma saati, $y$ = not.', 'Satış arttıkça fiyat düşer → $x$ = satış miktarı, $y$ = fiyat.'], 'Fiyatı sen belirliyor olsan bile soru “$x$ ürün satılırsa fiyat ne olur?” diyorsa satış = $x$, fiyat = $y$. Sorunun ne verdiğine bak.', ['Cümlede “arttıkça / azaldıkça” kelimesini bul: <b>öncesi $x$, sonrası $y$</b>.', '“… verilince … çıkar” kalıbında verilen $x$, çıkan $y$.', 'Emin değilsen birimlere bak: grafiğin yatay ekseni $x$, dikey ekseni $y$.']],
       ['Eğimin (slope) anlamı', '$y=mx+b$’de $m$: $x$ 1 artınca $y$’nin ne kadar değiştiği. Birimi “$y$ birimi / $x$ birimi”.', ['m=\\dfrac{\\Delta y}{\\Delta x}'], null, '$C=12h+40$ (lira, saat): her ek saat 12 lira ekler.', 'Eğim negatifse “her birimde … azalır” diye yorumla.'],
       ['y-kesişimin anlamı', '$b$: $x=0$ iken $y$’nin değeri, yani başlangıç değeri (sabit ücret, ilk miktar).', ['x=0 \\Rightarrow y=b'], null, '$C=12h+40$: hiç saat yokken 40 lira (sabit ücret).', 'Bağlamda $x=0$ anlamsızsa bile soru “best interpretation” diyorsa yine başlangıç değeri olarak yorumla.'],
+    ] },
+    desmos: { ad: 'Desmos regresyon taktikleri', ic: '📈', alt: 'random(10), ~ işareti, dummy factor', notlar: [
+      ['Regresyon nasıl kurulur', 'Bilinmeyen sabitleri olan bir eşitlik varsa Desmos’a sabitleri buldurursun.', ['x_1=\\operatorname{random}(10)', '\\text{sol taraf}\\sim\\text{sağ taraf}'], null, '$\\frac{mx_1+b}{x_1+4}\\sim\\frac{2x_1+10}{x_1+4}$ gibi yaz → Desmos $m=2$, $b=10$ verir.', '$=$ değil $\\sim$ (tilde) yaz; değişken $x$ değil $x_1$ olmalı.', ['1. satıra $x_1=\\operatorname{random}(10)$ yaz (rastgele 10 sayılık liste).', '2. satıra eşitliği $\\sim$ ile yaz, $x$ yerine $x_1$ kullan.', 'Regression parameters kısmından sabitleri oku. $R^2=1$ ya da RMSE ≈ 0 ise tam oturmuştur.']],
+      ['⭐ Regresyondaki harf = sorudaki harf', 'Desmos’un verdiği $b$, sorudaki $b$’nin kendisidir. Grafiğe gidip y-kesişimine bakma.', [], null, '$y=\\frac{mx+b}{x+4}$, regresyon $b=10$ verdi. y-kesişimi ise $\\frac{10}{4}=2.5$: soru $b$’yi soruyorsa cevap 10, 2.5 değil.', '$b$ sadece doğrusal $y=mx+b$’de y-kesişimine eşittir.'],
+      ['⭐ Dummy factor (ekstra çarpan)', 'Soru “… bir çarpanı $kx+j$” diyorsa ama diğer çarpanı vermiyorsa, onun yerine bilinmeyen bir <b>ekstra çarpan</b> ($dx_1+z$) koy. Böylece iki tarafın derecesi eşit olur ve regresyon oturur. $d$ ve $z$ seni ilgilendirmez.', ['ax_1^2+96x_1+c\\sim(kx_1+j)(dx_1+z)'], null, ['$ax^2+96x+c$’nin bir çarpanı $kx+j$: sol taraf 2. dereceden, $(kx+j)$ tek başına 1. derece → yanına $(dx_1+z)$ ekle.', 'Kısa yol (aynı soru): en az bir reel kök → $96^2-4ac\\ge0$ → $ac\\le\\frac{9216}{4}=2304$ → en büyük $ac=2304$.'], 'Ekstra çarpan koymazsan Desmos 2. dereceyi 1. dereceye eşitlemeye çalışır, oturmaz. Çok bilinmeyen varsa Desmos tek bir olası çözüm verir; “en büyük/en küçük” sorularında sonucu formülle (diskriminant gibi) kontrol et.', ['Sol tarafın derecesini say (kaçıncı dereceden?).', 'Sağdaki verilen çarpanların derecelerini topla.', 'Eksik kalan derece kadar ekstra çarpan ekle: 1 eksikse $(dx_1+z)$, 2 eksikse $(dx_1^2+ex_1+z)$.']],
     ] },
   } },
   voc: { ad: 'Matematik kelimeleri', ic: '🔤', alt: 'Sorularda geçen İngilizce terimler; ⭐ = az bilinen', konular: {
@@ -9897,6 +9902,16 @@ renderNotebook = function () {
         saveNotebook();
       }
       localStorage.setItem('satm_nb_seed_xy', '1');
+    }
+  } catch {}
+  try {
+    if (!localStorage.getItem('satm_nb_seed_dummy')) {
+      if (!notebook.some(x => x.id === 'seed-dummy')) {
+        notebook.push({ id: 'seed-dummy', pin: true, createdAt: Date.now(), updatedAt: Date.now(), title: 'Desmos: dummy factor + regresyon harfleri',
+          body: 'Dummy factor (ekstra çarpan):\n→ Soru “bir çarpanı $kx+j$” diyorsa regresyonda yanına ekstra çarpan koy: $ax_1^2+96x_1+c \\sim (kx_1+j)(dx_1+z)$\n- $(dx_1+z)$ ekstra, iki tarafın derecesi eşit olsun / uysun diye.\n- $d$ ve $z$ önemli değil, sadece $a$, $c$, $k$, $j$’ye bak.\n- Kontrol: en az bir reel kök → $b^2-4ac \\ge 0$ → $ac \\le 2304$.\n\nRegresyondaki harf = sorudaki harf:\n→ Desmos’un verdiği $b$ sorudaki $b$’dir. Grafiğe gidip y-kesişimine bakma!\n- $y=\\frac{mx+b}{x+4}$’te $b=10$ ama y-kesişimi $2.5$.\n\nKurulum:\n- $x_1=\\operatorname{random}(10)$\n- $=$ yerine $\\sim$, $x$ yerine $x_1$' });
+        saveNotebook();
+      }
+      localStorage.setItem('satm_nb_seed_dummy', '1');
     }
   } catch {}
 })();
