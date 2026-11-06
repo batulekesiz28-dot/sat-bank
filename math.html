@@ -1874,6 +1874,24 @@ body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:
 .kn-voc td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
 .kn-voc tr:last-child td{border-bottom:0}.kn-voc td:nth-child(3){color:var(--fg2);font-size:13.5px}
 @media (max-width:700px){.kn-voc th:nth-child(3),.kn-voc td:nth-child(3){display:none}}
+#view-notes .nb-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;align-items:start}
+.nbv{border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:14px 16px 10px;display:flex;flex-direction:column;gap:6px}
+.nbv-pin{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.nbv-head{display:flex;align-items:flex-start;gap:4px}
+.nbv-head h3{margin:0;font-size:16px;line-height:1.35;flex:1}
+.nbv-ic{border:0;background:none;cursor:pointer;font-size:15px;padding:2px 4px;border-radius:8px;opacity:.45}
+.nbv-ic:hover,.nbv-ic.on{opacity:1;background:var(--bg2,rgba(0,0,0,.05))}
+.nbv-body{font-size:14.5px;line-height:1.6;color:var(--fg)}
+.nbv-body p{margin:0 0 6px}.nbv-body h4{margin:10px 0 4px;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--fg2)}
+.nbv-body ul,.nbv-body ol{margin:0 0 6px;padding-left:20px}.nbv-body li{margin:2px 0}
+.nbv-key{background:rgba(37,99,235,.08);border-left:3px solid #2563eb;border-radius:8px;padding:7px 10px;margin:4px 0 8px;font-weight:600}
+.nbv-tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:4px 0 8px}
+.nbv-tbl th{text-align:left;font-size:12px;color:var(--fg2);border-bottom:1px solid var(--border);padding:5px 8px}
+.nbv-tbl td{border-bottom:1px solid var(--border);padding:5px 8px;vertical-align:top}.nbv-tbl tr:last-child td{border-bottom:0}
+.nbv-date{font-size:11.5px;color:var(--fg3,var(--fg2));text-align:right}
+.nbv-empty{color:var(--fg2);font-style:italic}
+.nb-editing{grid-column:1/-1}
+.nbv-btn{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:5px 14px;font:inherit;font-size:13px;cursor:pointer;margin-left:8px}
 </style>
 
 <!-- TOPBAR -->
@@ -9777,6 +9795,13 @@ const KONU = {
       ['Benzer cisimler', 'Kenar oranı $k$ ise alan $k^2$, hacim $k^3$ katı.', ['\\text{alan}\\times k^2,\\ \\text{hacim}\\times k^3'], null, 'Hacimler 972 ve 36 → oran $27=3^3$ → kenar oranı 3; 12’lik kenar 4 olur.', null],
     ] },
   } },
+  alg: { ad: 'Cebir', ic: '🧮', alt: 'Doğrusal modeller, x/y seçimi, eğimin anlamı', konular: {
+    model: { ad: 'Doğrusal modeller ve yorum', ic: '📈', alt: 'x mi y mi, eğim ve kesişimin anlamı', notlar: [
+      ['⭐ x mi, y mi?', '<b>x</b> = kontrol ettiğin ya da verilen şey (girdi). <b>y</b> = sonucunda ortaya çıkan şey (çıktı).', [], null, ['Reklam harcaması arttıkça satış artar → $x$ = reklam, $y$ = satış.', 'Çalışma saati arttıkça not yükselir → $x$ = çalışma saati, $y$ = not.', 'Satış arttıkça fiyat düşer → $x$ = satış miktarı, $y$ = fiyat.'], 'Fiyatı sen belirliyor olsan bile soru “$x$ ürün satılırsa fiyat ne olur?” diyorsa satış = $x$, fiyat = $y$. Sorunun ne verdiğine bak.', ['Cümlede “arttıkça / azaldıkça” kelimesini bul: <b>öncesi $x$, sonrası $y$</b>.', '“… verilince … çıkar” kalıbında verilen $x$, çıkan $y$.', 'Emin değilsen birimlere bak: grafiğin yatay ekseni $x$, dikey ekseni $y$.']],
+      ['Eğimin (slope) anlamı', '$y=mx+b$’de $m$: $x$ 1 artınca $y$’nin ne kadar değiştiği. Birimi “$y$ birimi / $x$ birimi”.', ['m=\\dfrac{\\Delta y}{\\Delta x}'], null, '$C=12h+40$ (lira, saat): her ek saat 12 lira ekler.', 'Eğim negatifse “her birimde … azalır” diye yorumla.'],
+      ['y-kesişimin anlamı', '$b$: $x=0$ iken $y$’nin değeri, yani başlangıç değeri (sabit ücret, ilk miktar).', ['x=0 \\Rightarrow y=b'], null, '$C=12h+40$: hiç saat yokken 40 lira (sabit ücret).', 'Bağlamda $x=0$ anlamsızsa bile soru “best interpretation” diyorsa yine başlangıç değeri olarak yorumla.'],
+    ] },
+  } },
   voc: { ad: 'Matematik kelimeleri', ic: '🔤', alt: 'Sorularda geçen İngilizce terimler; ⭐ = az bilinen', konular: {
     vgeo: { ad: 'Geometri kelimeleri', ic: '📐', alt: 'diagonal, chord, altitude, inscribed…', kelime: [
       ['diagonal', 'köşegen', 'Çokgende komşu olmayan iki köşeyi birleştiren doğru', 1], ['vertex / vertices', 'köşe / köşeler', 'Parabolde vertex = tepe noktası', 1], ['perimeter', 'çevre (çokgen)', 'Kenarların toplamı'], ['circumference', 'çemberin çevresi', '$2\\pi r$', 1], ['radius / radii', 'yarıçap / yarıçaplar', ''], ['diameter', 'çap', '$2r$'], ['chord', 'kiriş', 'Çemberin iki noktasını birleştiren doğru parçası', 1], ['arc', 'yay', 'Arc measure = derece, arc length = uzunluk', 1], ['sector', 'daire dilimi', 'Pizza dilimi', 1], ['tangent', 'teğet (doğru) / tanjant (tan)', 'Çembere tek noktada değen doğru', 1], ['inscribed', 'içine çizilmiş', 'Inscribed in a circle = köşeleri çemberin üstünde', 1], ['circumscribed', 'dışına çizilmiş', 'Şeklin etrafını saran', 1], ['concentric', 'eş merkezli', 'Aynı merkezli çemberler', 1], ['equilateral', 'eşkenar', 'Bütün kenarlar eşit'], ['isosceles', 'ikizkenar', 'İki kenar eşit', 1], ['scalene', 'çeşitkenar', 'Hiç kenar eşit değil', 1], ['hypotenuse', 'hipotenüs', 'Dik açının karşısındaki en uzun kenar'], ['leg', 'dik kenar', 'Dik üçgende hipotenüs olmayan kenar', 1], ['altitude', 'yükseklik', 'Köşeden karşı kenara inen dik', 1], ['median (üçgen)', 'kenarortay', 'Köşeyi karşı kenarın orta noktasına bağlar', 1], ['bisector', 'açıortay / ortalayan', 'Angle bisector = açıyı ikiye bölen', 1], ['perpendicular', 'dik', 'Aralarında $90^\\circ$ var; eğimlerin çarpımı $-1$', 1], ['parallel', 'paralel', 'Eğimler eşit'], ['transversal', 'kesen', 'Paralel doğruları kesen doğru', 1], ['supplementary', 'bütünler', 'Toplamı $180^\\circ$', 1], ['complementary', 'tümler', 'Toplamı $90^\\circ$', 1], ['vertical angles', 'ters açılar', 'Karşılıklı açılar, eşit', 1], ['corresponding', 'karşılık gelen / yöndeş', 'Benzer şekillerde eşleşen kenar/açı', 1], ['alternate interior angles', 'iç ters açılar', 'Paralellerde eşit', 1], ['acute / obtuse', 'dar / geniş açı', '$<90^\\circ$ / $>90^\\circ$'], ['congruent', 'eş (≅)', 'Aynı şekil, aynı boyut', 1], ['similar', 'benzer (∼)', 'Aynı şekil, farklı boyut'], ['scale factor', 'benzerlik oranı', 'Kenar $k$ → alan $k^2$, hacim $k^3$', 1], ['quadrilateral', 'dörtgen', '', 1], ['trapezoid', 'yamuk', 'Bir çift kenar paralel', 1], ['rhombus', 'eşkenar dörtgen', 'Dört kenar eşit', 1], ['parallelogram', 'paralelkenar', ''], ['polygon / regular polygon', 'çokgen / düzgün çokgen', 'Regular = bütün kenar ve açılar eşit', 1], ['pentagon / hexagon / octagon', 'beşgen / altıgen / sekizgen', '', 1], ['convex', 'dışbükey', 'İçe göçük köşesi yok', 1], ['right rectangular prism', 'dik dikdörtgenler prizması', 'Kutu', 1], ['right circular cylinder / cone', 'dik silindir / koni', ''], ['sphere / hemisphere', 'küre / yarım küre', '', 1], ['lateral face / lateral area', 'yan yüz / yanal alan', 'Tabanlar hariç yüzler', 1], ['slant height', 'eğik yükseklik', 'Koni/piramitte yüz boyunca yükseklik', 1], ['edge / face', 'ayrıt (kenar) / yüz', '', 1], ['surface area', 'yüzey alanı', 'Bütün yüzlerin toplamı'], ['midpoint', 'orta nokta', '$\\left(\\frac{x_1+x_2}{2},\\frac{y_1+y_2}{2}\\right)$'], ['segment / ray / line', 'doğru parçası / ışın / doğru', '', 1], ['collinear', 'doğrusal (aynı doğru üzerinde)', '', 1], ['origin', 'orijin, $(0,0)$', ''], ['quadrant', 'bölge (çeyrek düzlem)', 'I, II, III, IV', 1], ['unit circle', 'birim çember', 'Merkez orijin, $r=1$', 1], ['counterclockwise / clockwise', 'saat yönünün tersi / saat yönü', 'Açılar counterclockwise ölçülür', 1], ['radian', 'radyan', '$180^\\circ=\\pi$'], ['interior / exterior', 'iç / dış', 'Interior of a circle = çemberin içi'], ['translation / dilation', 'öteleme (kaydırma) / büyütme-küçültme', '', 1], ['not drawn to scale', 'ölçekli çizilmemiş', 'Şekle bakıp ölçme, hesapla', 1] ] },
@@ -9794,7 +9819,7 @@ const knT = t => kxText(t).replace(/&lt;(\/?)b&gt;/g, '<$1b>');
 function knHtml() {
   const [c, t] = KNS.path, cat = c && KONU[c], top = cat && t && cat.konular[t];
   const crumb = `<div class="kn-crumb"><button type="button" data-kn="">Konu notları</button>${cat ? ` › <button type="button" data-kn="${c}">${cat.ad}</button>` : ''}${top ? ` › <b>${top.ad}</b>` : ''}</div>`;
-  if (!cat) return `${crumb}<div class="section-sub kn-sub">SAT’ta çıkan genel matematik: konu seç, içine gir.</div><div class="kn-grid">${Object.entries(KONU).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small></button>`).join('')}<div class="kn-card kn-soon"><span class="kn-ic">➕</span><b>Cebir, ileri matematik, veri</b><small>Yakında; istediğin konuyu söyle, eklenir.</small></div></div>`;
+  if (!cat) return `${crumb}<div class="section-sub kn-sub">SAT’ta çıkan genel matematik: konu seç, içine gir.</div><div class="kn-grid">${Object.entries(KONU).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small></button>`).join('')}<div class="kn-card kn-soon"><span class="kn-ic">➕</span><b>İleri matematik, veri</b><small>Yakında; istediğin konuyu söyle, eklenir.</small></div></div>`;
   if (!top) return `${crumb}<div class="kn-grid">${Object.entries(cat.konular).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${c}/${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small><em>${v.notlar ? v.notlar.length + ' not' : v.kelime.length + ' kelime'}</em></button>`).join('')}</div>`;
   if (top.kelime) return `${crumb}<input type="search" class="kn-q" placeholder="Kelime ara (İngilizce ya da Türkçe)…"><table class="kn-voc"><thead><tr><th>İngilizce</th><th>Türkçe</th><th>Not</th></tr></thead><tbody>${top.kelime.map(([en, tr, nt, star]) => `<tr data-s="${escHtml((en + ' ' + tr + ' ' + nt).toLocaleLowerCase('tr'))}"><td><b>${star ? '⭐ ' : ''}${knT(en)}</b></td><td>${knT(tr)}</td><td>${knT(nt)}</td></tr>`).join('')}</tbody></table>`;
   return `${crumb}<div class="kn-notes">${top.notlar.map(([ad, txt, fs, svg, ex, trap, adim]) => `<section class="kn-note"><div class="kn-body"><h3>${ad}</h3><p>${knT(txt)}</p>${fs.length ? `<div class="kn-fs">${fs.map(f => `<div class="kn-f">${mkx(f, true)}</div>`).join('')}</div>` : ''}${adim ? `<div class="kn-steps"><b>Neler olur / ne yaparsın:</b><ol>${adim.map(a => `<li>${knT(a)}</li>`).join('')}</ol></div>` : ''}${ex ? [].concat(ex).map((e, i, arr) => `<div class="kn-ex"><b>Örnek${arr.length > 1 ? ' ' + (i + 1) : ''}:</b> ${knT(e)}</div>`).join('') : ''}${trap ? `<div class="kn-trap"><b>Dikkat:</b> ${knT(trap)}</div>` : ''}</div>${svg && KN_SVG[svg] ? `<div class="kn-pic">${KN_SVG[svg]}</div>` : ''}</section>`).join('')}</div>`;
@@ -9810,6 +9835,70 @@ function knHtml() {
   view.addEventListener('click', e => { const b = e.target.closest('[data-kn]'); if (!b) return; KNS.path = b.dataset.kn ? b.dataset.kn.split('/') : []; try { sessionStorage.setItem('kn_path', JSON.stringify(KNS.path)); } catch {} render(); window.scrollTo({ top: 0 }); });
   const orig = switchView;
   switchView = function (v) { orig.apply(this, arguments); if (v === 'konu') { document.querySelectorAll('.ttab').forEach(b => b.classList.toggle('active', b.dataset.view === 'konu')); view.classList.add('active'); render(); } };
+})();
+// ══ 📒 NOTLARIM: tidy cards (read view + edit), pin, light formatting; one-time seed note ══
+const NBX = { edit: null };
+function nbMd(body) {
+  const fmt = t => kxText(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  const lines = String(body || '').replace(/\r/g, '').split('\n'); let out = '', i = 0;
+  const cells = l => l.includes('\t') ? l.split('\t') : l.includes(' | ') || /^\|.*\|$/.test(l.trim()) ? l.trim().replace(/^\||\|$/g, '').split('|') : null;
+  while (i < lines.length) {
+    const l = lines[i], t = l.trim();
+    if (!t) { i++; continue; }
+    const c = cells(l);
+    if (c && c.length >= 2) { const rows = []; while (i < lines.length && cells(lines[i]) && cells(lines[i]).length >= 2) { rows.push(cells(lines[i]).map(x => x.trim())); i++; }
+      out += `<table class="nbv-tbl"><thead><tr>${rows[0].map(x => `<th>${fmt(x)}</th>`).join('')}</tr></thead><tbody>${rows.slice(1).map(r => `<tr>${r.map(x => `<td>${fmt(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>`; continue; }
+    if (/^([-•*]|\d+[.)])\s+/.test(t)) { const ol = /^\d/.test(t); let li = ''; while (i < lines.length && /^([-•*]|\d+[.)])\s+/.test(lines[i].trim())) { li += `<li>${fmt(lines[i].trim().replace(/^([-•*]|\d+[.)])\s+/, ''))}</li>`; i++; } out += ol ? `<ol>${li}</ol>` : `<ul>${li}</ul>`; continue; }
+    if (/^#{1,3}\s/.test(t)) { out += `<h4>${fmt(t.replace(/^#+\s*/, ''))}</h4>`; i++; continue; }
+    if (t.length <= 48 && /:$/.test(t)) { out += `<h4>${fmt(t.slice(0, -1))}</h4>`; i++; continue; }
+    if (/^(→|⇒|>)\s*/.test(t)) { out += `<div class="nbv-key">${fmt(t.replace(/^(→|⇒|>)\s*/, ''))}</div>`; i++; continue; }
+    out += `<p>${fmt(t)}</p>`; i++;
+  }
+  return out || '<p class="nbv-empty">Boş not. Düzenle’ye bas.</p>';
+}
+renderNotebook = function () {
+  const host = document.getElementById('nbList'); if (!host) return;
+  const q = (document.getElementById('nbSearch').value || '').trim().toLocaleLowerCase('tr');
+  const list = notebook.slice().sort((a, b) => (!!b.pin - !!a.pin) || b.updatedAt - a.updatedAt).filter(n => !q || (n.title + ' ' + n.body).toLocaleLowerCase('tr').includes(q));
+  host.innerHTML = list.length ? list.map(n => NBX.edit === n.id ? `<div class="nb-card nb-editing" data-nb="${n.id}">
+      <input class="nb-title" data-nbf="title" value="${escHtml(n.title)}" placeholder="Başlık">
+      <textarea class="nb-body" data-nbf="body" rows="6" placeholder="Notun…&#10;İpucu: “- ” ile madde, “Başlık:” ile ara başlık, sekmeyle ya da “ | ” ile tablo, **kalın**, $x^2$ formül.">${escHtml(n.body)}</textarea>
+      <div class="nb-foot"><span class="nb-date">${nbDate(n.updatedAt)}</span><button class="nb-del" data-nbdel="${n.id}">Sil</button><button class="nbv-btn nbv-done" data-nbdone="1">Bitti</button></div>
+    </div>` : `<div class="nb-card nbv${n.pin ? ' nbv-pin' : ''}" data-nb="${n.id}">
+      <div class="nbv-head"><h3>${escHtml(n.title || 'Başlıksız not')}</h3><button class="nbv-ic${n.pin ? ' on' : ''}" data-nbpin="${n.id}" title="${n.pin ? 'Sabitlemeyi kaldır' : 'Üste sabitle'}">📌</button><button class="nbv-ic" data-nbedit="${n.id}" title="Düzenle">✏️</button></div>
+      <div class="nbv-body">${nbMd(n.body)}</div>
+      <div class="nbv-date">${nbDate(n.updatedAt)}</div>
+    </div>`).join('') : `<div class="empty-state">${notebook.length ? 'Aramana uyan not yok.' : 'Henüz not yok. "Yeni not" ile başla.'}</div>`;
+  host.querySelectorAll('.nb-body').forEach(autoGrow);
+  const qn = document.getElementById('nbQNotes');
+  const withNotes = RAW_QUESTIONS.filter(x => (state.notes[x.id] || '').trim() && (!q || (state.notes[x.id] + ' ' + x.question).toLocaleLowerCase('tr').includes(q)));
+  qn.innerHTML = withNotes.length ? withNotes.map(x => `<div class="nb-qnote">
+      <div class="nb-qmeta">${escHtml(dk(x) === 'Ekstra' ? 'Ekstra' : x.domain)}, ${escHtml(x.skill)}</div>
+      <div class="nb-qtext">${escHtml(qPlain(x.question).replace(/\s+/g, ' ').slice(0, 150))}…</div>
+      <div class="nb-qbody">${escHtml(state.notes[x.id])}</div>
+      <button class="topbar-action-btn" data-nbgo="${x.id}">Soruya git</button>
+    </div>`).join('') : '<div class="nb-empty-q">Bir soruda "Not ekle" ile yazdığın notlar burada toplanır.</div>';
+};
+(function () {
+  const v = document.getElementById('view-notes'); if (!v) return;
+  v.addEventListener('click', e => {
+    const ed = e.target.closest('[data-nbedit]'); if (ed) { NBX.edit = ed.dataset.nbedit; renderNotebook(); const t = document.querySelector(`[data-nb="${NBX.edit}"] .nb-body`); t && t.focus(); return; }
+    if (e.target.closest('[data-nbdone]')) { NBX.edit = null; renderNotebook(); return; }
+    const pn = e.target.closest('[data-nbpin]'); if (pn) { const n = notebook.find(x => x.id === pn.dataset.nbpin); if (n) { n.pin = !n.pin; n.updatedAt = Date.now(); saveNotebook(); renderNotebook(); } return; }
+  });
+  document.getElementById('nbNewBtn')?.addEventListener('click', () => { const n = notebook.slice().sort((a, b) => b.createdAt - a.createdAt)[0]; if (n) { NBX.edit = n.id; renderNotebook(); document.querySelector(`[data-nb="${n.id}"] .nb-title`)?.focus(); } });
+  document.getElementById('nbSearch')?.addEventListener('input', () => renderNotebook());
+  // one-time seed: x / y rule
+  try {
+    if (!localStorage.getItem('satm_nb_seed_xy')) {
+      if (!notebook.some(x => x.id === 'seed-xy')) {
+        notebook.push({ id: 'seed-xy', pin: true, createdAt: Date.now(), updatedAt: Date.now(), title: 'x mi, y mi? (hangisi bağımsız değişken)',
+          body: 'Basit kural:\n- **x** = kontrol ettiğin / verilen şey (girdi)\n- **y** = sonucunda ortaya çıkan şey (çıktı)\n\nÖzet kural:\n→ Cümledeki “arttıkça / azaldıkça” kelimesinin **öncesi x, sonrası y**.\n\nÖrnekler:\nDurum\tx\ty\nReklam harcaması arttıkça satış artar\treklam\tsatış\nÇalışma saati arttıkça not yükselir\tçalışma saati\tnot\nSatış arttıkça fiyat düşer\tsatış miktarı\tfiyat\n\nDikkat:\n- Fiyatı sen belirliyor olsan bile soru “$x$ ürün satılırsa fiyat ne olur?” diye soruyorsa satış = $x$, fiyat = $y$.\n- Yani “… verilince … çıkar” kalıbında **verilen x, çıkan y**.' });
+        saveNotebook();
+      }
+      localStorage.setItem('satm_nb_seed_xy', '1');
+    }
+  } catch {}
 })();
 </script>
 </body></html>
