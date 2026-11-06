@@ -7593,6 +7593,26 @@ document.addEventListener('mouseup', e => {
     }
   } catch {}
 
+  // same word twice (case / spaces don't matter): keep one row, fill its empty cells from the others
+  try {
+    const groups = new Map();
+    words.forEach(w => { const k = normW(w && w.word); if (!k) return; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(w); });
+    let removed = 0; const drop = new Set();
+    const score = w => ['meaning', 'def', 'hint', 'example'].reduce((n, f) => n + (String(w[f] || '').trim() ? 1 : 0), 0);
+    groups.forEach(list => {
+      if (list.length < 2) return;
+      const keep = list.slice().sort((a, b) => score(b) - score(a) || (a.addedAt || 0) - (b.addedAt || 0))[0];
+      list.forEach(w => {
+        if (w === keep) return;
+        Object.keys(w).forEach(f => { if (f !== 'key' && (keep[f] == null || String(keep[f]).trim() === '') && w[f] != null && String(w[f]).trim() !== '') keep[f] = w[f]; });
+        if (w.addedAt && (!keep.addedAt || w.addedAt < keep.addedAt)) keep.addedAt = w.addedAt;
+        drop.add(w); removed++;
+      });
+      if (typeof keep.word === 'string') keep.word = keep.word.trim();
+    });
+    if (removed) { for (let i = words.length - 1; i >= 0; i--) if (drop.has(words[i])) words.splice(i, 1); localStorage.setItem(KEY, JSON.stringify(words)); }
+  } catch {}
+
   // words added 2026-11-06 from Batu's list: new words are added once; existing words only get empty cells filled
   try {
     {
