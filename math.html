@@ -7859,6 +7859,18 @@ document.addEventListener('mouseup', e => {
     if (removed) { for (let i = words.length - 1; i >= 0; i--) if (drop.has(words[i])) words.splice(i, 1); localStorage.setItem(KEY, JSON.stringify(words)); }
   } catch {}
 
+  // words from R&W questions (2026-11-06 evening): added if missing, empty cells filled
+  try {
+    const ADD2 = [{"word": "collaboration", "meaning": "iş birliği, birlikte çalışma", "def": "The act of working together with others to create something.", "example": "The Mule Bone is one of the few examples of collaboration in literature."}, {"word": "characterization", "meaning": "karakter yaratma / tasvir", "def": "The way an author creates and describes characters.", "example": ""}, {"word": "interpretation", "meaning": "yorum, yorumlama", "def": "An explanation of the meaning of something.", "example": ""}, {"word": "commercialization", "meaning": "ticarileştirme", "def": "The process of turning something into a product to make money.", "example": ""}, {"word": "confined to", "meaning": "-e/-a sınırlı, ile kısıtlı", "def": "Limited to a particular place, group, or area.", "example": "Velázquez's influence was hardly confined to Spain."}, {"word": "derived from", "meaning": "-den türemiş, -den gelen", "def": "Coming from or based on a source.", "example": ""}, {"word": "repressed", "meaning": "bastırılmış", "def": "Held back or kept under control by force.", "example": ""}, {"word": "hardly", "meaning": "neredeyse hiç; hiç de … değil", "def": "Almost not at all; used to say something is not true.", "example": "His influence was hardly confined to Spain (= it spread worldwide)."}];
+    let ch = 0;
+    ADD2.forEach((s, n) => {
+      const ex = findWord(s.word);
+      if (ex) { ['meaning', 'def', 'example'].forEach(f => { if (!String(ex[f] || '').trim() && s[f]) { ex[f] = s[f]; ch++; } }); }
+      else { words.push({ key: 'a7-' + n + '-' + Math.random().toString(36).slice(2, 6), word: s.word, meaning: s.meaning, def: s.def, hint: '', example: s.example, addedAt: Date.now() + n, source: 'question' }); ch++; }
+    });
+    if (ch) localStorage.setItem(KEY, JSON.stringify(words));
+  } catch {}
+
   // words added 2026-11-06 from Batu's list: new words are added once; existing words only get empty cells filled
   try {
     {
