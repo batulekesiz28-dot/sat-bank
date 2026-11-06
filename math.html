@@ -1666,6 +1666,24 @@ body.ts-full #view-tset .focus-wrap .q-card{min-height:calc(100vh - 170px)}
 .eks-acts{display:flex;gap:6px;flex-wrap:wrap}
 .eks-empty{color:var(--fg3);font-size:13.5px;padding:14px;border:1px dashed var(--border2);border-radius:12px}
 
+.rtw-head{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.rtw-tip{padding:12px 14px;border-radius:10px;border:1px solid #bbf7d0;background:#f0fdf4;font-size:14px;line-height:1.55;color:var(--fg)}
+.rtw-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.rtw-tab{border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 14px;font:inherit;font-size:13.5px;cursor:pointer}
+.rtw-tab.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.rtw-g{margin-bottom:18px}
+.rtw-gh{display:flex;align-items:baseline;gap:10px;margin:4px 0 10px}.rtw-gn{font-weight:700;font-size:17px}.rtw-ge{font-size:12px;color:var(--fg3);text-transform:uppercase;letter-spacing:.05em}
+.rtw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.rtw-c{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.rtw-k{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--fg3)}
+.rtw-p{font-size:20px;font-weight:700;font-family:var(--serif, Georgia, serif)}
+.rtw-m{font-size:14px;color:var(--fg)}.rtw-t{font-size:13px;color:var(--fg2)}
+.rtw-ex{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.rtw-x{font-size:12.5px;padding:2px 8px;border-radius:999px;background:var(--bg2, rgba(0,0,0,.05));color:var(--fg)}
+.rtw-x.in{background:rgba(22,163,74,.12);color:#15803d;font-weight:600}
+.rtw-note{font-size:12.5px;color:var(--fg3);line-height:1.55;margin-top:6px}
+.rtw-empty{color:var(--fg3)}
+
 /* ══ math mode ══ */
 body.math-mode .q-tour-btn,body.math-mode .q-lv-btn,body.math-mode .q-pg-toggle,body.math-mode .ttab[data-view="vocab"],body.math-mode .ttab[data-view="study"],body.math-mode .ink-tool.ink-th{display:none!important}
 .mq-img{display:block;max-width:100%;height:auto;image-rendering:auto}
@@ -2127,6 +2145,7 @@ body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:
       <div><div class="section-h">Vocab</div><div class="section-sub">Sorudaki bir kelimeye hızlıca 3 kez tıkla, tabloya eklensin. Hücrelere tıklayıp düzenleyebilirsin.</div></div>
       <div class="vocab-actions">
         <button class="topbar-action-btn" id="trOpenBtn">↔ Transition words</button>
+        <button class="topbar-action-btn" id="rtOpenBtn">🌱 Roots &amp; affixes</button>
         <button class="topbar-action-btn vs-open" id="vsOpenBtn" title="10 kelime, 1–2 dakika: her kelime tek soru; bilemediğin sonda tekrar gelir, sonraki günlerde aralıklı tekrar">⚡ Hızlı kelime <span class="vs-badge" id="vsBadge" hidden></span></button>
         <button class="topbar-action-btn" id="popExBtn" title="Örnek cümlesi uzun / bilimsel kalan kelimelere AI kısa, anime-futbol-dizi-oyun cümlesi yazsın">✨ Popüler örnek <span class="vs-badge" id="popExBadge" hidden></span></button>
         <button class="topbar-action-btn vq-open" id="vqOpenBtn">🧩 Bilmece</button>
@@ -2140,6 +2159,7 @@ body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:
     <div id="vocabSrs" class="vs" hidden></div>
     <div id="vocabQuiz" class="vq" hidden></div>
     <div id="vocabTrans" class="trw" hidden></div>
+    <div id="vocabRoots" class="rtw" hidden></div>
     <div class="vocab-filter">
       <input id="vocabSearch" class="filter-select" type="search" placeholder="Kelime veya anlam ara">
       <label class="vocab-check"><input type="checkbox" id="vocabOnlyEmpty"> Anlamı boş olanlar</label>
@@ -9043,6 +9063,61 @@ Sadece JSON: {"items":[{"w":"kelime","ex":"cümle"}]}` }], { temp: 0.7, timeout:
   // the teacher's additions arrive through sync: refresh
   let sig = localStorage.getItem(KEY) || ''; setInterval(() => { const s = localStorage.getItem(KEY) || ''; if (s === sig) return; sig = s; badge(); if (view.classList.contains('active') && !E.edit && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#view-eksik'))) render(); }, 1500);
   badge();
+})();
+
+// ══ 🌱 ROOTS & AFFIXES page inside Vocab ══
+(function () {
+  const DATA = [{"k": "Roots", "tr": "Kökler", "h": "The core idea: roots & combining forms", "rows": [{"p": "cred-", "m": "believe; trust", "t": "inanmak; güvenmek", "ex": ["credible", "incredulous"]}, {"p": "dict-", "m": "say; state", "t": "söylemek; belirtmek", "ex": ["contradict", "predict"]}, {"p": "sequ- / secut-", "m": "follow", "t": "takip etmek", "ex": ["subsequent", "consequence"]}, {"p": "dur-", "m": "last; endure; hard", "t": "sürmek; dayanmak; sert", "ex": ["durable", "duration"]}, {"p": "voc- / vok-", "m": "voice; call", "t": "ses; çağırmak", "ex": ["evoke", "invoke", "advocate", "equivocal"]}, {"p": "idio-", "m": "one’s own; distinctive", "t": "kişiye ait; kendine özgü", "ex": ["idiosyncratic"]}, {"p": "ambi-", "m": "both; on both sides", "t": "iki; iki tarafta", "ex": ["ambivalent"]}, {"p": "hetero-", "m": "different; other", "t": "farklı; diğer", "ex": ["heterogeneous"]}, {"p": "homo-", "m": "same; alike", "t": "aynı; benzer", "ex": ["homogeneous"]}, {"p": "mal-", "m": "bad; badly", "t": "kötü; kötü şekilde", "ex": ["malign"]}]}, {"k": "Prefixes", "tr": "Ön ekler", "h": "At the beginning: prefixes", "rows": [{"p": "un-", "m": "not; in some verbs, reverse an action", "t": "değil; bazı fiillerde tersine çevirme", "ex": ["unsubstantiated", "unequivocal"]}, {"p": "in- / im- / il- / ir-", "m": "not", "t": "değil", "ex": ["imperceptible", "impartial", "irrelevant", "independent"]}, {"p": "re-", "m": "again; sometimes back", "t": "yeniden; bazen geri", "ex": ["reappraise", "reassess"]}, {"p": "dis-", "m": "not, opposite, or reversal", "t": "değil, zıt ya da tersine", "ex": ["dissimilar", "disproportionate"]}, {"p": "mis-", "m": "wrongly or badly", "t": "yanlış ya da kötü şekilde", "ex": ["misconstrue", "misinterpret"]}, {"p": "non-", "m": "not; absence of the named category", "t": "değil; o şeyin yokluğu", "ex": ["nonessential", "nonvisual"]}, {"p": "pre-", "m": "before", "t": "önce", "ex": ["preemptive", "preassessment"]}, {"p": "inter-", "m": "between or among", "t": "arasında", "ex": ["intermingle", "interdependent"]}, {"p": "trans-", "m": "across; from one position or state to another", "t": "öte; bir yerden/durumdan diğerine", "ex": ["transposition", "transnational"]}, {"p": "counter-", "m": "against, opposing, or contrary to", "t": "karşı, zıt", "ex": ["counterfactual", "counterevidence"]}, {"p": "over-", "m": "too much; beyond a suitable limit", "t": "aşırı; sınırın üstünde", "ex": ["overestimate", "overstate"]}, {"p": "under-", "m": "below; too little or insufficiently", "t": "altında; çok az, yetersiz", "ex": ["under-resourced", "underestimate"]}, {"p": "ab- / abs-", "m": "away; from", "t": "uzak; -den", "ex": ["abstain"]}, {"p": "contra-", "m": "against; opposite", "t": "karşı; zıt", "ex": ["contravene"]}, {"p": "extra-", "m": "outside; beyond", "t": "dışında; ötesinde", "ex": ["extraneous"]}, {"p": "ob- / oc- / of- / op-", "m": "against; toward; in the way", "t": "karşı; -e doğru; yolunda engel", "ex": ["obstruct"]}]}, {"k": "Suffixes", "tr": "Son ekler", "h": "At the end: suffixes", "rows": [{"p": "-tion / -sion", "m": "forms a noun for an action, process, result, or state", "t": "eylem/süreç/sonuç isim yapar", "ex": ["evaluation", "distribution", "derivation", "concession", "assertion", "validation", "proliferation"]}, {"p": "-ment", "m": "forms a noun for an action, result, or state", "t": "eylem/sonuç isim yapar", "ex": ["assessment", "discernment", "acknowledgment", "impediment"]}, {"p": "-ness", "m": "a state or quality; usually forms a noun from an adjective", "t": "durum/nitelik (sıfattan isim)", "ex": ["capriciousness", "decisiveness", "arbitrariness"]}, {"p": "-ity", "m": "a state or quality; forms an abstract noun", "t": "durum/nitelik (soyut isim)", "ex": ["similarity", "feasibility"]}, {"p": "-able / -ible", "m": "able to be; capable of, or suitable for", "t": "-ebilir; uygun", "ex": ["discernible", "replicable"]}, {"p": "-ly", "m": "often forms an adverb describing how or to what degree", "t": "zarf yapar: nasıl, ne kadar", "ex": ["ubiquitously", "meticulously", "relatively", "explicitly", "implicitly", "skeptically", "dubiously", "inherently", "extraneously"]}, {"p": "-ive", "m": "often forms an adjective for a tendency, function, or characteristic", "t": "eğilim/özellik sıfatı", "ex": ["pervasive", "interpretive", "derivative"]}, {"p": "-al", "m": "often forms an adjective meaning related to", "t": "-sal/-sel: ile ilgili", "ex": ["conjectural", "evidential", "consensual"]}, {"p": "-ous", "m": "having or characterized by a quality", "t": "o niteliğe sahip", "ex": ["anomalous", "pernicious", "capacious"]}, {"p": "-ance / -ence", "m": "often forms a noun for a state, quality, or process", "t": "durum/nitelik/süreç ismi", "ex": ["relevance", "independence"]}, {"p": "-ful", "m": "having; characterized by", "t": "-li, dolu", "ex": ["resourceful"]}, {"p": "-less", "m": "without; lacking", "t": "-siz, yoksun", "ex": ["baseless"]}, {"p": "-ize / -ise", "m": "make; become; carry out a process", "t": "yapmak; hâline getirmek", "ex": ["itemize"]}, {"p": "-ed", "m": "having a quality or having undergone an action", "t": "o niteliğe sahip / işlem görmüş", "ex": ["nuanced"]}]}], NOTE = "Selected from useful reading patterns and the Penguin worksheet, with misleading root connections omitted. Historical pieces are clues, not always modern building blocks. Academic Word List additions reflect academic-reading frequency, not a ranking of SAT appearances. Word parts help form a prediction; context decides the meaning.";
+  let on = false, q = '', tab = 'all';
+  const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const norm = s => String(s || '').replace(/İ/g, 'I').replace(/ı/g, 'i').trim().toLowerCase();
+  function mine() { try { const a = JSON.parse(localStorage.getItem('satm_bank_vocab_v1') || '[]'); const m = {}; a.forEach(w => { if (w && w.word) m[norm(w.word)] = w.meaning || ''; }); return m; } catch { return {}; } }
+  function setTable(show) { document.querySelectorAll('#view-vocab .vocab-filter, #view-vocab .vocab-table-wrap').forEach(el => { el.style.display = show ? '' : 'none'; }); }
+  function body() {
+    const s = norm(q), M = mine();
+    const out = DATA.filter(g => tab === 'all' || g.k === tab).map(g => {
+      const rows = g.rows.filter(r => !s || norm(r.p + ' ' + r.m + ' ' + r.t + ' ' + r.ex.join(' ')).includes(s));
+      if (!rows.length) return '';
+      return `<section class="rtw-g"><div class="rtw-gh"><span class="rtw-gn">${esc(g.tr)}</span><span class="rtw-ge">${esc(g.h)}</span></div><div class="rtw-grid">${rows.map(r => `<div class="rtw-c">
+          <span class="rtw-k">${esc(g.k.replace(/s$/, '').toUpperCase())}</span>
+          <span class="rtw-p">${esc(r.p)}</span>
+          <span class="rtw-m">${esc(r.m)}</span><span class="rtw-t">${esc(r.t)}</span>
+          <div class="rtw-ex">${r.ex.map(x => { const k = norm(x), has = k in M; return `<span class="rtw-x${has ? ' in' : ''}"${has && M[k] ? ` title="${esc(M[k])}"` : ''}>${esc(x)}</span>`; }).join('')}</div>
+        </div>`).join('')}</div></section>`;
+    }).join('');
+    return out || '<p class="rtw-empty">Eşleşen yok.</p>';
+  }
+  function render() {
+    const host = document.getElementById('vocabRoots'); if (!host) return;
+    host.hidden = !on;
+    const b = document.getElementById('rtOpenBtn'); if (b) b.textContent = on ? '← Tabloya dön' : '🌱 Roots & affixes';
+    if (!on) return;
+    if (!host.querySelector('.rtw-list')) {
+      host.innerHTML = `<div class="rtw-head">
+          <div class="rtw-tip"><b>Nasıl kullanılır?</b> Tanımadığın bir kelimede önce kökü ve ekleri bul (ör. <i>in-</i> + <i>cred</i> + <i>-ulous</i> = inanmayan). Bu sana bir tahmin verir; asıl anlamı cümle belirler. Yeşil kelimeler senin Vocab listende var, üstüne gelince Türkçesi görünür.</div>
+          <div class="rtw-tabs">${[['all', 'Hepsi'], ['Roots', 'Kökler'], ['Prefixes', 'Ön ekler'], ['Suffixes', 'Son ekler']].map(([k, t]) => `<button type="button" class="rtw-tab${tab === k ? ' on' : ''}" data-rtt="${k}">${t}</button>`).join('')}</div>
+          <input id="rtwSearch" class="filter-select" type="search" placeholder="Ara (ör. cred, not, -ous, against)">
+        </div><div class="rtw-list"></div><p class="rtw-note">${esc(NOTE)}</p>`;
+      host.querySelector('#rtwSearch').addEventListener('input', e => { q = e.target.value; host.querySelector('.rtw-list').innerHTML = body(); });
+      host.addEventListener('click', e => { const t = e.target.closest('[data-rtt]'); if (!t) return; tab = t.dataset.rtt; host.querySelectorAll('.rtw-tab').forEach(x => x.classList.toggle('on', x.dataset.rtt === tab)); host.querySelector('.rtw-list').innerHTML = body(); });
+    }
+    host.querySelector('.rtw-list').innerHTML = body();
+  }
+  document.addEventListener('click', e => {
+    const t = e.target.closest && e.target.closest('#rtOpenBtn, #trOpenBtn, #vqOpenBtn, #vsOpenBtn');
+    if (!t) return;
+    if (t.id !== 'rtOpenBtn') { if (on) { on = false; render(); setTable(true); } return; }
+    e.preventDefault(); e.stopPropagation();
+    const opening = !on;
+    if (opening) {
+      const trw = document.getElementById('vocabTrans'); if (trw && !trw.hidden) document.getElementById('trOpenBtn')?.click();
+      if (window.__vq && window.__vq.on) { window.__vq.on = false; const qz = document.getElementById('vocabQuiz'); if (qz) qz.hidden = true; const qb = document.getElementById('vqOpenBtn'); if (qb) qb.textContent = '🧩 Bilmece'; }
+      const vs = document.getElementById('vocabSrs'); if (vs && !vs.hidden) document.getElementById('vsOpenBtn')?.click();
+    }
+    on = opening;
+    setTable(!on);
+    render();
+  }, true);
 })();
 
 // ══════════════════════════════════════════════════════════════════════
