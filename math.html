@@ -1925,6 +1925,10 @@ body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:
 .q-dhint{display:flex;justify-content:flex-end;padding:0 18px 12px}
 .q-dh{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px}
 .q-dh.yes{color:#15803d;background:rgba(22,163,74,.1)}.q-dh.no{color:#9a3412;background:rgba(234,88,12,.1)}
+.q-dhint{justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.q-les{border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.q-les:hover{border-color:var(--accent);color:var(--accent)}
+.q-dh:only-child{margin-left:auto}
 </style>
 
 <!-- TOPBAR -->
@@ -9948,6 +9952,151 @@ const KONU = {
       ['⭐ Dummy factor (ekstra çarpan)', 'Soru “… bir çarpanı $kx+j$” diyorsa ama diğer çarpanı vermiyorsa, onun yerine bilinmeyen bir <b>ekstra çarpan</b> ($dx_1+z$) koy. Böylece iki tarafın derecesi eşit olur ve regresyon oturur. $d$ ve $z$ seni ilgilendirmez.', ['ax_1^2+96x_1+c\\sim(kx_1+j)(dx_1+z)'], null, ['$ax^2+96x+c$’nin bir çarpanı $kx+j$: sol taraf 2. dereceden, $(kx+j)$ tek başına 1. derece → yanına $(dx_1+z)$ ekle.', 'Kısa yol (aynı soru): en az bir reel kök → $96^2-4ac\\ge0$ → $ac\\le\\frac{9216}{4}=2304$ → en büyük $ac=2304$.'], 'Ekstra çarpan koymazsan Desmos 2. dereceyi 1. dereceye eşitlemeye çalışır, oturmaz. Çok bilinmeyen varsa Desmos tek bir olası çözüm verir; “en büyük/en küçük” sorularında sonucu formülle (diskriminant gibi) kontrol et.', ['Sol tarafın derecesini say (kaçıncı dereceden?).', 'Sağdaki verilen çarpanların derecelerini topla.', 'Eksik kalan derece kadar ekstra çarpan ekle: 1 eksikse $(dx_1+z)$, 2 eksikse $(dx_1^2+ex_1+z)$.']],
     ] },
   } },
+  balg: { en: 1, ad: 'Algebra basics', ic: '🟦', alt: 'Linear equations, linear functions, systems, inequalities', konular: {
+    l1: { ad: 'Linear equations in one variable', ic: '1️⃣', alt: 'Get x alone; one, none or infinitely many solutions', notlar: [
+      ['The goal: get x alone', 'A linear equation has one variable to the first power (no $x^2$). Do the same thing to both sides until $x$ is by itself.', ['ax+b=c \\Rightarrow x=\\dfrac{c-b}{a}'], null, ['$3(x-2)+5=2x+7$ → $3x-6+5=2x+7$ → $3x-1=2x+7$ → $x=8$.'], 'When you move a term to the other side, its sign flips: $+5$ becomes $-5$.', ['Distribute (open the brackets).', 'Combine like terms on each side.', 'Move all $x$ terms to one side, numbers to the other.', 'Divide by the number in front of $x$.']],
+      ['Fractions? Clear them first', 'Multiply every term by the least common denominator (LCD). The fractions disappear.', [], null, '$\\frac{x}{3}+\\frac{x}{4}=7$ → multiply by 12 → $4x+3x=84$ → $x=12$.', 'Multiply EVERY term, including the number on the right side.'],
+      ['⭐ One, none, or infinitely many solutions', 'Simplify both sides to the form $ax+b=cx+d$ and compare.', ['a\\ne c \\Rightarrow \\text{one solution}', 'a=c,\\ b\\ne d \\Rightarrow \\text{no solution}', 'a=c,\\ b=d \\Rightarrow \\text{infinitely many}'], null, ['$4(x+2)=4x+k$ has infinitely many solutions when $k=8$ (both sides are $4x+8$).', '$5x+3=5x+1$ → no solution (same $x$ part, different numbers).'], 'No solution = the $x$ terms cancel and you get a false statement like $3=1$.'],
+      ['Solve for an expression, not x', 'Sometimes the question asks for $6x+9$, not $x$. Look for a shortcut: the expression may be a multiple of what you have.', [], null, 'If $2x+3=11$, then $6x+9=3(2x+3)=3\\cdot11=33$.', 'Read the last line of the question: what exactly do they want?'],
+      ['Desmos', 'Type the equation directly (with $x$) and Desmos shows the solution as a vertical line, or graph each side as $y=\\dots$ and click the intersection.', [], null, null, null],
+    ] },
+    l2: { ad: 'Linear equations in two variables', ic: '📏', alt: 'Slope, intercepts, forms of a line', notlar: [
+      ['Slope = rise over run', 'Slope tells how much $y$ changes when $x$ goes up by 1.', ['m=\\dfrac{y_2-y_1}{x_2-x_1}'], null, 'Through $(1,2)$ and $(4,11)$: $m=\\frac{11-2}{4-1}=3$.', 'Keep the same order on top and bottom ($y_2-y_1$ with $x_2-x_1$).'],
+      ['Three forms of a line', 'Pick the form that matches what you know.', ['\\text{slope-intercept: } y=mx+b', '\\text{point-slope: } y-y_1=m(x-x_1)', '\\text{standard: } Ax+By=C,\\ m=-\\dfrac{A}{B}'], null, '$2x+3y=12$: slope $-\\frac23$, y-intercept $\\frac{12}{3}=4$, x-intercept $\\frac{12}{2}=6$.', null],
+      ['Intercepts', 'x-intercept: where the line crosses the x-axis → put $y=0$. y-intercept: where it crosses the y-axis → put $x=0$.', ['y\\text{-int: } x=0,\\quad x\\text{-int: } y=0'], null, '$y=2x-8$: y-intercept $-8$; x-intercept: $0=2x-8 \\Rightarrow x=4$.', null],
+      ['Parallel and perpendicular', 'Parallel lines have the same slope. Perpendicular lines have negative reciprocal slopes (flip and change the sign).', ['\\parallel: m_1=m_2', '\\perp: m_1\\cdot m_2=-1'], null, 'A line perpendicular to $y=\\frac23x+1$ has slope $-\\frac32$.', null],
+      ['Is a point on the line?', 'Plug the point’s $x$ and $y$ in. If the equation is true, the point is on the line.', [], null, 'Is $(2,5)$ on $y=3x-1$? $3\\cdot2-1=5$ ✓ yes.', null],
+      ['Word problems: combinations', 'Equations like $5x+8y=200$ often mean “$x$ items at \\$5 and $y$ items at \\$8 cost \\$200 total”.', [], null, 'If $x=24$, then $8y=200-120=80$, so $y=10$.', 'The coefficient is the price/amount per item; the right side is the total.'],
+    ] },
+    l3: { ad: 'Linear functions', ic: '📈', alt: 'f(x) = mx + b, tables, meaning of slope and intercept', notlar: [
+      ['Function notation', '$f(x)=mx+b$ is a rule. $f(3)$ means “put 3 in for $x$”.', ['f(x)=mx+b'], null, '$f(x)=4x-1$ → $f(3)=11$. If $f(a)=19$, then $4a-1=19$ → $a=5$.', '$f(3)$ is an output (a $y$ value), not a multiplication.'],
+      ['Find the rule from two values', 'Two points give the slope; then plug one in to get $b$.', ['m=\\dfrac{f(x_2)-f(x_1)}{x_2-x_1}'], null, '$f(2)=7$, $f(5)=16$: $m=\\frac{9}{3}=3$; $7=3\\cdot2+b \\Rightarrow b=1$ → $f(x)=3x+1$.', null],
+      ['Tables', 'In a linear table, $y$ changes by the same amount each time $x$ goes up by the same step.', [], null, '$x$: 0, 1, 2 → $y$: 5, 8, 11. Change is $+3$ each time → $f(x)=3x+5$.', 'If the $x$ step is 2, divide the $y$ change by 2 to get the slope.'],
+      ['⭐ Meaning in context', 'Slope = rate (per one unit of $x$). y-intercept = starting value (when $x=0$).', [], null, '$C(h)=45h+60$ (cost for $h$ hours): \\$45 per hour, \\$60 fixed fee.', 'Check the units: slope is “$y$ units per $x$ unit”.'],
+      ['Shifting a graph', '$f(x)+k$ moves the graph up $k$. $f(x-h)$ moves it right $h$.', [], null, '$y=2x+1$ shifted down 4 → $y=2x-3$.', null],
+    ] },
+    sys: { ad: 'Systems of two linear equations', ic: '✖️', alt: 'Intersection, substitution, elimination, number of solutions', notlar: [
+      ['A solution = the crossing point', 'The solution $(x,y)$ makes BOTH equations true. On a graph it’s where the two lines meet.', [], null, null, null],
+      ['Substitution', 'Solve one equation for a variable, put it into the other.', [], null, '$y=2x+1$ and $3x+y=16$ → $3x+2x+1=16$ → $x=3$, $y=7$.', null],
+      ['Elimination', 'Add or subtract the equations so one variable cancels. Multiply first if needed.', [], null, '$x+y=10$ and $x-y=4$ → add: $2x=14$ → $x=7$, $y=3$.', 'If they ask for $x+y$ or $x-y$, adding/subtracting the equations may give it in one step.'],
+      ['⭐ How many solutions?', 'Compare slopes and intercepts.', ['\\text{different slopes} \\Rightarrow \\text{one}', '\\text{same slope, different intercept} \\Rightarrow \\text{none (parallel)}', '\\text{same line} \\Rightarrow \\text{infinitely many}', '\\frac{a_1}{a_2}=\\frac{b_1}{b_2}\\ne\\frac{c_1}{c_2} \\Rightarrow \\text{no solution}'], null, '$2x+3y=5$ and $4x+ky=7$ have no solution when $k=6$ (ratios $\\frac24=\\frac36$ but $\\frac57$ is different).', null],
+      ['Word problems', 'Two unknowns → two equations: usually one for the count and one for the value.', [], null, '30 tickets, adults \\$12, kids \\$7, total \\$285: $a+k=30$, $12a+7k=285$ → $a=15$.', null],
+      ['Desmos', 'Type both equations; click the intersection point to read $(x,y)$. Parallel lines = no solution; one line on top of the other = infinitely many.', [], null, null, null],
+    ] },
+    ineq: { ad: 'Linear inequalities', ic: '⚖️', alt: 'Solve, flip the sign, graph, word problems', notlar: [
+      ['Solve like an equation… with one rule', 'Everything works like an equation, EXCEPT: multiplying or dividing by a negative number flips the sign.', ['-2x>6 \\Rightarrow x<-3'], null, '$5-3x\\le14$ → $-3x\\le9$ → $x\\ge-3$.', 'Forgetting to flip the sign is the #1 mistake.'],
+      ['⭐ Words to symbols', 'Translate carefully.', ['\\text{at least} \\Rightarrow \\ge', '\\text{at most / no more than} \\Rightarrow \\le', '\\text{more than} \\Rightarrow >', '\\text{fewer than / less than} \\Rightarrow <'], null, '“at most \\$100 on $x$ shirts at \\$12 and $y$ hats at \\$8”: $12x+8y\\le100$.', null],
+      ['Graphing', 'Solid line for $\\le,\\ge$ (the line is included); dashed for $<,>$. $y>\\dots$ shade above, $y<\\dots$ shade below.', [], null, null, null],
+      ['Does a point work?', 'Plug the point into every inequality. It must make ALL of them true.', [], null, 'Is $(2,1)$ a solution of $y<x$ and $y>-x+2$? $1<2$ ✓, $1>0$ ✓ → yes.', null],
+      ['Desmos', 'Type the inequalities; the overlapping shaded area is the solution set. Click a point or check the choices.', [], null, null, null],
+    ] },
+  } },
+  badv: { en: 1, ad: 'Advanced Math basics', ic: '🟪', alt: 'Equivalent expressions, quadratics, exponentials, nonlinear equations', konular: {
+    eqx: { ad: 'Equivalent expressions', ic: '🟰', alt: 'Expand, factor, exponent rules, match coefficients', notlar: [
+      ['Expand (distribute)', 'Multiply every term by every term.', ['(a+b)(c+d)=ac+ad+bc+bd'], null, '$(x+3)(2x-5)=2x^2-5x+6x-15=2x^2+x-15$.', null],
+      ['⭐ Special products', 'Memorize these three; SAT uses them all the time.', ['(a+b)^2=a^2+2ab+b^2', '(a-b)^2=a^2-2ab+b^2', 'a^2-b^2=(a+b)(a-b)'], null, '$x^2-49=(x+7)(x-7)$; $(2x+3)^2=4x^2+12x+9$.', '$(a+b)^2$ is NOT $a^2+b^2$. Don’t forget the middle term $2ab$.'],
+      ['Factoring', 'Take out the common factor first, then factor what’s left.', [], null, ['$6x^2+9x=3x(2x+3)$.', '$x^2+5x+6=(x+2)(x+3)$: two numbers that multiply to 6 and add to 5.'], null],
+      ['Exponent rules', 'Same base: multiply → add exponents; divide → subtract; power of a power → multiply.', ['x^a\\cdot x^b=x^{a+b}', '\\dfrac{x^a}{x^b}=x^{a-b}', '(x^a)^b=x^{ab}', 'x^{-n}=\\dfrac{1}{x^n}', 'x^{\\frac{m}{n}}=\\sqrt[n]{x^m}'], null, '$\\sqrt[3]{x^2}=x^{\\frac23}$; $\\frac{x^5}{x^2}=x^3$.', null],
+      ['⭐ “Equivalent for all x” → match coefficients', 'If two expressions are equal for every $x$, the numbers in front of $x^2$, $x$ and the constants must match.', [], null, '$(2x+k)^2=4x^2+12x+9$ → middle term $4k=12$ → $k=3$.', null, ['Expand the side with the unknown.', 'Line up $x^2$, $x$ and number terms.', 'Set matching coefficients equal and solve.']],
+      ['Desmos', 'Graph both expressions: if the graphs lie on top of each other, they are equivalent. For unknown constants, use regression: $(2x_1+k)^2\\sim4x_1^2+12x_1+9$ with $x_1=\\operatorname{random}(10)$.', [], null, null, null],
+    ] },
+    neq: { ad: 'Nonlinear equations & systems', ic: '🔀', alt: 'Quadratics, discriminant, radicals, absolute value, line + parabola', notlar: [
+      ['Three ways to solve a quadratic', 'Make one side 0 first: $ax^2+bx+c=0$.', ['\\text{factor},\\quad \\text{complete the square},\\quad x=\\dfrac{-b\\pm\\sqrt{b^2-4ac}}{2a}'], null, '$x^2-x-12=0$ → $(x-4)(x+3)=0$ → $x=4$ or $x=-3$.', null],
+      ['⭐ The discriminant: how many solutions?', '$D=b^2-4ac$ tells the number of real solutions without solving.', ['D>0 \\Rightarrow 2', 'D=0 \\Rightarrow 1', 'D<0 \\Rightarrow 0'], null, '$x^2+6x+k=0$ has exactly one solution when $36-4k=0 \\Rightarrow k=9$.', null],
+      ['Sum and product of solutions', 'Fast way when they ask for the sum or product of the solutions.', ['x_1+x_2=-\\dfrac{b}{a}', 'x_1\\cdot x_2=\\dfrac{c}{a}'], null, '$2x^2-10x+3=0$: sum $=5$, product $=\\frac32$.', null],
+      ['Radical and rational equations', 'Radical: isolate the root, square both sides. Rational: multiply by the denominator. ALWAYS check your answers.', [], null, '$\\sqrt{x+7}=x-5$ → $x+7=x^2-10x+25$ → $x=9$ or $x=2$. Check: $x=2$ gives $3=-3$ ✗. Only $x=9$.', 'Squaring can create fake (extraneous) solutions; a denominator can’t be 0.'],
+      ['Absolute value', '$|x-3|=5$ means the distance from 3 is 5: two cases.', ['|A|=k \\Rightarrow A=k \\text{ or } A=-k'], null, '$|x-3|=5$ → $x=8$ or $x=-2$.', null],
+      ['Line + parabola systems', 'Substitute the line into the parabola → a quadratic. Its number of solutions = number of intersection points.', [], null, '$y=x^2$ and $y=2x+3$ → $x^2-2x-3=0$ → $x=3,-1$ → two points.', 'Exactly one intersection (tangent line) → discriminant $=0$.'],
+      ['Desmos', 'Graph both sides (or both equations) and click the intersections. Fastest way for most of these questions.', [], null, null, null],
+    ] },
+    nfn: { ad: 'Nonlinear functions', ic: '〰️', alt: 'Parabolas, vertex, zeros, exponential growth/decay, transformations', notlar: [
+      ['⭐ Three forms of a quadratic', 'Each form shows one thing instantly.', ['\\text{standard: } y=ax^2+bx+c \\ (c=\\text{y-intercept})', '\\text{vertex: } y=a(x-h)^2+k \\ (\\text{vertex } (h,k))', '\\text{factored: } y=a(x-p)(x-q) \\ (\\text{zeros } p, q)'], null, '$y=2(x-3)^2+5$: vertex $(3,5)$, minimum value 5.', 'In vertex form the sign of $h$ flips: $(x-3)$ → $h=3$; $(x+3)$ → $h=-3$.'],
+      ['Vertex and axis of symmetry', 'The vertex is the max or min. Its $x$ is halfway between the zeros.', ['x_{\\text{vertex}}=-\\dfrac{b}{2a}=\\dfrac{p+q}{2}'], null, '$y=x^2-8x+7$: $x=4$, $y=16-32+7=-9$ → vertex $(4,-9)$.', '$a>0$ opens up (minimum); $a<0$ opens down (maximum).'],
+      ['Zeros = x-intercepts = solutions', 'A zero is where $f(x)=0$. If $f(a)=0$, then $(x-a)$ is a factor.', ['f(a)=0 \\iff (x-a) \\text{ is a factor}'], null, 'Zeros at $-2$ and $5$ → $f(x)=a(x+2)(x-5)$.', 'Remainder: dividing $p(x)$ by $(x-a)$ leaves remainder $p(a)$.'],
+      ['⭐ Exponential functions', 'Multiply by the same number each step.', ['f(x)=a\\cdot b^x', '\\text{growth } r\\%: b=1+\\frac{r}{100}', '\\text{decay } r\\%: b=1-\\frac{r}{100}'], null, ['$P=500(1.04)^t$: starts at 500, grows 4% per year.', '$V=800(0.85)^t$: loses 15% per year.'], 'If the change happens every 3 years, the exponent is $\\frac{t}{3}$.'],
+      ['Linear vs exponential', 'Linear: add the same amount each step (constant difference). Exponential: multiply by the same amount (constant ratio).', [], null, '5, 10, 20, 40 → ×2 → exponential. 5, 10, 15, 20 → +5 → linear.', null],
+      ['Transformations', 'Changes inside the brackets move left/right (opposite sign); outside move up/down.', ['f(x)+k:\\ \\text{up } k', 'f(x-h):\\ \\text{right } h', '-f(x):\\ \\text{flip over x-axis}'], null, '$y=(x+2)^2-1$ is $y=x^2$ moved left 2, down 1.', null],
+      ['Desmos', 'Graph the function and click the points: Desmos marks zeros, max/min and y-intercept for you.', [], null, null, null],
+    ] },
+  } },
+  bpsd: { en: 1, ad: 'Problem Solving & Data basics', ic: '🟩', alt: 'Ratios, percentages, statistics, scatterplots, probability, studies', konular: {
+    rat: { ad: 'Ratios, rates, proportions & units', ic: '⚗️', alt: 'Parts and totals, cross-multiply, unit conversion', notlar: [
+      ['Ratios: parts of a whole', 'A ratio $a:b$ splits the total into $a+b$ equal parts.', ['\\text{one part}=\\dfrac{\\text{total}}{a+b}'], null, 'Boys:girls $=3:5$, 40 students → one part $=5$ → 15 boys, 25 girls.', null],
+      ['Proportions: cross-multiply', 'Two equal ratios → multiply across.', ['\\dfrac{a}{b}=\\dfrac{c}{d} \\Rightarrow ad=bc'], null, '3 cm on the map = 50 km. 7.2 cm = ? → $\\frac{3}{50}=\\frac{7.2}{x}$ → $x=120$ km.', 'Keep the same units in the same position (map/real over map/real).'],
+      ['Rates', 'A rate compares two different units: “per”.', ['d=r\\cdot t', '\\text{rate}=\\dfrac{\\text{amount}}{\\text{time}}'], null, '240 km in 3 hours → 80 km per hour.', null],
+      ['⭐ Unit conversion chain', 'Multiply by fractions equal to 1 so the unwanted units cancel.', [], null, '60 miles/hour → feet/second: $60\\cdot\\frac{5280}{1}\\cdot\\frac{1}{3600}=88$ ft/s.', 'Square units square the factor: 1 yd = 3 ft, so 1 yd² = 9 ft². Cube units: 1 yd³ = 27 ft³.'],
+      ['Density', 'Density = amount per space.', ['\\text{density}=\\dfrac{\\text{mass}}{\\text{volume}}', '\\text{population density}=\\dfrac{\\text{people}}{\\text{area}}'], null, '1,200 people on 15 km² → 80 people per km².', null],
+    ] },
+    pct: { ad: 'Percentages', ic: '％', alt: 'Percent of, increase/decrease, percent change, reverse', notlar: [
+      ['Percent = per 100', '$p\\%$ of a number = $\\frac{p}{100}$ times it.', ['p\\%\\ \\text{of}\\ N=\\dfrac{p}{100}\\cdot N'], null, '35% of 80 $=0.35\\cdot80=28$.', null],
+      ['⭐ Increase and decrease = multiply', 'Turn every change into one multiplier.', ['+r\\% \\Rightarrow \\times\\left(1+\\tfrac{r}{100}\\right)', '-r\\% \\Rightarrow \\times\\left(1-\\tfrac{r}{100}\\right)'], null, '+20% → ×1.2; −15% → ×0.85. +20% then −20% → ×1.2×0.8 = ×0.96 (a 4% drop, not 0%).', 'Successive changes multiply; they don’t add.'],
+      ['Percent change', 'Always divide by the OLD value.', ['\\%\\ \\text{change}=\\dfrac{\\text{new}-\\text{old}}{\\text{old}}\\cdot100'], null, '50 → 65: $\\frac{15}{50}=30\\%$ increase.', null],
+      ['Reverse percent (find the original)', 'Divide by the multiplier.', ['\\text{original}=\\dfrac{\\text{new}}{\\text{multiplier}}'], null, 'After 20% off, the price is \\$48 → original $=\\frac{48}{0.8}=60$ dollars.', 'Don’t add 20% to \\$48 (that gives \\$57.60, wrong).'],
+      ['Percent of a percent', '“$p\\%$ of $q\\%$ of $N$” → multiply all.', [], null, '40% of 25% of 200 $=0.4\\cdot0.25\\cdot200=20$.', null],
+    ] },
+    stat1: { ad: 'One-variable data: center & spread', ic: '📊', alt: 'Mean, median, mode, range, standard deviation, box plots', notlar: [
+      ['Center', 'Three ways to describe the middle of the data.', ['\\text{mean}=\\dfrac{\\text{sum}}{\\text{count}}', '\\text{median}=\\text{middle value (sorted)}', '\\text{mode}=\\text{most frequent}'], null, '2, 3, 3, 8, 14: mean $=6$, median $=3$, mode $=3$.', 'Even count → median is the average of the two middle values.'],
+      ['⭐ Outliers', 'An outlier (very far value) pulls the mean a lot, the median barely.', [], null, 'Remove 14 from 2, 3, 3, 8, 14: mean goes 6 → 4, median goes 3 → 3.', 'Right-skewed data (a long tail of big values): mean > median.'],
+      ['Spread', 'Range = max − min. Standard deviation = how far values typically are from the mean.', ['\\text{range}=\\max-\\min', 'IQR=Q_3-Q_1'], null, '{10,10,10} has SD 0; {0,10,20} has a bigger SD.', 'Adding the same number to every value changes the mean, but NOT the SD or range.'],
+      ['Frequency tables', 'Each value counts as many times as its frequency.', ['\\text{mean}=\\dfrac{\\sum(\\text{value}\\times\\text{freq})}{\\sum\\text{freq}}'], null, 'Value 1 (×3), 2 (×5), 3 (×2): mean $=\\frac{3+10+6}{10}=1.9$; median = average of 5th and 6th values $=2$.', null],
+      ['Box plots', 'Five numbers: min, $Q_1$, median, $Q_3$, max. The box is the middle 50%.', [], null, null, null],
+      ['Adding or removing a value', 'Work with the total, not the averages.', ['\\text{new mean}=\\dfrac{\\text{old sum}\\pm x}{n\\pm1}'], null, 'Mean of 4 tests is 80 (sum 320). After a 5th test of 95: $\\frac{415}{5}=83$.', null],
+    ] },
+    stat2: { ad: 'Two-variable data: models & scatterplots', ic: '📉', alt: 'Line of best fit, predictions, correlation, residuals', notlar: [
+      ['Scatterplots and the line of best fit', 'Each dot is one data point. The line of best fit shows the trend; use it to predict.', [], null, 'Best fit $y=2.5x+10$: at $x=8$, predicted $y=30$.', 'A prediction comes from the LINE, not from a dot.'],
+      ['Slope and intercept in context', 'Slope = predicted change in $y$ for each 1-unit increase in $x$. y-intercept = predicted $y$ when $x=0$.', [], null, 'Price $=0.75\\cdot$(weight)$+2$: each extra gram adds about \\$0.75.', 'Say “predicted” or “estimated”: it’s a model, not exact.'],
+      ['Correlation', 'Positive: goes up together. Negative: one up, the other down. Strong: dots close to the line.', [], null, null, null],
+      ['Linear or exponential model?', 'Straight trend → linear. Curving up faster and faster (or a constant % change) → exponential.', [], null, null, null],
+      ['Residual', 'How far the real point is from the line.', ['\\text{residual}=\\text{actual}-\\text{predicted}'], null, 'Actual 34, predicted 30 → residual 4 (point is above the line).', null],
+      ['Desmos regression', 'Put the data in a table ($x_1$, $y_1$), then type $y_1\\sim mx_1+b$ (or $y_1\\sim ab^{x_1}$) to get the model.', [], null, null, null],
+    ] },
+    prob: { ad: 'Probability & conditional probability', ic: '🎲', alt: 'Favorable over total, two-way tables, “given that”', notlar: [
+      ['Basic probability', 'Probability = favorable outcomes ÷ all outcomes. Always between 0 and 1.', ['P(A)=\\dfrac{\\text{favorable}}{\\text{total}}', 'P(\\text{not }A)=1-P(A)'], null, '3 red, 5 blue marbles: $P(\\text{red})=\\frac38$.', null],
+      ['⭐ Two-way tables and “given that”', '“Given that…” shrinks the total to that one row or column.', ['P(A\\mid B)=\\dfrac{\\text{both A and B}}{\\text{total of B}}'], null, 'Of 40 juniors, 12 play chess. P(chess | junior) $=\\frac{12}{40}=0.3$.', 'Pick the right denominator: the group named after “given that” or “of the…”.'],
+      ['Independent events', 'If one event doesn’t affect the other, multiply.', ['P(A\\text{ and }B)=P(A)\\cdot P(B)'], null, 'Two coin flips both heads: $\\frac12\\cdot\\frac12=\\frac14$.', null],
+      ['Expected count', 'Multiply the probability by how many times it’s repeated.', ['\\text{expected}=P\\cdot n'], null, 'P(defect) $=0.02$, 500 items → about 10 defects.', null],
+    ] },
+    inf: { ad: 'Sample statistics & margin of error', ic: '🎯', alt: 'Estimates, intervals, sample size', notlar: [
+      ['From sample to population', 'A random sample lets you estimate the whole population it was taken from.', ['\\text{estimate}=\\text{sample \\%}\\times\\text{population size}'], null, '30% of a random sample likes tea; town has 8,000 people → about 2,400.', 'Only generalize to the population that was sampled (e.g. students of THAT school).'],
+      ['⭐ Margin of error = a plausible range', 'Estimate ± margin gives the range where the true value probably is.', ['\\text{interval}=\\text{estimate}\\pm\\text{margin}'], null, '52% ± 3% → the true value is plausibly between 49% and 55%.', 'A value inside the interval is plausible, NOT certain. If two intervals overlap, you can’t say one group is really bigger.'],
+      ['Sample size', 'Bigger random sample → smaller margin of error (more precise).', [], null, null, null],
+    ] },
+    stud: { ad: 'Evaluating statistical claims', ic: '🔬', alt: 'Random sampling vs random assignment, bias', notlar: [
+      ['⭐ The two key questions', 'Random sampling → you can generalize to the population. Random assignment (in an experiment) → you can say “causes”.', [], null, null, null, ['Was the sample chosen at random from a population? → conclusions apply to that population.', 'Were subjects randomly assigned to groups (treatment vs control)? → cause-and-effect is OK.', 'No random assignment (observational study)? → only “is associated with”.']],
+      ['Observational study vs experiment', 'Observational: just watch and record. Experiment: the researcher assigns the treatment.', [], null, 'Surveying people about coffee and sleep is observational → coffee is “associated with” less sleep, not “causes”.', null],
+      ['Bias', 'A sample that isn’t representative gives biased results.', [], null, 'Asking only people at a gym about exercise habits; online polls where people choose to answer (voluntary response).', 'A bigger sample doesn’t fix a biased sample.'],
+    ] },
+  } },
+  bgeo: { en: 1, ad: 'Geometry & Trig basics', ic: '🟧', alt: 'Angles, triangles, trig, area & volume, circles', konular: {
+    lat: { ad: 'Lines, angles & triangles', ic: '📐', alt: 'Straight angle, parallel lines, triangle rules, similarity', notlar: [
+      ['Angle facts', 'A straight line is $180°$. Vertical (opposite) angles are equal. Around a point is $360°$.', ['\\text{line}=180^\\circ,\\ \\text{point}=360^\\circ'], 'tri180', null, null],
+      ['Parallel lines + transversal', 'All acute angles are equal; all obtuse angles are equal; acute + obtuse = $180°$.', [], 'parallel', 'One angle is $65°$ → the others are $65°$ or $115°$.', null],
+      ['Triangle rules', 'Angles add to $180°$. Exterior angle = sum of the two far inside angles. Equal sides ↔ equal angles (isosceles).', ['a+b+c=180^\\circ', '\\text{exterior}=a+b'], null, null, 'Longest side is across from the biggest angle.'],
+      ['⭐ Similar triangles', 'Same angles, sizes scaled by $k$. Two equal angles (AA) is enough. A line parallel to one side makes a similar small triangle.', ['\\text{sides}\\times k,\\ \\text{area}\\times k^2'], 'similar', null, 'Match vertices in order: $\\triangle ABC\\sim\\triangle DEF$ means $A↔D$, $B↔E$, $C↔F$.'],
+      ['Polygons', 'Interior angles of an $n$-sided polygon add to $(n-2)\\cdot180°$.', ['(n-2)\\cdot180^\\circ'], null, 'Hexagon: $4\\cdot180=720°$.', null],
+    ] },
+    rtt: { ad: 'Right triangles & trigonometry', ic: '📐', alt: 'Pythagoras, special triangles, SOH-CAH-TOA, radians', notlar: [
+      ['Pythagorean theorem', 'Only in right triangles; $c$ is the hypotenuse (longest side).', ['a^2+b^2=c^2', '3\\text{-}4\\text{-}5,\\ 5\\text{-}12\\text{-}13,\\ 8\\text{-}15\\text{-}17,\\ 7\\text{-}24\\text{-}25'], null, null, 'Multiples work too: 6-8-10, 15-20-25.'],
+      ['Special right triangles', 'On the reference sheet.', ['30\\text{-}60\\text{-}90:\\ x,\\ x\\sqrt3,\\ 2x', '45\\text{-}45\\text{-}90:\\ x,\\ x,\\ x\\sqrt2'], null, null, null],
+      ['⭐ SOH-CAH-TOA', 'For an acute angle in a right triangle.', ['\\sin=\\dfrac{\\text{opp}}{\\text{hyp}},\\ \\cos=\\dfrac{\\text{adj}}{\\text{hyp}},\\ \\tan=\\dfrac{\\text{opp}}{\\text{adj}}'], 'trig', 'If $\\tan A=\\frac{5}{12}$: opp 5, adj 12, hyp 13 → $\\sin A=\\frac{5}{13}$.', null],
+      ['⭐ Complementary angles', 'The two acute angles add to $90°$, so the sine of one equals the cosine of the other.', ['\\sin x=\\cos(90^\\circ-x)', '\\sin A=\\cos B \\Rightarrow A+B=90^\\circ'], null, null, null],
+      ['Radians', '$180°=\\pi$ radians.', ['\\text{degrees}\\cdot\\dfrac{\\pi}{180}=\\text{radians}'], null, '$60°=\\frac{\\pi}{3}$.', null],
+    ] },
+    av: { ad: 'Area & volume', ic: '🧊', alt: 'Formulas, surface area, scaling', notlar: [
+      ['Area formulas', 'All on the reference sheet.', ['\\text{rectangle: } \\ell w,\\quad \\text{triangle: } \\tfrac12bh,\\quad \\text{circle: } \\pi r^2'], null, null, 'Triangle height must be perpendicular to the base.'],
+      ['Volume formulas', 'Prism/cylinder = base area × height. Cone/pyramid = one third of that.', ['V_{\\text{prism}}=\\ell wh,\\ V_{\\text{cyl}}=\\pi r^2h', 'V_{\\text{cone}}=\\tfrac13\\pi r^2h,\\ V_{\\text{sphere}}=\\tfrac43\\pi r^3'], null, null, null],
+      ['Surface area', 'Add the areas of all faces. NOT on the reference sheet.', ['S_{\\text{cube}}=6s^2', 'S_{\\text{box}}=2(\\ell w+\\ell h+wh)'], null, 'Box 4×5×6: $2(20+24+30)=148$.', null],
+      ['⭐ Scaling', 'Lengths ×$k$ → areas ×$k^2$ → volumes ×$k^3$.', [], null, 'Similar solids with volume ratio 27 → length ratio 3.', null],
+      ['Shaded areas', 'Big area minus the empty parts.', [], 'shade', null, null],
+    ] },
+    cir: { ad: 'Circles', ic: '⭕', alt: 'Arc, sector, angles, tangent, equation', notlar: [
+      ['Basics', 'Diameter = 2 × radius.', ['C=2\\pi r,\\quad A=\\pi r^2'], 'basic', null, null],
+      ['⭐ Arc and sector: one ratio', 'Arc = part of the circumference; sector = part of the area. Same fraction for both.', ['\\dfrac{\\theta}{360}=\\dfrac{\\text{arc}}{2\\pi r}=\\dfrac{\\text{sector}}{\\pi r^2}', '\\text{radians: arc}=r\\theta'], 'pizza', '$r=6$, $\\theta=60°$: arc $=12\\pi\\cdot\\frac16=2\\pi$, sector $=36\\pi\\cdot\\frac16=6\\pi$.', null],
+      ['Angles in circles', 'Inscribed angle = half the central angle. An angle that “sees” a diameter is $90°$.', [], 'inscribed', null, null],
+      ['Tangent lines', 'A tangent is perpendicular to the radius at the touching point → right triangle → Pythagoras.', [], 'tangent', null, null],
+      ['⭐ Circle equation', 'Center $(h,k)$, radius $r$. If it’s expanded, complete the square.', ['(x-h)^2+(y-k)^2=r^2'], 'eq', '$x^2+6x+y^2-4y=12$ → $(x+3)^2+(y-2)^2=25$ → center $(-3,2)$, $r=5$.', 'The right side is $r^2$, and the signs inside the brackets are opposite to the center.'],
+    ] },
+  } },
   voc: { ad: 'Matematik kelimeleri', ic: '🔤', alt: 'Sorularda geçen İngilizce terimler; ⭐ = az bilinen', konular: {
     vgeo: { ad: 'Geometri kelimeleri', ic: '📐', alt: 'diagonal, chord, altitude, inscribed…', kelime: [
       ['diagonal', 'köşegen', 'Çokgende komşu olmayan iki köşeyi birleştiren doğru', 1], ['vertex / vertices', 'köşe / köşeler', 'Parabolde vertex = tepe noktası', 1], ['perimeter', 'çevre (çokgen)', 'Kenarların toplamı'], ['circumference', 'çemberin çevresi', '$2\\pi r$', 1], ['radius / radii', 'yarıçap / yarıçaplar', ''], ['diameter', 'çap', '$2r$'], ['chord', 'kiriş', 'Çemberin iki noktasını birleştiren doğru parçası', 1], ['arc', 'yay', 'Arc measure = derece, arc length = uzunluk', 1], ['sector', 'daire dilimi', 'Pizza dilimi', 1], ['tangent', 'teğet (doğru) / tanjant (tan)', 'Çembere tek noktada değen doğru', 1], ['inscribed', 'içine çizilmiş', 'Inscribed in a circle = köşeleri çemberin üstünde', 1], ['circumscribed', 'dışına çizilmiş', 'Şeklin etrafını saran', 1], ['concentric', 'eş merkezli', 'Aynı merkezli çemberler', 1], ['equilateral', 'eşkenar', 'Bütün kenarlar eşit'], ['isosceles', 'ikizkenar', 'İki kenar eşit', 1], ['scalene', 'çeşitkenar', 'Hiç kenar eşit değil', 1], ['hypotenuse', 'hipotenüs', 'Dik açının karşısındaki en uzun kenar'], ['leg', 'dik kenar', 'Dik üçgende hipotenüs olmayan kenar', 1], ['altitude', 'yükseklik', 'Köşeden karşı kenara inen dik', 1], ['median (üçgen)', 'kenarortay', 'Köşeyi karşı kenarın orta noktasına bağlar', 1], ['bisector', 'açıortay / ortalayan', 'Angle bisector = açıyı ikiye bölen', 1], ['perpendicular', 'dik', 'Aralarında $90^\\circ$ var; eğimlerin çarpımı $-1$', 1], ['parallel', 'paralel', 'Eğimler eşit'], ['transversal', 'kesen', 'Paralel doğruları kesen doğru', 1], ['supplementary', 'bütünler', 'Toplamı $180^\\circ$', 1], ['complementary', 'tümler', 'Toplamı $90^\\circ$', 1], ['vertical angles', 'ters açılar', 'Karşılıklı açılar, eşit', 1], ['corresponding', 'karşılık gelen / yöndeş', 'Benzer şekillerde eşleşen kenar/açı', 1], ['alternate interior angles', 'iç ters açılar', 'Paralellerde eşit', 1], ['acute / obtuse', 'dar / geniş açı', '$<90^\\circ$ / $>90^\\circ$'], ['congruent', 'eş (≅)', 'Aynı şekil, aynı boyut', 1], ['similar', 'benzer (∼)', 'Aynı şekil, farklı boyut'], ['scale factor', 'benzerlik oranı', 'Kenar $k$ → alan $k^2$, hacim $k^3$', 1], ['quadrilateral', 'dörtgen', '', 1], ['trapezoid', 'yamuk', 'Bir çift kenar paralel', 1], ['rhombus', 'eşkenar dörtgen', 'Dört kenar eşit', 1], ['parallelogram', 'paralelkenar', ''], ['polygon / regular polygon', 'çokgen / düzgün çokgen', 'Regular = bütün kenar ve açılar eşit', 1], ['pentagon / hexagon / octagon', 'beşgen / altıgen / sekizgen', '', 1], ['convex', 'dışbükey', 'İçe göçük köşesi yok', 1], ['right rectangular prism', 'dik dikdörtgenler prizması', 'Kutu', 1], ['right circular cylinder / cone', 'dik silindir / koni', ''], ['sphere / hemisphere', 'küre / yarım küre', '', 1], ['lateral face / lateral area', 'yan yüz / yanal alan', 'Tabanlar hariç yüzler', 1], ['slant height', 'eğik yükseklik', 'Koni/piramitte yüz boyunca yükseklik', 1], ['edge / face', 'ayrıt (kenar) / yüz', '', 1], ['surface area', 'yüzey alanı', 'Bütün yüzlerin toplamı'], ['midpoint', 'orta nokta', '$\\left(\\frac{x_1+x_2}{2},\\frac{y_1+y_2}{2}\\right)$'], ['segment / ray / line', 'doğru parçası / ışın / doğru', '', 1], ['collinear', 'doğrusal (aynı doğru üzerinde)', '', 1], ['origin', 'orijin, $(0,0)$', ''], ['quadrant', 'bölge (çeyrek düzlem)', 'I, II, III, IV', 1], ['unit circle', 'birim çember', 'Merkez orijin, $r=1$', 1], ['counterclockwise / clockwise', 'saat yönünün tersi / saat yönü', 'Açılar counterclockwise ölçülür', 1], ['radian', 'radyan', '$180^\\circ=\\pi$'], ['interior / exterior', 'iç / dış', 'Interior of a circle = çemberin içi'], ['translation / dilation', 'öteleme (kaydırma) / büyütme-küçültme', '', 1], ['not drawn to scale', 'ölçekli çizilmemiş', 'Şekle bakıp ölçme, hesapla', 1] ] },
@@ -9961,14 +10110,15 @@ const KONU = {
 };
 const KNS = { path: [] };
 try { KNS.path = JSON.parse(sessionStorage.getItem('kn_path') || '[]'); } catch {}
-const knT = t => kxText(t).replace(/&lt;(\/?)b&gt;/g, '<$1b>');
+const knT = t => kxText(String(t).replace(/\\\$/g, '\u0001')).replace(/\u0001/g, '$').replace(/&lt;(\/?)b&gt;/g, '<$1b>');
 function knHtml() {
   const [c, t] = KNS.path, cat = c && KONU[c], top = cat && t && cat.konular[t];
   const crumb = `<div class="kn-crumb"><button type="button" data-kn="">Konu notları</button>${cat ? ` › <button type="button" data-kn="${c}">${cat.ad}</button>` : ''}${top ? ` › <b>${top.ad}</b>` : ''}</div>`;
-  if (!cat) return `${crumb}<div class="section-sub kn-sub">SAT’ta çıkan genel matematik: konu seç, içine gir.</div><div class="kn-grid">${Object.entries(KONU).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small></button>`).join('')}<div class="kn-card kn-soon"><span class="kn-ic">➕</span><b>İleri matematik, veri</b><small>Yakında; istediğin konuyu söyle, eklenir.</small></div></div>`;
-  if (!top) return `${crumb}<div class="kn-grid">${Object.entries(cat.konular).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${c}/${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small><em>${v.notlar ? v.notlar.length + ' not' : v.kelime.length + ' kelime'}</em></button>`).join('')}</div>`;
+  if (!cat) return `${crumb}<div class="section-sub kn-sub">SAT’ta çıkan genel matematik: konu seç, içine gir.</div><div class="kn-grid">${Object.entries(KONU).sort((a, b) => (!!b[1].en) - (!!a[1].en)).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small></button>`).join('')}<div class="kn-card kn-soon"><span class="kn-ic">➕</span><b>İleri matematik, veri</b><small>Yakında; istediğin konuyu söyle, eklenir.</small></div></div>`;
+  if (!top) return `${crumb}<div class="kn-grid">${Object.entries(cat.konular).map(([k, v]) => `<button type="button" class="kn-card" data-kn="${c}/${k}"><span class="kn-ic">${v.ic}</span><b>${v.ad}</b><small>${v.alt}</small><em>${v.notlar ? v.notlar.length + (cat.en ? ' notes' : ' not') : v.kelime.length + ' kelime'}</em></button>`).join('')}</div>`;
   if (top.kelime) return `${crumb}<input type="search" class="kn-q" placeholder="Kelime ara (İngilizce ya da Türkçe)…"><table class="kn-voc"><thead><tr><th>İngilizce</th><th>Türkçe</th><th>Not</th></tr></thead><tbody>${top.kelime.map(([en, tr, nt, star]) => `<tr data-s="${escHtml((en + ' ' + tr + ' ' + nt).toLocaleLowerCase('tr'))}"><td><b>${star ? '⭐ ' : ''}${knT(en)}</b></td><td>${knT(tr)}</td><td>${knT(nt)}</td></tr>`).join('')}</tbody></table>`;
-  return `${crumb}<div class="kn-notes">${top.notlar.map(([ad, txt, fs, svg, ex, trap, adim]) => `<section class="kn-note"><div class="kn-body"><h3>${ad}</h3><p>${knT(txt)}</p>${fs.length ? `<div class="kn-fs">${fs.map(f => `<div class="kn-f">${mkx(f, true)}</div>`).join('')}</div>` : ''}${adim ? `<div class="kn-steps"><b>Neler olur / ne yaparsın:</b><ol>${adim.map(a => `<li>${knT(a)}</li>`).join('')}</ol></div>` : ''}${ex ? [].concat(ex).map((e, i, arr) => `<div class="kn-ex"><b>Örnek${arr.length > 1 ? ' ' + (i + 1) : ''}:</b> ${knT(e)}</div>`).join('') : ''}${trap ? `<div class="kn-trap"><b>Dikkat:</b> ${knT(trap)}</div>` : ''}</div>${svg && KN_SVG[svg] ? `<div class="kn-pic">${KN_SVG[svg]}</div>` : ''}</section>`).join('')}</div>`;
+  const EN = !!cat.en; const LB = EN ? { st: 'How to solve:', ex: 'Example', tr: 'Watch out:' } : { st: 'Neler olur / ne yaparsın:', ex: 'Örnek', tr: 'Dikkat:' };
+  return `${crumb}<div class="kn-notes">${top.notlar.map(([ad, txt, fs, svg, ex, trap, adim]) => `<section class="kn-note"><div class="kn-body"><h3>${ad}</h3><p>${knT(txt)}</p>${fs.length ? `<div class="kn-fs">${fs.map(f => `<div class="kn-f">${mkx(f, true)}</div>`).join('')}</div>` : ''}${adim ? `<div class="kn-steps"><b>${LB.st}</b><ol>${adim.map(a => `<li>${knT(a)}</li>`).join('')}</ol></div>` : ''}${ex ? [].concat(ex).map((e, i, arr) => `<div class="kn-ex"><b>${LB.ex}${arr.length > 1 ? ' ' + (i + 1) : ''}:</b> ${knT(e)}</div>`).join('') : ''}${trap ? `<div class="kn-trap"><b>${LB.tr}</b> ${knT(trap)}</div>` : ''}</div>${svg && KN_SVG[svg] ? `<div class="kn-pic">${KN_SVG[svg]}</div>` : ''}</section>`).join('')}</div>`;
 }
 (function () {
   const tab = document.createElement('button'); tab.className = 'ttab'; tab.dataset.view = 'konu'; tab.textContent = 'Konu notları';
@@ -10084,10 +10234,28 @@ function spHtml(t) {
     try {
       if (!q) return h;
       if (q.sp) { const m = h.match(new RegExp('<div class="rationale[^"]*" id="rationale-' + q.id + '">\\s*(<div class="rat-head">[\\s\\S]*?</div>|<strong>💡 Açıklama</strong>)')); if (m) h = h.replace(m[0], m[0] + spHtml(q.sp) + '<details class="simp-off"><summary>Official explanation (College Board)</summary>') .replace(new RegExp('(id="rationale-' + q.id + '">[\\s\\S]*?)(</div>\\s*<div class="q-actions">)'), '$1</details>$2'); }
-      if (q.ds) { const on = q.ds === '+'; const tag = `<div class="q-dhint"><span class="q-dh ${on ? 'yes' : 'no'}">${on ? '📈 Desmos önerilir' : '✍️ Desmos önerilmez'}</span></div>`; let k = h.lastIndexOf('</article>'); if (k < 0) { k = h.trimEnd().lastIndexOf('</div>'); } if (k > 0) h = h.slice(0, k) + tag + h.slice(k); }
+      const lp = KN_SKILL[q.skill];
+      if (q.ds || lp) { const on = q.ds === '+'; const tag = `<div class="q-dhint">${lp ? `<button type="button" class="q-les" data-kn-go="${lp}">📘 Lesson: ${escHtml(KONU[lp.split('/')[0]].konular[lp.split('/')[1]].ad)}</button>` : ''}${q.ds ? `<span class="q-dh ${on ? 'yes' : 'no'}">${on ? '📈 Desmos önerilir' : '✍️ Desmos önerilmez'}</span>` : ''}</div>`; let k = h.lastIndexOf('</article>'); if (k < 0) { k = h.trimEnd().lastIndexOf('</div>'); } if (k > 0) h = h.slice(0, k) + tag + h.slice(k); }
     } catch (e) { console.error(e); }
     return h;
   };
 })();
+
+// ══ 📘 skill → basic lesson link on every question ══
+const KN_SKILL = {
+  'Linear equations in one variable': 'balg/l1', 'Linear equations in two variables': 'balg/l2', 'Linear functions': 'balg/l3',
+  'Systems of two linear equations in two variables': 'balg/sys', 'Linear inequalities in one or two variables': 'balg/ineq',
+  'Equivalent expressions': 'badv/eqx', 'Nonlinear equations in one variable and systems of equations in two variables': 'badv/neq', 'Nonlinear functions': 'badv/nfn',
+  'Ratios, rates, propor tional relationships, and units': 'bpsd/rat', 'Ratios, rates, proportional relationships, and units': 'bpsd/rat', 'Percentages': 'bpsd/pct',
+  'One-variable data: Distributions and measures of center and spread': 'bpsd/stat1', 'Two-variable data: Models and scatterplots': 'bpsd/stat2',
+  'Probability and conditional probability': 'bpsd/prob', 'Inference from sample statistics and margin of error': 'bpsd/inf',
+  'Evaluating statistical claims: Observational studies and experiments': 'bpsd/stud',
+  'Lines, angles, and triangles': 'bgeo/lat', 'Right triangles and trigonometry': 'bgeo/rtt', 'Area and volume': 'bgeo/av', 'Circles': 'bgeo/cir',
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-kn-go]'); if (!b) return;
+  KNS.path = b.dataset.knGo.split('/'); try { sessionStorage.setItem('kn_path', JSON.stringify(KNS.path)); } catch {}
+  switchView('konu'); window.scrollTo({ top: 0 });
+});
 </script>
 </body></html>
