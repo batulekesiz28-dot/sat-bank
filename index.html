@@ -1906,6 +1906,7 @@ body.ts-full #view-tset .focus-wrap .q-card{min-height:calc(100vh - 170px)}
       <div class="vocab-actions">
         <button class="topbar-action-btn" id="trOpenBtn">↔ Transition words</button>
         <button class="topbar-action-btn" id="rtOpenBtn">🌱 Roots &amp; affixes</button>
+        <button class="topbar-action-btn" id="trHideBtn" title="Türkçe anlamları kapat; görmek istediğine dokun, tek tek açılsın">🙈 Türkçeyi gizle</button>
         <button class="topbar-action-btn vs-open" id="vsOpenBtn" title="10 kelime, 1–2 dakika: her kelime tek soru; bilemediğin sonda tekrar gelir, sonraki günlerde aralıklı tekrar">⚡ Hızlı kelime <span class="vs-badge" id="vsBadge" hidden></span></button>
         <button class="topbar-action-btn" id="popExBtn" title="Örnek cümlesi uzun / bilimsel kalan kelimelere AI kısa, anime-futbol-dizi-oyun cümlesi yazsın">✨ Popüler örnek <span class="vs-badge" id="popExBadge" hidden></span></button>
         <button class="topbar-action-btn vq-open" id="vqOpenBtn">🧩 Bilmece</button>
@@ -8927,5 +8928,38 @@ Sadece JSON: {"items":[{"w":"kelime","ex":"cümle"}]}` }], { temp: 0.7, timeout:
 
 // Set tab hidden: if the page was left on it, go back to the first section
 try { setTimeout(() => { if (typeof currentView !== 'undefined' && currentView === 'tset' && !document.body.classList.contains('ts-full')) { const b = document.querySelector('.ttab:not(.ttab-set)'); b && b.click(); } }, 0); } catch {}
+</script>
+<style>
+#trHideBtn.on{background:#4f46e5;color:#fff;border-color:#4f46e5}
+.vocab-table.tr-hide td.vc-mean:not(.tr-open){color:transparent!important;cursor:pointer;position:relative;user-select:none;-webkit-user-select:none}
+.vocab-table.tr-hide td.vc-mean:not(.tr-open)::before{content:"👁 göster"!important;position:absolute;inset:6px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--surface2,#eef2ff);color:var(--fg3,#64748b)!important;font-size:12px;font-weight:600;border:1px dashed var(--border2,#cbd5e1)}
+.vocab-table.tr-hide td.vc-mean.tr-open{background:rgba(79,70,229,.07)}
+</style>
+<script>
+(() => {
+  const K = 'sat_vocab_tr_hide'; let on = false; try { on = localStorage.getItem(K) === '1'; } catch {}
+  const open = new Set();
+  const tbl = () => document.querySelector('#view-vocab .vocab-table') || document.querySelector('.vocab-table');
+  const apply = () => {
+    const t = tbl(), b = document.getElementById('trHideBtn'); if (!t || !b) return;
+    t.classList.toggle('tr-hide', on); b.classList.toggle('on', on);
+    b.textContent = on ? '👁 Türkçeyi göster' : '🙈 Türkçeyi gizle';
+    t.querySelectorAll('tr[data-vk]').forEach(tr => { const td = tr.querySelector('td.vc-mean'); if (td) td.classList.toggle('tr-open', open.has(tr.dataset.vk)); });
+  };
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('#trHideBtn'); if (!b) return;
+    on = !on; open.clear(); try { localStorage.setItem(K, on ? '1' : '0'); } catch {} apply();
+  });
+  // a hidden cell: first tap only reveals it (does not start editing)
+  const reveal = e => {
+    if (!on) return; const td = e.target.closest && e.target.closest('.vocab-table td.vc-mean'); if (!td || td.classList.contains('tr-open')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (e.type !== 'click') return;
+    const tr = td.closest('tr[data-vk]'); if (tr) open.add(tr.dataset.vk); td.classList.add('tr-open');
+  };
+  ['pointerdown', 'mousedown', 'click'].forEach(t => document.addEventListener(t, reveal, true));
+  const start = () => { const l = document.getElementById('vocabList'); if (l) new MutationObserver(apply).observe(l, { childList: true }); apply(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
 </script>
 </body></html>
