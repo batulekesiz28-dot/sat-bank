@@ -1517,8 +1517,8 @@ body.ink-on.ink-er .ink-layer{cursor:none}
 .vs-why li{margin:5px 0;line-height:1.45}
 @media (max-width:600px){.vs-card{padding:18px 16px}.vs-word{font-size:32px}.vs-opts{grid-template-columns:1fr}}
 
-.lz-layer{position:fixed;inset:0;width:100vw;height:100vh;z-index:2500;pointer-events:none}
-body.ink-lz .lz-layer{pointer-events:auto;touch-action:none;cursor:crosshair}
+.lz-layer{position:fixed;left:0;top:0;width:100%;height:100%;z-index:2500;pointer-events:none}
+body.ink-lz .lz-layer{pointer-events:auto;touch-action:pan-x pan-y pinch-zoom;cursor:crosshair}
 .ink-tool.ink-lz svg{display:block}
 body.ink-lz .ink-palette{z-index:2600}
 
@@ -7256,6 +7256,7 @@ document.addEventListener('mouseup', e => {
   function redrawQid(qid) { document.querySelectorAll(`canvas.ink-layer[data-qid="${qid}"]`).forEach(redraw); }
   window.__inkApply = (qid, strokes) => { if (strokes && strokes.length) ink[qid] = strokes; else delete ink[qid]; delete redoStack[qid]; delete hist[qid]; saveInk(); try { redrawQid(qid); } catch {} };
 
+  document.body.classList.toggle('ink-palm', palmOn());
   // ── drawing ──
   document.addEventListener('pointerdown', e => {
     if (!ui.tool) return;
@@ -7404,12 +7405,13 @@ document.addEventListener('mouseup', e => {
   // ── laser pen: a screen-wide layer, strokes fade away after the chosen seconds (works on every page) ──
   const lz = document.createElement('canvas'); lz.className = 'lz-layer'; document.body.appendChild(lz);
   const lzS = []; let lzCur = null, lzRaf = 0;
-  const lzSize = () => { const d = Math.min(window.devicePixelRatio || 1, 2); lz.width = innerWidth * d; lz.height = innerHeight * d; lz.dataset.d = d; };
-  lzSize(); window.addEventListener('resize', lzSize);
+  const lzSize = () => { const d = Math.min(window.devicePixelRatio || 1, 2), r = lz.getBoundingClientRect(), W = Math.round(r.width || innerWidth), H = Math.round(r.height || innerHeight); if (lz.width !== W * d || lz.height !== H * d) { lz.width = W * d; lz.height = H * d; } lz.dataset.d = d; lz._r = r; };
+  lzSize(); window.addEventListener('resize', lzSize); if (window.visualViewport) visualViewport.addEventListener('resize', lzSize);
+  lz.addEventListener('touchstart', e => { const t = e.changedTouches && e.changedTouches[0]; if (t && t.touchType === 'stylus') e.preventDefault(); }, { passive: false });
   function lzDraw() {
     lzRaf = 0;
     const ctx = lz.getContext('2d'), d = +lz.dataset.d || 1, now = performance.now(), hold = (ui.lzSec || 2) * 1000, fade = 450;
-    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, lz.width, lz.height); ctx.setTransform(d, 0, 0, d, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, lz.width, lz.height); const lr = lz._r || { left: 0, top: 0 }; ctx.setTransform(d, 0, 0, d, -lr.left * d, -lr.top * d);
     for (let i = lzS.length - 1; i >= 0; i--) { const s = lzS[i]; if (s.end && now - s.end > hold + fade) lzS.splice(i, 1); }
     lzS.forEach(s => {
       const a = s.end ? Math.max(0, Math.min(1, 1 - (now - s.end - hold) / fade)) : 1; if (a <= 0 || s.p.length < 2) return;
@@ -7422,7 +7424,7 @@ document.addEventListener('mouseup', e => {
     if (lzS.length) lzRaf = requestAnimationFrame(lzDraw);
   }
   const lzKick = () => { if (!lzRaf) lzRaf = requestAnimationFrame(lzDraw); };
-  lz.addEventListener('pointerdown', e => { if (ui.tool !== 'lz' || (e.pointerType === 'mouse' && e.button !== 0)) return; e.preventDefault(); lzCur = { p: [e.clientX, e.clientY], sx: window.scrollX, sy: window.scrollY, end: 0, id: e.pointerId }; lzS.push(lzCur); try { lz.setPointerCapture(e.pointerId); } catch {} lzKick(); });
+  lz.addEventListener('pointerdown', e => { if (ui.tool !== 'lz' || e.pointerType === 'touch' || (e.pointerType === 'mouse' && e.button !== 0)) return; e.preventDefault(); lzSize(); lzCur = { p: [e.clientX, e.clientY], sx: window.scrollX, sy: window.scrollY, end: 0, id: e.pointerId }; lzS.push(lzCur); try { lz.setPointerCapture(e.pointerId); } catch {} lzKick(); });
   lz.addEventListener('pointermove', e => { if (!lzCur || e.pointerId !== lzCur.id) return; e.preventDefault(); const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; (evs.length ? evs : [e]).forEach(v => lzCur.p.push(v.clientX + (window.scrollX - lzCur.sx), v.clientY + (window.scrollY - lzCur.sy))); lzKick(); });
   const lzEnd = e => { if (!lzCur || e.pointerId !== lzCur.id) return; lzCur.end = performance.now(); lzCur = null; lzKick(); };
   lz.addEventListener('pointerup', lzEnd); lz.addEventListener('pointercancel', lzEnd);
