@@ -1519,8 +1519,9 @@ body.ink-on.ink-er .ink-layer{cursor:none}
 @media (max-width:600px){.vs-card{padding:18px 16px}.vs-word{font-size:32px}.vs-opts{grid-template-columns:1fr}}
 
 .lz-layer{position:fixed;left:0;top:0;width:100%;height:100%;z-index:2500;pointer-events:none}
-body.ink-lz .lz-layer{pointer-events:auto;touch-action:none;cursor:crosshair}
-body.ink-on.ink-palm .ink-layer{touch-action:none}
+body.ink-lz .lz-layer{pointer-events:auto;touch-action:pan-x pan-y pinch-zoom;cursor:crosshair}
+body.ink-on .ink-layer{touch-action:pan-x pan-y pinch-zoom}
+body.pen-near.ink-on .ink-layer,body.pen-near.ink-lz .lz-layer{touch-action:none}
 .ink-tool.ink-lz svg{display:block}
 body.ink-lz .ink-palette{z-index:2600}
 
@@ -9213,28 +9214,19 @@ body.ds-docked .topbar-inner{flex-wrap:wrap;height:auto;min-height:56px;row-gap:
 })();
 </script>
 <script>
+// pen draws, fingers pan / pinch-zoom natively: a touch that belongs to a pen (pointerdown 'pen' comes first) is stopped from scrolling
 (() => {
-  let f = null;
-  const onLayer = t => t && t.closest && t.closest('canvas.ink-layer, canvas.lz-layer');
-  document.addEventListener('pointerdown', e => {
-    if (e.pointerType !== 'touch' || !onLayer(e.target)) return;
-    if (f) { f = null; return; }                       // second finger: leave it (two-finger tap = undo)
-    f = { id: e.pointerId, x: e.clientX, y: e.clientY, vy: 0, vx: 0, t: e.timeStamp };
-  }, true);
-  document.addEventListener('pointermove', e => {
-    if (!f || e.pointerId !== f.id) return;
-    const dx = e.clientX - f.x, dy = e.clientY - f.y, dt = Math.max(1, e.timeStamp - f.t);
-    window.scrollBy(-dx, -dy);
-    f.vx = -dx / dt; f.vy = -dy / dt; f.x = e.clientX; f.y = e.clientY; f.t = e.timeStamp;
-  }, true);
-  const end = e => {
-    if (!f || e.pointerId !== f.id) return;
-    let vx = f.vx, vy = f.vy, last = performance.now(); f = null;
-    if (Math.abs(vy) < 0.25 && Math.abs(vx) < 0.25) return;
-    const step = now => { const dt = now - last; last = now; window.scrollBy(vx * dt, vy * dt); vx *= 0.94; vy *= 0.94; if (Math.abs(vy) > 0.03 || Math.abs(vx) > 0.03) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
-  };
-  document.addEventListener('pointerup', end, true); document.addEventListener('pointercancel', end, true);
+  let penT = 0;
+  window.addEventListener('pointerdown', e => { if (e.pointerType === 'pen') penT = Date.now(); }, true);
+  // S Pen / Apple Pencil hovering near the screen: lock the layers for drawing before the tip touches
+  let nearT = 0;
+  const near = e => { if (e.pointerType !== 'pen') return; document.body.classList.add('pen-near'); clearTimeout(nearT); nearT = setTimeout(() => document.body.classList.remove('pen-near'), 1500); };
+  ['pointerover', 'pointermove', 'pointerdown', 'pointerup'].forEach(t => window.addEventListener(t, near, true));
+  window.addEventListener('touchstart', e => {
+    const t = e.changedTouches && e.changedTouches[0], tg = e.target;
+    if (!tg || !tg.closest || !tg.closest('canvas.ink-layer, canvas.lz-layer')) return;
+    if ((t && t.touchType === 'stylus') || Date.now() - penT < 400) e.preventDefault();
+  }, { passive: false, capture: true });
 })();
 
 // ══════════════════════════════════════════════════════════════════════
