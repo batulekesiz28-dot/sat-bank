@@ -1926,7 +1926,7 @@ body.ts-full #view-tset .focus-wrap .q-card{min-height:calc(100vh - 170px)}
     <div class="vocab-filter">
       <input id="vocabSearch" class="filter-select" type="search" placeholder="Kelime veya anlam ara">
       <label class="vocab-check"><input type="checkbox" id="vocabOnlyEmpty"> Anlamı boş olanlar</label>
-      <select id="vocabSort" class="filter-select"><option value="new">En yeni üstte</option><option value="az">A'dan Z'ye</option></select>
+      <select id="vocabSort" class="filter-select"><option value="new">En yeni üstte</option><option value="az">A'dan Z'ye</option><option value="root">🌱 Köklerine göre</option></select>
       <span class="stat"><strong id="vocabCount">0</strong> kelime</span>
     </div>
     <div class="vocab-table-wrap">
@@ -7701,13 +7701,14 @@ document.addEventListener('mouseup', e => {
     const sort = document.getElementById('vocabSort').value;
     let list = words.filter(w => (!q || (w.word + ' ' + w.meaning + ' ' + w.def + ' ' + w.hint + ' ' + w.example).toLowerCase().includes(q)) && (!onlyEmpty || !w.meaning.trim()));
     list = sort === 'az' ? list.slice().sort((a, b) => a.word.localeCompare(b.word, 'en', { sensitivity: 'base' })) : list.slice().sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+    const groups = sort === 'root' ? window.__vocabGroups(list) : null;
     document.getElementById('vocabCount').textContent = words.length;
     if (!list.length) {
       host.innerHTML = `<tr><td colspan="7" class="vocab-empty">${words.length ? 'Aramana uyan kelime yok.' : 'Henüz kelime yok. Sorudaki bir kelimeye 3 kez tıkla ya da Notion\'dan içe aktar.'}</td></tr>`;
       return;
     }
     const ce = 'contenteditable="plaintext-only" spellcheck="false"';
-    host.innerHTML = list.map(w => `<tr data-vk="${escHtml(w.key)}">
+    const row = w => `<tr data-vk="${escHtml(w.key)}">
       <td class="vc-word"><span ${ce} data-vf="word">${escHtml(w.word)}</span></td>
       <td class="vc-mean${w.meaning.trim() ? '' : ' is-empty'}" ${ce} data-vf="meaning" data-ph="Türkçesini yaz">${escHtml(w.meaning)}</td>
       <td class="vc-def" ${ce} data-vf="def">${escHtml(w.def)}</td>
@@ -7715,7 +7716,10 @@ document.addEventListener('mouseup', e => {
       <td class="vc-ex" ${ce} data-vf="example">${escHtml(w.example)}</td>
       <td class="vc-date">${w.addedAt ? new Date(w.addedAt).toLocaleDateString('tr-TR') : ''}</td>
       <td class="vc-del"><button class="vocab-remove" data-vocab-remove="${escHtml(w.key)}" title="Kelimeyi sil" aria-label="Sil">${ICON.x}</button></td>
-    </tr>`).join('');
+    </tr>`;
+    host.innerHTML = groups
+      ? groups.map(g => `<tr class="vc-grp vc-grp-${g.kind}"><td colspan="7"><span class="vc-gi">${g.kind === 'root' ? '🌱' : g.kind === 'pre' ? '🔤' : g.kind === 'theme' ? '💡' : '📄'}</span><b>${escHtml(g.label)}</b>${g.mean ? `<span class="vc-gm">${escHtml(g.mean)}</span>` : ''}<span class="vc-gc">${g.words.length}</span></td></tr>` + g.words.map(row).join('')).join('')
+      : list.map(row).join('');
   }
   window.renderVocab = render;
   window.__vocabApply = list => {
@@ -8977,6 +8981,40 @@ try { setTimeout(() => { if (typeof currentView !== 'undefined' && currentView =
     if (!tg || !tg.closest || !tg.closest('canvas.ink-layer, canvas.lz-layer')) return;
     if ((t && t.touchType === 'stylus') || Date.now() - penT < 400) e.preventDefault();
   }, { passive: false, capture: true });
+})();
+</script>
+
+<style>
+.vocab-table tr.vc-grp td{background:var(--surface2,#f1f5f9);padding:9px 12px;font-size:13.5px;border-top:2px solid var(--border2,#cbd5e1);position:sticky;top:0;z-index:1}
+.vc-grp .vc-gi{margin-right:6px}.vc-grp b{font-weight:700;letter-spacing:.01em}
+.vc-grp .vc-gm{margin-left:10px;color:var(--fg3,#64748b);font-size:12.5px}
+.vc-grp .vc-gc{float:right;font-size:11.5px;color:var(--fg3,#64748b);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:999px;padding:1px 8px}
+.vc-grp-theme td{background:rgba(245,158,11,.10)!important}.vc-grp-root td{background:rgba(22,163,74,.09)!important}.vc-grp-pre td{background:rgba(79,70,229,.08)!important}
+</style>
+<script>
+(() => {
+  const ROOTS = [["spec / spic", "bakmak — look", "spec|spic"], ["vid / vis", "görmek — see", "^evid|^vis|provid|invis"], ["cred", "inanmak — believe", "cred"], ["cede / ceed / cess", "gitmek, bırakmak — go, yield", "cede|ceed|cess"], ["voc / vok", "ses, çağırmak — voice, call", "voc|vok"], ["plic / plex", "katlamak — fold", "plic|plex"], ["sequ / secu", "takip etmek — follow", "sequ|secu"], ["ten / tain", "tutmak — hold", "tain|tenab|tenac"], ["tenu", "ince — thin", "tenu"], ["tend / tens", "germek, uzanmak — stretch", "tend|tens|tentio"], ["duc / duct", "götürmek — lead", "duc"], ["ject", "atmak — throw", "ject"], ["fer", "taşımak — carry", "fer(?!v)"], ["pon / pos", "koymak — put, place", "pon|pos(?!s)"], ["cap / cept / cip", "almak, tutmak — take", "cept|capac|ancipat"], ["sens / sent", "hissetmek — feel", "^sens|nsens|^senti"], ["nov", "yeni — new", "nov"], ["gen", "doğmak, tür — birth, kind", "gene|gend|genit|genous"], ["path", "his, acı — feeling", "path"], ["tempor", "zaman — time", "tempor"], ["scrib / script", "yazmak — write", "scrib|script"], ["vert / vers / verg", "dönmek — turn", "vert|vers|verg"], ["jug / junct / juxta", "birleştirmek — join", "jug|junct|juxta"], ["fac / fic / fect", "yapmak — make, do", "fic|fect|fact(?!i)"], ["bene / bon", "iyi — good", "^bene|^beni|^bon"], ["mal", "kötü — bad", "^mal"], ["viv / vit / via", "yaşam, yol — life, way", "^viv|^vita|^via|viab"], ["ver", "doğru — true", "^ver(i|a)"], ["flu / flux", "akmak — flow", "flu"], ["dic / dict", "söylemek — say", "dict|^dic"], ["mit / miss", "göndermek — send", "miss|emit|omit|submit|admit|permit"], ["struct", "kurmak — build", "struct"], ["form", "şekil — shape", "form"], ["pend / pens", "asmak, tartmak — hang, weigh", "pend|pens"], ["cur / curs", "koşmak — run", "curs|curr"], ["tract", "çekmek — pull", "tract"], ["cert / cern / cris", "ayırmak, karar — sift, decide", "cern|crim|cert|cris"], ["equi / equ", "eşit — equal", "^equ|adequ|iniqu"], ["homo / hetero", "aynı / farklı — same / other", "^homo|^hetero"], ["anim / ambi", "iki yönlü — both", "^ambi"], ["pli / ple", "doldurmak — fill", "plen|plet|plem|plete"], ["pug / pugn", "dövüşmek — fight", "pug"], ["grav / griev", "ağır — heavy", "grav|griev"], ["cogn / gnos", "bilmek — know", "cogn|gnos"], ["err", "dolaşmak, hata — wander", "^err"], ["sci", "bilmek — know", "scien|scio"], ["loqu / locu", "konuşmak — speak", "loqu|locu"], ["chron", "zaman — time", "chron"], ["graph / gram", "yazmak, çizmek — write, draw", "graph|gram"]], PREFIX = [["dis- / dif-", "değil, ayrı — not, apart", "^dis|^dif"], ["un-", "değil — not", "^un"], ["in- / im- / il- / ir-", "değil (veya içine) — not / into", "^in|^im|^il|^ir"], ["sub- / sup-", "altında — under", "^sub|^sup(?!er)"], ["super- / sur-", "üstünde, fazla — over", "^super|^sur"], ["trans-", "öte, karşı — across", "^trans"], ["inter-", "arasında — between", "^inter"], ["circum-", "etrafında — around", "^circum"], ["counter- / contra-", "karşı — against", "^counter|^contra"], ["con- / com- / col- / co-", "birlikte — together", "^con|^com|^col|^co"], ["pre- / ante-", "önce — before", "^pre|^ante"], ["pro-", "ileri, lehine — forward, for", "^pro"], ["re-", "geri, tekrar — back, again", "^re"], ["ex- / e-", "dışarı — out", "^ex|^e[lmvn]"], ["de-", "aşağı, uzak — down, away", "^de"], ["mis-", "yanlış — wrong", "^mis"], ["multi- / uni-", "çok / tek — many / one", "^multi|^uni"], ["ab- / a-", "uzak, değil — away, not", "^ab|^a(?=[pc])"]], THEMES = [["Desteklemek, güçlendirmek — support, strengthen", "buttress corroborat substantiat bolster augment reinforc validat vindicat attest endors testament foster amplif intensif magnif accelerat expedit underscor advoca proponent emphas"], ["Şüphe, inanmamak — doubt", "skeptic cynic dubious incredul implausib spurious untenab tenuous"], ["Eleştirmek, reddetmek — criticize, reject", "refut disparag denigrat denounc lambast impugn malign debunk repudiat dismiss rescind affront"], ["Açık, net — clear, obvious", "lucid evident explicit transparent unambiguous conspicuous palpab manifest perceptib vivid irrefutab decisive discern"], ["Belirsiz, gizli — unclear, hidden", "ambiguous nebulous obscur vague opaque equivoc ambivalent arcane esoteric enigma indeciph inexplicab explicab intangib imperceptib implicit elusive surreptitious"], ["İyi, sakin, ılımlı — kind, calm, mild", "benevol benign tranquil unassuming modest innocuous innocous amenab neutral impartial"], ["Saygı, ün — respect, fame", "reveren prestig esteem acclaim emulat distinction"], ["Zor, aşılamaz — hard, too much", "arduous insuperab insurmount prohibitiv exorbitant precarious"], ["Gereksiz, fazla, eskimiş — unnecessary, outdated", "superfluous redundan extraneous defunct obsolete outmoded"], ["Hafifletmek, düzeltmek — ease, fix", "mitigat ameliorat rectif alleviat assuag abat attenuat temper qualif subdu reconcil compromis dwindl"], ["Engellemek, zayıflatmak — block, weaken", "undermin imped stymie foil preclud forestall constrain suppress repress confin subjugat counteract circumvent hinder"], ["Kötüleştirmek, zararlı — worsen, harmful", "exacerbat detriment pernicious disastrous"], ["Sebep olmak, ortaya çıkarmak — cause, bring out", "precipitat engender induc catalyst elicit evok invok emanat stir beckon"], ["Birleşmek, karışmak — combine, mix", "coalesc conflat interming juxtapos collaborat converg accumulat"], ["Ayrılmak, farklı — separate, differ", "diverg dispers diffus partition decoupl disparate discrepan dissonan incongruous heterogen distinct variation variab"], ["Benzer, aynı — similar, same", "homogen analogous similar invariab consistent relative"], ["Her yerde, bol — everywhere, plenty", "pervasiv pervad ubiquit universal proliferat abound abundan copious myriad influx flourish"], ["Az, önemsiz — few, small", "negligib dearth paucity nominal inconsequen hardly infrequent sporadic peripheral"], ["Dikkatli, akıllı — careful, wise", "meticul judicious pragmatic scrutin calibrat circumspect discerning deliberat exactitud precision resolute competent"], ["Yeni, eşi görülmemiş — new", "novel novelty innovat unprecedent premier emergen visionar"], ["Alışılmış, eski — usual, old", "convention customar habitual habituat quotidian antecedent retrospect rudimentar"], ["Değişken, kısa süreli — changing, short-lived", "volatil erratic capricious vacillat oscillat ephemeral haphazard halting"], ["Kalıcı, dirençli — lasting, tough", "perpetual persistent durab resilient inertia torpor slumber prolong retain"], ["Olası, akla yatkın — possible, believable", "plausib credib feasib viab inevitab potential"], ["Tahmin, varsayım — guess, assume", "hypothe conjectur surmis speculat extrapolat counterfactual corollar assumption notional"], ["Etkili, yeterli — effective, enough", "efficac ineffectual compelling satisfactor inadequate sufficien utilitarian utiliz"], ["Kurala karşı, sahte — rule-breaking, fake", "defy dogmatic heterodox illicit iconoclas fraudulent deceptiv contriv fabricat distort exaggerat misconstru"], ["Taklit — copy", "imitat mimic replicab"], ["Sıradışı — unusual", "anomal idiosyncrat paradox counterintuit"], ["Kısa, yüzeysel — short, shallow", "abridg synopsis succinct cursory superficial offhand perfunctor summation"], ["Uzatmak, detaylandırmak — extend, detail", "protract expound elaborat eloborat enumerat itemiz exhaustiv"], ["Yerini almak, geçmek — replace, surpass", "supersed supplant eclips outstrip transcend surmount preempt"], ["Boyun eğmek, kabul — give in, accept", "acquiesc capitulat conced consensus adhere defer acknowledg yield"], ["Göstermek, işaret — show, signal", "denot indicat index portend harbinger beli evinc epitomi exemplif characteriz"], ["Kaynak, atfetmek — origin, credit", "ascrib attribut deriv cite cited constitut"]];
+  const nrm = s => String(s || '').replace(/İ/g, 'I').replace(/ı/g, 'i').trim().toLowerCase();
+  const RX = ROOTS.map(r => new RegExp(r[2])), PX = PREFIX.map(r => new RegExp(r[2]));
+  const TH = THEMES.map(t => t[1].split(' '));
+  const themeOf = w => { const n = nrm(w); for (let i = 0; i < TH.length; i++) if (TH[i].some(s => n.startsWith(s))) return i; return -1; };
+  window.__vocabGroups = list => {
+    const az = (a, b) => a.word.localeCompare(b.word, 'en', { sensitivity: 'base' });
+    const byTheme = (a, b) => { const ta = themeOf(a.word), tb = themeOf(b.word); return (ta < 0 ? 999 : ta) - (tb < 0 ? 999 : tb) || az(a, b); };
+    const R = {}, P = {}, T = {}, other = [];
+    list.forEach(w => { const n = nrm(w.word); const i = RX.findIndex(r => r.test(n)); (R[i] = R[i] || []).push(w); });
+    const left = [];
+    Object.keys(R).forEach(i => { if (i < 0 || R[i].length < 2) left.push(...R[i]); });
+    const out = [];
+    ROOTS.forEach((r, i) => { if (R[i] && R[i].length >= 2) out.push({ kind: 'root', label: r[0], mean: r[1], words: R[i].sort(byTheme) }); });
+    const left2 = [];
+    left.forEach(w => { const t = themeOf(w.word); if (t >= 0) (T[t] = T[t] || []).push(w); else left2.push(w); });
+    THEMES.forEach((t, i) => { if (T[i]) out.push({ kind: 'theme', label: t[0], mean: 'benzer anlamlılar', words: T[i].sort(az) }); });
+    left2.forEach(w => { const n = nrm(w.word); const i = PX.findIndex(r => r.test(n)); if (i >= 0) (P[i] = P[i] || []).push(w); else other.push(w); });
+    PREFIX.forEach((p, i) => { if (P[i]) { if (P[i].length >= 2) out.push({ kind: 'pre', label: p[0], mean: p[1], words: P[i].sort(az) }); else other.push(...P[i]); } });
+    if (other.length) out.push({ kind: 'other', label: 'Diğer', mean: 'ortak kökü olmayanlar', words: other.sort(az) });
+    return out;
+  };
 })();
 </script>
 </body></html>
