@@ -1926,7 +1926,7 @@ body.ts-full #view-tset .focus-wrap .q-card{min-height:calc(100vh - 170px)}
     <div class="vocab-filter">
       <input id="vocabSearch" class="filter-select" type="search" placeholder="Kelime veya anlam ara">
       <label class="vocab-check"><input type="checkbox" id="vocabOnlyEmpty"> Anlamı boş olanlar</label>
-      <select id="vocabSort" class="filter-select"><option value="new">En yeni üstte</option><option value="az">A'dan Z'ye</option><option value="root">🌱 Köklerine göre</option></select>
+      <select id="vocabSort" class="filter-select"><option value="new">En yeni üstte</option><option value="az">A'dan Z'ye</option><option value="root">🌱 Köklerine göre (-voke, -cate…)</option><option value="mean">💡 Anlamlarına göre</option></select>
       <span class="stat"><strong id="vocabCount">0</strong> kelime</span>
     </div>
     <div class="vocab-table-wrap">
@@ -7701,7 +7701,7 @@ document.addEventListener('mouseup', e => {
     const sort = document.getElementById('vocabSort').value;
     let list = words.filter(w => (!q || (w.word + ' ' + w.meaning + ' ' + w.def + ' ' + w.hint + ' ' + w.example).toLowerCase().includes(q)) && (!onlyEmpty || !w.meaning.trim()));
     list = sort === 'az' ? list.slice().sort((a, b) => a.word.localeCompare(b.word, 'en', { sensitivity: 'base' })) : list.slice().sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-    const groups = sort === 'root' ? window.__vocabGroups(list) : null;
+    const groups = sort === 'root' ? window.__vocabEndGroups(list) : sort === 'mean' ? window.__vocabGroups(list) : null;
     document.getElementById('vocabCount').textContent = words.length;
     if (!list.length) {
       host.innerHTML = `<tr><td colspan="7" class="vocab-empty">${words.length ? 'Aramana uyan kelime yok.' : 'Henüz kelime yok. Sorudaki bir kelimeye 3 kez tıkla ya da Notion\'dan içe aktar.'}</td></tr>`;
@@ -7718,7 +7718,7 @@ document.addEventListener('mouseup', e => {
       <td class="vc-del"><button class="vocab-remove" data-vocab-remove="${escHtml(w.key)}" title="Kelimeyi sil" aria-label="Sil">${ICON.x}</button></td>
     </tr>`;
     host.innerHTML = groups
-      ? groups.map(g => `<tr class="vc-grp vc-grp-${g.kind}"><td colspan="7"><span class="vc-gi">${g.kind === 'root' ? '🌱' : g.kind === 'pre' ? '🔤' : g.kind === 'theme' ? '💡' : '📄'}</span><b>${escHtml(g.label)}</b>${g.mean ? `<span class="vc-gm">${escHtml(g.mean)}</span>` : ''}<span class="vc-gc">${g.words.length}</span></td></tr>` + g.words.map(row).join('')).join('')
+      ? groups.map(g => `<tr class="vc-grp vc-grp-${g.kind}"><td colspan="7"><span class="vc-gi">${g.kind === 'end' ? '🌱' : g.kind === 'root' ? '🌱' : g.kind === 'pre' ? '🔤' : g.kind === 'theme' ? '💡' : '📄'}</span><b>${escHtml(g.label)}</b>${g.mean ? `<span class="vc-gm">${escHtml(g.mean)}</span>` : ''}<span class="vc-gc">${g.words.length}</span></td></tr>` + g.words.map(row).join('')).join('')
       : list.map(row).join('');
   }
   window.renderVocab = render;
@@ -9013,6 +9013,35 @@ try { setTimeout(() => { if (typeof currentView !== 'undefined' && currentView =
     left2.forEach(w => { const n = nrm(w.word); const i = PX.findIndex(r => r.test(n)); if (i >= 0) (P[i] = P[i] || []).push(w); else other.push(w); });
     PREFIX.forEach((p, i) => { if (P[i]) { if (P[i].length >= 2) out.push({ kind: 'pre', label: p[0], mean: p[1], words: P[i].sort(az) }); else other.push(...P[i]); } });
     if (other.length) out.push({ kind: 'other', label: 'Diğer', mean: 'ortak kökü olmayanlar', words: other.sort(az) });
+    return out;
+  };
+})();
+</script>
+<style>.vc-grp-end td{background:rgba(22,163,74,.09)!important}.vc-grp-end b{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14.5px}</style>
+<script>
+(() => {
+  const nrm = s => String(s || '').replace(/İ/g, 'I').replace(/ı/g, 'i').trim().toLowerCase();
+  // light base form so conjectures/conjecture, accelerated/accelerate, epitomizing/epitomize land together
+  const base = s => { let w = nrm(s).split(/\s+/)[0].replace(/[^a-z]/g, '');
+    if (w.length > 6 && /ing$/.test(w)) { w = w.slice(0, -3); if (/(iz|at|ut|id|iv|uc|ok|ur)$/.test(w)) w += 'e'; }
+    else if (w.length > 5 && /ated$|ized$|ised$|osed$|uced$|oked$/.test(w)) w = w.slice(0, -1);
+    else if (w.length > 5 && /(sh|ch|x)es$/.test(w)) w = w.slice(0, -2);
+    else if (w.length > 5 && /[^sui]s$/.test(w)) w = w.slice(0, -1);
+    return w; };
+  // "Köklerine göre": words sharing the same ending (≥4 letters: -voke, -cate, -ject …) sit together
+  window.__vocabEndGroups = list => {
+    const az = (a, b) => a.word.localeCompare(b.word, 'en', { sensitivity: 'base' });
+    const B = new Map(list.map(w => [w, base(w.word)]));
+    let left = list.slice(); const out = [];
+    for (let L = 4; L >= 4; L--) {
+      const m = {};
+      left.forEach(w => { const b = B.get(w); if (b.length >= L + 1) (m[b.slice(-L)] = m[b.slice(-L)] || []).push(w); });
+      const used = new Set();
+      Object.keys(m).forEach(k => { if (m[k].length >= 2) { out.push({ kind: 'end', label: '-' + k, mean: '…' + k + ' ile biten', words: m[k].sort((a, b) => { const ra = B.get(a).split('').reverse().join(''), rb = B.get(b).split('').reverse().join(''); return ra < rb ? -1 : ra > rb ? 1 : 0; }), key: k }); m[k].forEach(w => used.add(w)); } });
+      left = left.filter(w => !used.has(w));
+    }
+    out.sort((a, b) => { const ra = a.key.split('').reverse().join(''), rb = b.key.split('').reverse().join(''); return ra < rb ? -1 : ra > rb ? 1 : 0; });
+    if (left.length) out.push({ kind: 'other', label: 'Diğer', mean: 'son 4 harfi başka kelimeyle uyuşmayanlar', words: left.sort(az) });
     return out;
   };
 })();
