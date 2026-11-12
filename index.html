@@ -1910,6 +1910,7 @@ body.ts-full #view-tset .focus-wrap .q-card{min-height:calc(100vh - 170px)}
         <button class="topbar-action-btn" id="rtOpenBtn">🌱 Roots &amp; affixes</button>
         <button class="topbar-action-btn" id="trHideBtn" title="Türkçe anlamları kapat; görmek istediğine dokun, tek tek açılsın">🙈 Türkçeyi gizle</button>
         <button class="topbar-action-btn vs-open" id="vsOpenBtn" title="10 kelime, 1–2 dakika: her kelime tek soru; bilemediğin sonda tekrar gelir, sonraki günlerde aralıklı tekrar">⚡ Hızlı kelime <span class="vs-badge" id="vsBadge" hidden></span></button>
+        <button class="topbar-action-btn" id="trFillBtn" title="Türkçesi boş (veya İngilizce yazılmış) kelimelere AI Türkçe anlam yazsın — dolu olanlara dokunmaz">🇹🇷 Türkçeleri yaz <span class="badge" id="trFillBadge" hidden></span></button>
         <button class="topbar-action-btn" id="popExBtn" title="Örnek cümlesi uzun / bilimsel kalan kelimelere AI kısa, anime-futbol-dizi-oyun cümlesi yazsın">✨ Popüler örnek <span class="vs-badge" id="popExBadge" hidden></span></button>
         <button class="topbar-action-btn vq-open" id="vqOpenBtn">🧩 Bilmece</button>
         <button class="topbar-action-btn" id="vocabAddBtn">Kelime ekle</button>
@@ -8651,6 +8652,46 @@ Sadece JSON: {"items":[{"w":"kelime","ex":"cümle"}]}` }], { temp: 0.7, timeout:
   }
   document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#popExBtn')) { e.preventDefault(); popRun(); } });
   popBadge(); setInterval(popBadge, 5000);
+
+  // ── 🇹🇷 Türkçeleri yaz: fill missing Turkish meanings (only empty, or clearly English, never a real Turkish one) ──
+  const TF = { busy: false };
+  const isEnglishy = s => { s = String(s || '').trim(); return !!s && !/[çğıöşüÇĞİÖŞÜ]/.test(s) && /\b(the|of|to|an?|is|or|and|that|with|something|someone|being|having)\b/i.test(s); };
+  const needTr = () => (J(VKEY, [])).filter(w => w && String(w.word || '').trim() && (!String(w.meaning || '').trim() || isEnglishy(w.meaning)));
+  function trBadge() { const b = document.getElementById('trFillBadge'); if (!b) return; const n = needTr().length; b.hidden = !n; b.textContent = n; }
+  async function trRun() {
+    if (TF.busy) return;
+    if (!(typeof aiKey === 'function' && aiKey())) { showToast('Bunun için Gemini anahtarı gerekli (Çalış → AI Koç ayarları).'); return; }
+    const L = needTr(); if (!L.length) { showToast('Bütün kelimelerin Türkçesi zaten yazılı.'); return; }
+    TF.busy = true; const btn = document.getElementById('trFillBtn'); let done = 0;
+    try {
+      for (let i = 0; i < L.length; i += 40) {
+        const part = L.slice(i, i + 40);
+        if (btn) btn.firstChild.textContent = `🇹🇷 Yazılıyor ${Math.min(i + 40, L.length)}/${L.length} `;
+        const out = await aiCall([{ text: `Türk bir lise öğrencisi SAT kelimesi çalışıyor. Her İngilizce kelime/ifade için KISA Türkçe anlamını yaz.
+Kurallar:
+- 1-4 kelimelik Türkçe karşılık; birden fazla yaygın anlamı varsa SAT'ta en çok kullanılanı önce, virgülle en fazla 3 anlam (ör. "belirsiz, muğlak").
+- Fiilse Türkçe mastar (-mek/-mak), sıfatsa sıfat olarak yaz.
+- Verilen İngilizce tanım varsa O anlamı esas al.
+KELİMELER:
+${part.map(w => `- ${w.word}${w.def ? ' (' + String(w.def).slice(0, 120) + ')' : ''}`).join('\n')}
+Sadece JSON: {"items":[{"w":"kelime","tr":"Türkçe anlam"}]}` }], { temp: 0.2, timeout: 60000 });
+        const items = (out && Array.isArray(out.items)) ? out.items : [];
+        const upd = [];
+        items.forEach(it => {
+          const w = part.find(x => norm(x.word) === norm(it.w)); const tr = String(it.tr || '').trim();
+          if (!w || !tr || tr.length > 80) return;
+          const nw = { ...w }; delete nw.key;
+          if (String(w.meaning || '').trim() && !w.meaning0) nw.meaning0 = w.meaning;
+          nw.meaning = tr; upd.push([norm(w.word), nw]);
+        });
+        if (upd.length && window.__vocabApply) { window.__vocabApply(upd); done += upd.length; }
+      }
+      showToast(`${done} kelimenin Türkçesi yazıldı.`);
+    } catch (e) { showToast(typeof aiErrText === 'function' ? aiErrText(e) : 'AI hatası'); }
+    TF.busy = false; if (btn) btn.firstChild.textContent = '🇹🇷 Türkçeleri yaz '; trBadge();
+  }
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#trFillBtn')) { e.preventDefault(); trRun(); } });
+  trBadge(); setInterval(trBadge, 5000);
   window.__vs = S;
   badge(); setInterval(badge, 30000);
 })();
